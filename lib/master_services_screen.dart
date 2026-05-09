@@ -1,7 +1,70 @@
 import 'package:flutter/material.dart';
 
-class MasterServicesScreen extends StatelessWidget {
+class MasterServicesScreen extends StatefulWidget {
   const MasterServicesScreen({super.key});
+
+  @override
+  State<MasterServicesScreen> createState() => _MasterServicesScreenState();
+}
+
+class _MasterServicesScreenState extends State<MasterServicesScreen> {
+  // Form Controllers
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ch1Controller = TextEditingController();
+  final TextEditingController _ch2Controller = TextEditingController();
+  final TextEditingController _ch3Controller = TextEditingController();
+  final TextEditingController _walletChargeController = TextEditingController();
+  final TextEditingController _timeController = TextEditingController();
+  final TextEditingController _docsController = TextEditingController();
+
+  // Form States
+  String _selectedWallet = 'CASH';
+  bool _isRepeated = false;
+  bool _isEDistrict = false;
+  bool _isGateway = false;
+  bool _isPrintScan = false;
+
+  bool _isEditing = false;
+  int? _editingId;
+
+  void _onEditService(int id, String name, String c1, String c2, String c3, String wallet, String wc) {
+    setState(() {
+      _isEditing = true;
+      _editingId = id;
+      _nameController.text = name;
+      _ch1Controller.text = c1;
+      _ch2Controller.text = c2;
+      _ch3Controller.text = c3;
+      _walletChargeController.text = wc;
+      _selectedWallet = wallet;
+      // Mocking other states for the demo
+      _isRepeated = false;
+      _isEDistrict = wallet == 'EDISTRICT';
+      _isGateway = wallet == 'GATEWAY';
+      _isPrintScan = false;
+      _timeController.text = '15';
+      _docsController.text = 'Required documents for $name';
+    });
+  }
+
+  void _resetForm() {
+    setState(() {
+      _isEditing = false;
+      _editingId = null;
+      _nameController.clear();
+      _ch1Controller.clear();
+      _ch2Controller.clear();
+      _ch3Controller.clear();
+      _walletChargeController.clear();
+      _timeController.clear();
+      _docsController.clear();
+      _selectedWallet = 'CASH';
+      _isRepeated = false;
+      _isEDistrict = false;
+      _isGateway = false;
+      _isPrintScan = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,13 +95,24 @@ class MasterServicesScreen extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(20),
-            child: const Text(
-              'Add service',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _isEditing ? 'Edit service' : 'Add service',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                if (_isEditing)
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    onPressed: _resetForm,
+                    visualDensity: VisualDensity.compact,
+                  ),
+              ],
             ),
           ),
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
@@ -48,42 +122,49 @@ class MasterServicesScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildLabel('Service name'),
-                _buildTextField('Enter name'),
+                _buildTextField('Enter name', _nameController),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: _buildMiniField('CH. 1', '0.00')),
+                    Expanded(child: _buildMiniField('CH. 1', '0.00', _ch1Controller)),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildMiniField('CH. 2', '0.00')),
+                    Expanded(child: _buildMiniField('CH. 2', '0.00', _ch2Controller)),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildMiniField('CH. 3', '0.00')),
+                    Expanded(child: _buildMiniField('CH. 3', '0.00', _ch3Controller)),
                   ],
                 ),
                 const SizedBox(height: 16),
                 _buildLabel('Wallet'),
-                _buildDropdown('CASH'),
+                _buildDropdown(_selectedWallet),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: _buildLabelAndField('Wallet charge', '0')),
+                    Expanded(child: _buildLabelAndField('Wallet charge', '0', _walletChargeController)),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildLabelAndField('Time (Min)', '15')),
+                    Expanded(child: _buildLabelAndField('Time (Min)', '15', _timeController)),
                   ],
                 ),
                 const SizedBox(height: 16),
                 _buildLabel('Required documents'),
-                _buildTextArea('List documents...'),
+                _buildTextArea('List documents...', _docsController),
                 const SizedBox(height: 20),
-                _buildCheckbox('Repeated', false),
-                _buildCheckbox('eDistrict', false),
-                _buildCheckbox('Gateway', false),
-                _buildCheckbox('Print/Scan/Copy', false),
+                _buildCheckbox('Repeated', _isRepeated, (v) => setState(() => _isRepeated = v!)),
+                _buildCheckbox('eDistrict', _isEDistrict, (v) => setState(() => _isEDistrict = v!)),
+                _buildCheckbox('Gateway', _isGateway, (v) => setState(() => _isGateway = v!)),
+                _buildCheckbox('Print/Scan/Copy', _isPrintScan, (v) => setState(() => _isPrintScan = v!)),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   height: 44,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      if (_isEditing) {
+                        // Handle Update logic
+                        _resetForm();
+                      } else {
+                        // Handle Save logic
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF00695C),
                       foregroundColor: Colors.white,
@@ -92,9 +173,9 @@ class MasterServicesScreen extends StatelessWidget {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'Save service',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    child: Text(
+                      _isEditing ? 'Update service' : 'Save service',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -115,7 +196,6 @@ class MasterServicesScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Table Header Controls
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -136,9 +216,7 @@ class MasterServicesScreen extends StatelessWidget {
               ],
             ),
           ),
-          // Table
           _buildDataTable(),
-          // Table Footer
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -167,7 +245,7 @@ class MasterServicesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(String hint) {
+  Widget _buildTextField(String hint, TextEditingController controller) {
     return Container(
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -176,6 +254,7 @@ class MasterServicesScreen extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: TextField(
+        controller: controller,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
@@ -186,7 +265,7 @@ class MasterServicesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMiniField(String label, String value) {
+  Widget _buildMiniField(String label, String value, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -199,15 +278,15 @@ class MasterServicesScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        _buildTextField(value),
+        _buildTextField(value, controller),
       ],
     );
   }
 
-  Widget _buildLabelAndField(String label, String hint) {
+  Widget _buildLabelAndField(String label, String hint, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [_buildLabel(label), _buildTextField(hint)],
+      children: [_buildLabel(label), _buildTextField(hint, controller)],
     );
   }
 
@@ -236,7 +315,7 @@ class MasterServicesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTextArea(String hint) {
+  Widget _buildTextArea(String hint, TextEditingController controller) {
     return Container(
       height: 80,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -245,6 +324,7 @@ class MasterServicesScreen extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: TextField(
+        controller: controller,
         maxLines: 3,
         decoration: InputDecoration(
           hintText: hint,
@@ -255,7 +335,7 @@ class MasterServicesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCheckbox(String label, bool value) {
+  Widget _buildCheckbox(String label, bool value, Function(bool?) onChanged) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -265,7 +345,7 @@ class MasterServicesScreen extends StatelessWidget {
             width: 24,
             child: Checkbox(
               value: value,
-              onChanged: (v) {},
+              onChanged: onChanged,
               activeColor: const Color(0xFF00695C),
               visualDensity: VisualDensity.compact,
             ),
@@ -326,7 +406,6 @@ class MasterServicesScreen extends StatelessWidget {
   Widget _buildDataTable() {
     return Column(
       children: [
-        // Header
         Container(
           color: const Color(0xFFF8FAFC),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -344,71 +423,17 @@ class MasterServicesScreen extends StatelessWidget {
           ),
         ),
         const Divider(height: 1),
-        // Rows
-        _buildDataRow(
-          1,
-          'Income Certificate',
-          '20.00',
-          '30.00',
-          '40.00',
-          'EDISTRICT',
-          '7.00',
-        ),
-        _buildDataRow(
-          2,
-          'Caste Certificate',
-          '20.00',
-          '30.00',
-          '40.00',
-          'EDISTRICT',
-          '7.00',
-        ),
-        _buildDataRow(
-          3,
-          'Passport Application',
-          '150.00',
-          '200.00',
-          '250.00',
-          'GATEWAY',
-          '1500.00',
-        ),
-        _buildDataRow(
-          4,
-          'Electricity Bill Pay',
-          '15.00',
-          '20.00',
-          '25.00',
-          'CASH',
-          '0.00',
-        ),
-        _buildDataRow(
-          5,
-          'Ration Card Entry',
-          '30.00',
-          '50.00',
-          '70.00',
-          'EDISTRICT',
-          '15.00',
-        ),
-        _buildDataRow(
-          6,
-          'Election ID Renewal',
-          '25.00',
-          '35.00',
-          '45.00',
-          'SBI',
-          '2.50',
-        ),
+        _buildDataRow(1, 'Income Certificate', '20.00', '30.00', '40.00', 'EDISTRICT', '7.00'),
+        _buildDataRow(2, 'Caste Certificate', '20.00', '30.00', '40.00', 'EDISTRICT', '7.00'),
+        _buildDataRow(3, 'Passport Application', '150.00', '200.00', '250.00', 'GATEWAY', '1500.00'),
+        _buildDataRow(4, 'Electricity Bill Pay', '15.00', '20.00', '25.00', 'CASH', '0.00'),
+        _buildDataRow(5, 'Ration Card Entry', '30.00', '50.00', '70.00', 'EDISTRICT', '15.00'),
+        _buildDataRow(6, 'Election ID Renewal', '25.00', '35.00', '45.00', 'SBI', '2.50'),
       ],
     );
   }
 
-  Widget _buildHeadCell(
-    String label, {
-    double? width,
-    bool isExpand = false,
-    bool hasSort = false,
-  }) {
+  Widget _buildHeadCell(String label, {double? width, bool isExpand = false, bool hasSort = false}) {
     Widget content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -434,15 +459,7 @@ class MasterServicesScreen extends StatelessWidget {
     return SizedBox(width: width, child: content);
   }
 
-  Widget _buildDataRow(
-    int id,
-    String name,
-    String c1,
-    String c2,
-    String c3,
-    String wallet,
-    String wc,
-  ) {
+  Widget _buildDataRow(int id, String name, String c1, String c2, String c3, String wallet, String wc) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: const BoxDecoration(
@@ -504,12 +521,14 @@ class MasterServicesScreen extends StatelessWidget {
                   Icons.edit_outlined,
                   const Color(0xFFFFF7ED),
                   const Color(0xFFF97316),
+                  () => _onEditService(id, name, c1, c2, c3, wallet, wc),
                 ),
                 const SizedBox(width: 8),
                 _buildActionButton(
                   Icons.delete_outline_rounded,
                   const Color(0xFFFEF2F2),
                   const Color(0xFFEF4444),
+                  () {},
                 ),
               ],
             ),
@@ -542,14 +561,18 @@ class MasterServicesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(IconData icon, Color bg, Color iconColor) {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
+  Widget _buildActionButton(IconData icon, Color bg, Color iconColor, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(icon, size: 14, color: iconColor),
       ),
-      child: Icon(icon, size: 14, color: iconColor),
     );
   }
 
@@ -567,23 +590,15 @@ class MasterServicesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPageBtn(
-    String label, {
-    bool isActive = false,
-    bool isEnabled = true,
-  }) {
+  Widget _buildPageBtn(String label, {bool isActive = false, bool isEnabled = true}) {
     return Container(
       margin: const EdgeInsets.only(left: 4),
       child: TextButton(
         onPressed: isEnabled ? () {} : null,
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          backgroundColor: isActive
-              ? const Color(0xFF00695C)
-              : Colors.transparent,
-          foregroundColor: isActive
-              ? Colors.white
-              : (isEnabled ? const Color(0xFF64748B) : const Color(0xFFCBD5E1)),
+          backgroundColor: isActive ? const Color(0xFF00695C) : Colors.transparent,
+          foregroundColor: isActive ? Colors.white : (isEnabled ? const Color(0xFF64748B) : const Color(0xFFCBD5E1)),
           minimumSize: const Size(0, 32),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(4),
