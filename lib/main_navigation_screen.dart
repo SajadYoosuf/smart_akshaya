@@ -5,6 +5,7 @@ import 'service_reports_screen.dart';
 import 'expenses_screen.dart';
 import 'settings_screen.dart';
 import 'master_services_screen.dart';
+import 'staff_management_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -27,6 +28,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     'Expenses',
     'Settings — password reset',
     'Services — Master',
+    'Staff management',
   ];
 
   @override
@@ -54,6 +56,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       const ExpensesScreen(),
                       const SettingsScreen(),
                       const MasterServicesScreen(),
+                      const StaffManagementScreen(),
                     ],
                   ),
                 ),
@@ -131,6 +134,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             children: [
               _buildSubNavItem('Password reset', 5),
               _buildSubNavItem('Services', 6),
+              _buildSubNavItem('Staff management', 7),
             ],
           ),
 
@@ -205,7 +209,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     bool isAnyChildActive = false;
     if (title == 'Services' && _selectedIndex == 1) isAnyChildActive = true;
     if (title == 'Reports' && _selectedIndex == 2) isAnyChildActive = true;
-    if (title == 'Settings' && (_selectedIndex == 5 || _selectedIndex == 6)) isAnyChildActive = true;
+    if (title == 'Settings' && (_selectedIndex == 5 || _selectedIndex == 6 || _selectedIndex == 7)) isAnyChildActive = true;
 
     return Column(
       children: [
