@@ -4,6 +4,7 @@ import 'new_entry_screen.dart';
 import 'service_reports_screen.dart';
 import 'expenses_screen.dart';
 import 'settings_screen.dart';
+import 'master_services_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -25,6 +26,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     'Services',
     'Expenses',
     'Settings — password reset',
+    'Services — Master',
   ];
 
   @override
@@ -51,6 +53,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       _buildPlaceholderPage('Services'),
                       const ExpensesScreen(),
                       const SettingsScreen(),
+                      const MasterServicesScreen(),
                     ],
                   ),
                 ),
@@ -125,7 +128,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             isExpanded: _isSettingsExpanded,
             onExpandToggle: () =>
                 setState(() => _isSettingsExpanded = !_isSettingsExpanded),
-            children: [_buildSubNavItem('Password reset', 5)],
+            children: [
+              _buildSubNavItem('Password reset', 5),
+              _buildSubNavItem('Services', 6),
+            ],
           ),
 
           const Spacer(),
@@ -199,7 +205,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     bool isAnyChildActive = false;
     if (title == 'Services' && _selectedIndex == 1) isAnyChildActive = true;
     if (title == 'Reports' && _selectedIndex == 2) isAnyChildActive = true;
-    if (title == 'Settings' && _selectedIndex == 5) isAnyChildActive = true;
+    if (title == 'Settings' && (_selectedIndex == 5 || _selectedIndex == 6)) isAnyChildActive = true;
 
     return Column(
       children: [
