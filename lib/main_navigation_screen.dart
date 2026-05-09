@@ -101,44 +101,52 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ),
           const SizedBox(height: 8),
 
-          // Main Section
-          _buildSidebarSectionTitle('MAIN'),
-          _buildNavItem('Dashboard', Icons.dashboard_rounded, 0),
-          _buildExpandableNavItem(
-            title: 'Services',
-            icon: Icons.grid_view_rounded,
-            isExpanded: _isServicesExpanded,
-            onExpandToggle: () =>
-                setState(() => _isServicesExpanded = !_isServicesExpanded),
-            children: [_buildSubNavItem('New entry', 1)],
-          ),
+          // Scrollable Navigation Area
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSidebarSectionTitle('MAIN'),
+                  _buildNavItem('Dashboard', Icons.dashboard_rounded, 0),
+                  _buildExpandableNavItem(
+                    title: 'Services',
+                    icon: Icons.grid_view_rounded,
+                    isExpanded: _isServicesExpanded,
+                    onExpandToggle: () =>
+                        setState(() => _isServicesExpanded = !_isServicesExpanded),
+                    children: [_buildSubNavItem('New entry', 1)],
+                  ),
 
-          _buildSidebarSectionTitle('FINANCE'),
-          _buildExpandableNavItem(
-            title: 'Reports',
-            icon: Icons.bar_chart_rounded,
-            isExpanded: _isReportsExpanded,
-            onExpandToggle: () =>
-                setState(() => _isReportsExpanded = !_isReportsExpanded),
-            children: [_buildSubNavItem('Service reports', 2)],
-          ),
-          _buildNavItem('Expenses', Icons.payments_outlined, 4),
+                  _buildSidebarSectionTitle('FINANCE'),
+                  _buildExpandableNavItem(
+                    title: 'Reports',
+                    icon: Icons.bar_chart_rounded,
+                    isExpanded: _isReportsExpanded,
+                    onExpandToggle: () =>
+                        setState(() => _isReportsExpanded = !_isReportsExpanded),
+                    children: [_buildSubNavItem('Service reports', 2)],
+                  ),
+                  _buildNavItem('Expenses', Icons.payments_outlined, 4),
 
-          _buildSidebarSectionTitle('SYSTEM'),
-          _buildExpandableNavItem(
-            title: 'Settings',
-            icon: Icons.settings_rounded,
-            isExpanded: _isSettingsExpanded,
-            onExpandToggle: () =>
-                setState(() => _isSettingsExpanded = !_isSettingsExpanded),
-            children: [
-              _buildSubNavItem('Password reset', 5),
-              _buildSubNavItem('Services', 6),
-              _buildSubNavItem('Staff management', 7),
-            ],
+                  _buildSidebarSectionTitle('SYSTEM'),
+                  _buildExpandableNavItem(
+                    title: 'Settings',
+                    icon: Icons.settings_rounded,
+                    isExpanded: _isSettingsExpanded,
+                    onExpandToggle: () =>
+                        setState(() => _isSettingsExpanded = !_isSettingsExpanded),
+                    children: [
+                      _buildSubNavItem('Password reset', 5),
+                      _buildSubNavItem('Services', 6),
+                      _buildSubNavItem('Staff management', 7),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-
-          const Spacer(),
 
           // Apply for Service Button
           _buildUserProfile(),

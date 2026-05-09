@@ -86,39 +86,6 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 48),
-
-          // Bottom Info Cards
-          Row(
-            children: [
-              Expanded(
-                child: _buildInfoCard(
-                  icon: Icons.shield_outlined,
-                  iconColor: const Color(0xFF3B82F6),
-                  title: 'Account Security',
-                  description: 'Update your password regularly to keep your citizen portal account secure from unauthorized access.',
-                ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: _buildInfoCard(
-                  icon: Icons.history_rounded,
-                  iconColor: const Color(0xFFF59E0B),
-                  title: 'Login History',
-                  description: 'Your last successful login was on October 24, 2024, at 10:22 AM from a Chrome browser on Windows.',
-                ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: _buildInfoCard(
-                  icon: Icons.verified_user_outlined,
-                  iconColor: const Color(0xFF10B981),
-                  title: 'Two-Factor Auth',
-                  description: 'Enhance your security further by enabling OTP-based authentication for all service applications.',
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -173,46 +140,6 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF94A3B8)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoCard({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String description,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: iconColor, size: 24),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            description,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF64748B),
-              height: 1.5,
-            ),
-          ),
         ],
       ),
     );
