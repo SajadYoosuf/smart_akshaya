@@ -11,15 +11,10 @@ class MasterServicesScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Left Side - Add Service Form
-          SizedBox(
-            width: 320,
-            child: _buildAddServiceForm(),
-          ),
+          SizedBox(width: 320, child: _buildAddServiceForm()),
           const SizedBox(width: 24),
           // Right Side - Service List Table
-          Expanded(
-            child: _buildServiceList(),
-          ),
+          Expanded(child: _buildServiceList()),
         ],
       ),
     );
@@ -39,7 +34,11 @@ class MasterServicesScreen extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: const Text(
               'Add service',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
             ),
           ),
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
@@ -76,9 +75,9 @@ class MasterServicesScreen extends StatelessWidget {
                 _buildTextArea('List documents...'),
                 const SizedBox(height: 20),
                 _buildCheckbox('Repeated', false),
-                _buildCheckbox('eDistrict', true),
+                _buildCheckbox('eDistrict', false),
                 _buildCheckbox('Gateway', false),
-                _buildCheckbox('Print/Scan/Copy', true),
+                _buildCheckbox('Print/Scan/Copy', false),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -88,10 +87,15 @@ class MasterServicesScreen extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF00695C),
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       elevation: 0,
                     ),
-                    child: const Text('Save service', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Save service',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               ],
@@ -116,11 +120,17 @@ class MasterServicesScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const Text('Show', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                const Text(
+                  'Show',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                ),
                 const SizedBox(width: 8),
                 _buildEntriesDropdown(),
                 const SizedBox(width: 8),
-                const Text('entries', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                const Text(
+                  'entries',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                ),
                 const Spacer(),
                 _buildSearchField(),
               ],
@@ -150,7 +160,10 @@ class MasterServicesScreen extends StatelessWidget {
   Widget _buildLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+      ),
     );
   }
 
@@ -177,7 +190,14 @@ class MasterServicesScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF94A3B8),
+          ),
+        ),
         const SizedBox(height: 4),
         _buildTextField(value),
       ],
@@ -187,10 +207,7 @@ class MasterServicesScreen extends StatelessWidget {
   Widget _buildLabelAndField(String label, String hint) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildLabel(label),
-        _buildTextField(hint),
-      ],
+      children: [_buildLabel(label), _buildTextField(hint)],
     );
   }
 
@@ -204,9 +221,16 @@ class MasterServicesScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(value, style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
+          ),
           const Spacer(),
-          const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF94A3B8)),
+          const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 18,
+            color: Color(0xFF94A3B8),
+          ),
         ],
       ),
     );
@@ -247,7 +271,10 @@ class MasterServicesScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
+          ),
         ],
       ),
     );
@@ -260,7 +287,10 @@ class MasterServicesScreen extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE2E8F0)),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: const Text('10', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+      child: const Text(
+        '10',
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+      ),
     );
   }
 
@@ -315,27 +345,88 @@ class MasterServicesScreen extends StatelessWidget {
         ),
         const Divider(height: 1),
         // Rows
-        _buildDataRow(1, 'Income Certificate', '20.00', '30.00', '40.00', 'EDISTRICT', '7.00'),
-        _buildDataRow(2, 'Caste Certificate', '20.00', '30.00', '40.00', 'EDISTRICT', '7.00'),
-        _buildDataRow(3, 'Passport Application', '150.00', '200.00', '250.00', 'GATEWAY', '1500.00'),
-        _buildDataRow(4, 'Electricity Bill Pay', '15.00', '20.00', '25.00', 'CASH', '0.00'),
-        _buildDataRow(5, 'Ration Card Entry', '30.00', '50.00', '70.00', 'EDISTRICT', '15.00'),
-        _buildDataRow(6, 'Election ID Renewal', '25.00', '35.00', '45.00', 'SBI', '2.50'),
+        _buildDataRow(
+          1,
+          'Income Certificate',
+          '20.00',
+          '30.00',
+          '40.00',
+          'EDISTRICT',
+          '7.00',
+        ),
+        _buildDataRow(
+          2,
+          'Caste Certificate',
+          '20.00',
+          '30.00',
+          '40.00',
+          'EDISTRICT',
+          '7.00',
+        ),
+        _buildDataRow(
+          3,
+          'Passport Application',
+          '150.00',
+          '200.00',
+          '250.00',
+          'GATEWAY',
+          '1500.00',
+        ),
+        _buildDataRow(
+          4,
+          'Electricity Bill Pay',
+          '15.00',
+          '20.00',
+          '25.00',
+          'CASH',
+          '0.00',
+        ),
+        _buildDataRow(
+          5,
+          'Ration Card Entry',
+          '30.00',
+          '50.00',
+          '70.00',
+          'EDISTRICT',
+          '15.00',
+        ),
+        _buildDataRow(
+          6,
+          'Election ID Renewal',
+          '25.00',
+          '35.00',
+          '45.00',
+          'SBI',
+          '2.50',
+        ),
       ],
     );
   }
 
-  Widget _buildHeadCell(String label, {double? width, bool isExpand = false, bool hasSort = false}) {
+  Widget _buildHeadCell(
+    String label, {
+    double? width,
+    bool isExpand = false,
+    bool hasSort = false,
+  }) {
     Widget content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF64748B),
+          ),
         ),
         if (hasSort) ...[
           const SizedBox(width: 4),
-          const Icon(Icons.unfold_more_rounded, size: 12, color: Color(0xFF94A3B8)),
+          const Icon(
+            Icons.unfold_more_rounded,
+            size: 12,
+            color: Color(0xFF94A3B8),
+          ),
         ],
       ],
     );
@@ -343,7 +434,15 @@ class MasterServicesScreen extends StatelessWidget {
     return SizedBox(width: width, child: content);
   }
 
-  Widget _buildDataRow(int id, String name, String c1, String c2, String c3, String wallet, String wc) {
+  Widget _buildDataRow(
+    int id,
+    String name,
+    String c1,
+    String c2,
+    String c3,
+    String wallet,
+    String wc,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: const BoxDecoration(
@@ -351,23 +450,67 @@ class MasterServicesScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          SizedBox(width: 30, child: Text('$id', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)))),
-          Expanded(child: Text(name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF1E293B)))),
-          SizedBox(width: 70, child: Text(c1, style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B)))),
-          SizedBox(width: 70, child: Text(c2, style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B)))),
-          SizedBox(width: 70, child: Text(c3, style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B)))),
           SizedBox(
-            width: 80,
-            child: _buildBadge(wallet),
+            width: 30,
+            child: Text(
+              '$id',
+              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+            ),
           ),
-          SizedBox(width: 70, child: Text(wc, style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B)))),
+          Expanded(
+            child: Text(
+              name,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 70,
+            child: Text(
+              c1,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B)),
+            ),
+          ),
+          SizedBox(
+            width: 70,
+            child: Text(
+              c2,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B)),
+            ),
+          ),
+          SizedBox(
+            width: 70,
+            child: Text(
+              c3,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B)),
+            ),
+          ),
+          SizedBox(width: 80, child: _buildBadge(wallet)),
+          SizedBox(
+            width: 70,
+            child: Text(
+              wc,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B)),
+            ),
+          ),
           SizedBox(
             width: 80,
             child: Row(
               children: [
-                _buildActionButton(Icons.edit_outlined, const Color(0xFFFFF7ED), const Color(0xFFF97316)),
+                _buildActionButton(
+                  Icons.edit_outlined,
+                  const Color(0xFFFFF7ED),
+                  const Color(0xFFF97316),
+                ),
                 const SizedBox(width: 8),
-                _buildActionButton(Icons.delete_outline_rounded, const Color(0xFFFEF2F2), const Color(0xFFEF4444)),
+                _buildActionButton(
+                  Icons.delete_outline_rounded,
+                  const Color(0xFFFEF2F2),
+                  const Color(0xFFEF4444),
+                ),
               ],
             ),
           ),
@@ -390,7 +533,11 @@ class MasterServicesScreen extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: color),
+        style: TextStyle(
+          fontSize: 8,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
       ),
     );
   }
@@ -420,19 +567,29 @@ class MasterServicesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPageBtn(String label, {bool isActive = false, bool isEnabled = true}) {
+  Widget _buildPageBtn(
+    String label, {
+    bool isActive = false,
+    bool isEnabled = true,
+  }) {
     return Container(
       margin: const EdgeInsets.only(left: 4),
       child: TextButton(
         onPressed: isEnabled ? () {} : null,
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          backgroundColor: isActive ? const Color(0xFF00695C) : Colors.transparent,
-          foregroundColor: isActive ? Colors.white : (isEnabled ? const Color(0xFF64748B) : const Color(0xFFCBD5E1)),
+          backgroundColor: isActive
+              ? const Color(0xFF00695C)
+              : Colors.transparent,
+          foregroundColor: isActive
+              ? Colors.white
+              : (isEnabled ? const Color(0xFF64748B) : const Color(0xFFCBD5E1)),
           minimumSize: const Size(0, 32),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(4),
-            side: BorderSide(color: isActive ? Colors.transparent : const Color(0xFFE2E8F0)),
+            side: BorderSide(
+              color: isActive ? Colors.transparent : const Color(0xFFE2E8F0),
+            ),
           ),
         ),
         child: Text(label, style: const TextStyle(fontSize: 12)),
