@@ -1,8 +1,40 @@
 import 'package:flutter/material.dart';
 import 'main_navigation_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  void _handleLogin() {
+    String email = _emailController.text.trim();
+    String password = _passwordController.text.trim();
+
+    if (email == 'admin@gmail.com' && password == 'password') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainNavigationScreen(userRole: 'admin')),
+      );
+    } else if (email == 'staff@gmail.com' && password == '123456') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainNavigationScreen(userRole: 'staff')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid email or password'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,19 +110,21 @@ class LoginScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 32),
-                          const _CustomTextField(
+                          _CustomTextField(
                             label: 'Email',
                             icon: Icons.email_rounded,
                             hintText: 'name@example.com',
                             keyboardType: TextInputType.emailAddress,
+                            controller: _emailController,
                           ),
                           const SizedBox(height: 20),
-                          const _CustomTextField(
+                          _CustomTextField(
                             label: 'Password',
                             icon: Icons.lock_rounded,
                             hintText: '••••••••',
                             obscureText: true,
                             keyboardType: TextInputType.visiblePassword,
+                            controller: _passwordController,
                           ),
                           const SizedBox(height: 12),
                           Row(
@@ -144,12 +178,7 @@ class LoginScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-                              );
-                            },
+                            onPressed: _handleLogin,
                             child: const Text(
                               'Login',
                               style: TextStyle(
@@ -313,6 +342,7 @@ class _CustomTextField extends StatelessWidget {
   final String hintText;
   final bool obscureText;
   final TextInputType? keyboardType;
+  final TextEditingController? controller;
 
   const _CustomTextField({
     required this.label,
@@ -320,6 +350,7 @@ class _CustomTextField extends StatelessWidget {
     required this.hintText,
     this.obscureText = false,
     this.keyboardType,
+    this.controller,
   });
 
   @override
@@ -337,6 +368,7 @@ class _CustomTextField extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         TextField(
+          controller: controller,
           obscureText: obscureText,
           keyboardType: keyboardType,
           decoration: InputDecoration(

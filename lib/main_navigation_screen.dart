@@ -6,19 +6,30 @@ import 'expenses_screen.dart';
 import 'settings_screen.dart';
 import 'master_services_screen.dart';
 import 'staff_management_screen.dart';
+import 'login_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final String? userRole;
+  const MainNavigationScreen({super.key, this.userRole});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _selectedIndex = 0;
-  bool _isServicesExpanded = false;
-  bool _isReportsExpanded = false;
+  late int _selectedIndex;
+  late String _role;
+  bool _isServicesExpanded = true;
+  bool _isReportsExpanded = true;
   bool _isSettingsExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _role = widget.userRole ?? 'admin';
+    // Default index for staff is 'New Entry' (1)
+    _selectedIndex = _role == 'staff' ? 1 : 0;
+  }
 
   final List<String> _pageTitles = [
     'Dashboard',
@@ -108,16 +119,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSidebarSectionTitle('MAIN'),
-                  _buildNavItem('Dashboard', Icons.dashboard_rounded, 0),
-                  _buildExpandableNavItem(
-                    title: 'Services',
-                    icon: Icons.grid_view_rounded,
-                    isExpanded: _isServicesExpanded,
-                    onExpandToggle: () =>
-                        setState(() => _isServicesExpanded = !_isServicesExpanded),
-                    children: [_buildSubNavItem('New entry', 1)],
-                  ),
+                  if (_role == 'admin') ...[
+                    _buildSidebarSectionTitle('MAIN'),
+                    _buildNavItem('Dashboard', Icons.dashboard_rounded, 0),
+                  ],
+                  if (_role == 'admin' || _role == 'staff') ...[
+                    if (_role == 'staff') _buildSidebarSectionTitle('SERVICES'),
+                    _buildExpandableNavItem(
+                      title: 'Services',
+                      icon: Icons.grid_view_rounded,
+                      isExpanded: _isServicesExpanded,
+                      onExpandToggle: () =>
+                          setState(() => _isServicesExpanded = !_isServicesExpanded),
+                      children: [_buildSubNavItem('New entry', 1)],
+                    ),
+                  ],
 
                   _buildSidebarSectionTitle('FINANCE'),
                   _buildExpandableNavItem(
@@ -130,19 +146,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   ),
                   _buildNavItem('Expenses', Icons.payments_outlined, 4),
 
-                  _buildSidebarSectionTitle('SYSTEM'),
-                  _buildExpandableNavItem(
-                    title: 'Settings',
-                    icon: Icons.settings_rounded,
-                    isExpanded: _isSettingsExpanded,
-                    onExpandToggle: () =>
-                        setState(() => _isSettingsExpanded = !_isSettingsExpanded),
-                    children: [
-                      _buildSubNavItem('Password reset', 5),
-                      _buildSubNavItem('Services', 6),
-                      _buildSubNavItem('Staff management', 7),
-                    ],
-                  ),
+                  if (_role == 'admin') ...[
+                    _buildSidebarSectionTitle('SYSTEM'),
+                    _buildExpandableNavItem(
+                      title: 'Settings',
+                      icon: Icons.settings_rounded,
+                      isExpanded: _isSettingsExpanded,
+                      onExpandToggle: () =>
+                          setState(() => _isSettingsExpanded = !_isSettingsExpanded),
+                      children: [
+                        _buildSubNavItem('Password reset', 5),
+                        _buildSubNavItem('Services', 6),
+                        _buildSubNavItem('Staff management', 7),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -335,16 +353,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Raseena Mol',
-                  style: TextStyle(
+                Text(
+                  _role == 'admin' ? 'Admin User' : 'Staff Member',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
-                  'Operator',
+                  _role == 'admin' ? 'System Admin' : 'Service Operator',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.4),
                     fontSize: 12,
@@ -354,8 +372,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ),
           ),
           IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.logout_rounded, color: Colors.red, size: 20),
+            onPressed: () => Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+            ),
+            icon: const Icon(Icons.logout_rounded, color: Colors.red, size: 20),
             tooltip: 'Log out',
           ),
         ],
