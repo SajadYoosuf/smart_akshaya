@@ -27,7 +27,11 @@ class SettingsScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(20),
                     child: Row(
                       children: const [
-                        Icon(Icons.lock_outline_rounded, color: Color(0xFF10B981), size: 18),
+                        Icon(
+                          Icons.lock_outline_rounded,
+                          color: Color(0xFF10B981),
+                          size: 18,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Password reset',
@@ -57,7 +61,10 @@ class SettingsScreen extends StatelessWidget {
                         const SizedBox(height: 6),
                         const Text(
                           'Minimum 8 characters',
-                          style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF94A3B8),
+                          ),
                         ),
                         const SizedBox(height: 24),
                         _buildLabel('Confirm password'),
@@ -72,11 +79,16 @@ class SettingsScreen extends StatelessWidget {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF10B981),
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                               elevation: 0,
                             ),
                             icon: const Icon(Icons.check_rounded, size: 18),
-                            label: const Text('Update password', style: TextStyle(fontWeight: FontWeight.bold)),
+                            label: const Text(
+                              'Update password',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ],
@@ -86,6 +98,9 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 48),
+
+          // Bottom Info Cards
         ],
       ),
     );
@@ -94,7 +109,11 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildLabel(String label) {
     return Text(
       label,
-      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF475569),
+      ),
     );
   }
 
@@ -130,16 +149,22 @@ class SettingsScreen extends StatelessWidget {
           Expanded(
             child: TextField(
               obscureText: true,
-              keyboardType: TextInputType.visiblePassword,
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                hintStyle: const TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontSize: 13,
+                ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.only(bottom: 12),
               ),
             ),
           ),
-          const Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF94A3B8)),
+          const Icon(
+            Icons.visibility_outlined,
+            size: 18,
+            color: Color(0xFF94A3B8),
+          ),
         ],
       ),
     );
