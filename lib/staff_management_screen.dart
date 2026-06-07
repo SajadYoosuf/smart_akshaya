@@ -1,7 +1,227 @@
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'services/auth_service.dart';
+import 'services/google_sheets_service.dart';
+import 'services/local_excel_service.dart';
+import 'config/google_sheets_config.dart';
 
-class StaffManagementScreen extends StatelessWidget {
+class StaffManagementScreen extends StatefulWidget {
   const StaffManagementScreen({super.key});
+
+  @override
+  State<StaffManagementScreen> createState() => _StaffManagementScreenState();
+}
+
+class _StaffManagementScreenState extends State<StaffManagementScreen> {
+  // Form Controllers
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _mobileController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+
+  String _selectedUserType = 'Normal User';
+  bool _isLoading = false;
+  bool _isSaving = false;
+  
+  List<StaffMember> _staffList = [];
+  List<StaffMember> _filteredStaffList = [];
+  String _spreadsheetId = '';
+
+  final GoogleSheetsService _sheetsService = GoogleSheetsService();
+  final LocalExcelService _localExcelService = LocalExcelService();
+  final AuthService _authService = AuthService();
+
+  @override
+  void initState() {
+    super.initState();
+    _initAndLoadStaff();
+    _searchController.addListener(_filterStaff);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _addressController.dispose();
+    _mobileController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _initAndLoadStaff() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      await _localExcelService.initDatabase(directory.path);
+      
+      _spreadsheetId = await _authService.getSpreadsheetId();
+      
+      if (_spreadsheetId.isNotEmpty) {
+        // Authenticate service
+        final credentialsJson = await DefaultAssetBundle.of(context)
+            .loadString('assets/credentials/google_sheets_credentials.json');
+        await _sheetsService.init(credentialsJson);
+
+        // Fetch staff
+        await _fetchStaffData();
+      } else {
+        print('No spreadsheet ID configured.');
+      }
+    } catch (e) {
+      print('Error initializing staff list: $e');
+      // Load offline cache as fallback
+      await _loadFromLocalCache();
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _fetchStaffData() async {
+    try {
+      final staff = await _authService.refreshStaffCache();
+      setState(() {
+        _staffList = staff;
+        _filteredStaffList = List.from(_staffList);
+      });
+    } catch (e) {
+      print('Failed fetching staff: $e');
+      await _loadFromLocalCache();
+    }
+  }
+
+  Future<void> _loadFromLocalCache() async {
+    // Attempt loading from cache via AuthService
+    try {
+      final staff = await _authService.refreshStaffCache(); // will read from sheets or fallback
+      setState(() {
+        _staffList = staff;
+        _filteredStaffList = List.from(_staffList);
+      });
+    } catch (e) {
+      print('Local cache read failed: $e');
+    }
+  }
+
+  void _filterStaff() {
+    final query = _searchController.text.toLowerCase().trim();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredStaffList = List.from(_staffList);
+      } else {
+        _filteredStaffList = _staffList.where((staff) {
+          return staff.name.toLowerCase().contains(query) ||
+              staff.email.toLowerCase().contains(query) ||
+              staff.mobile.contains(query) ||
+              staff.address.toLowerCase().contains(query) ||
+              staff.userType.toLowerCase().contains(query);
+        }).toList();
+      }
+    });
+  }
+
+  Future<void> _handleSaveStaff() async {
+    if (_spreadsheetId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please configure Spreadsheet ID on the Login screen first.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    final name = _nameController.text.trim();
+    final address = _addressController.text.trim();
+    final mobile = _mobileController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirm = _confirmController.text.trim();
+
+    if (name.isEmpty || address.isEmpty || mobile.isEmpty || email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All fields are required'), backgroundColor: Colors.orangeAccent),
+      );
+      return;
+    }
+
+    if (password != confirm) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match'), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      // Calculate new numeric ID
+      int nextId = 1;
+      if (_staffList.isNotEmpty) {
+        final ids = _staffList.map((s) => int.tryParse(s.id) ?? 0).toList();
+        nextId = ids.reduce((curr, next) => curr > next ? curr : next) + 1;
+      }
+
+      final type = _selectedUserType == 'Admin' ? 'admin' : 'staff';
+      final status = 'Active';
+      final hashedPassword = AuthService.generatePasswordHash(password);
+
+      final newRow = [
+        '$nextId',
+        name,
+        address,
+        mobile,
+        email,
+        type,
+        status,
+        hashedPassword,
+      ];
+
+      // Append row to Google Sheets
+      await _sheetsService.appendRow(_spreadsheetId, GoogleSheetsConfig.staffSheetName, newRow);
+      
+      // Refresh cache
+      await _fetchStaffData();
+
+      // Clear Form
+      _nameController.clear();
+      _addressController.clear();
+      _mobileController.clear();
+      _emailController.clear();
+      _passwordController.clear();
+      _confirmController.clear();
+      setState(() {
+        _selectedUserType = 'Normal User';
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Staff saved successfully to Google Sheets!'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving staff: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +232,7 @@ class StaffManagementScreen extends StatelessWidget {
         children: [
           _buildAddStaffForm(),
           const SizedBox(height: 24),
-          _buildStaffList(),
+          _buildStaffListSection(),
         ],
       ),
     );
@@ -56,20 +276,16 @@ class StaffManagementScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Expanded(child: _buildFormField('Name', 'Enter full name')),
+                    Expanded(child: _buildFormField('Name', 'Enter full name', controller: _nameController)),
                     const SizedBox(width: 20),
-                    Expanded(
-                      child: _buildFormField(
-                        'Address',
-                        'Enter residential address',
-                      ),
-                    ),
+                    Expanded(child: _buildFormField('Address', 'Enter residential address', controller: _addressController)),
                     const SizedBox(width: 20),
                     Expanded(
                       child: _buildFormField(
                         'Mobile',
                         '+91 00000 00000',
                         keyboardType: TextInputType.phone,
+                        controller: _mobileController,
                       ),
                     ),
                   ],
@@ -78,7 +294,7 @@ class StaffManagementScreen extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: _buildDropdownField('User type', 'Normal User'),
+                      child: _buildDropdownField('User type'),
                     ),
                     const SizedBox(width: 20),
                     Expanded(
@@ -86,10 +302,11 @@ class StaffManagementScreen extends StatelessWidget {
                         'Email',
                         'example@mail.com',
                         keyboardType: TextInputType.emailAddress,
+                        controller: _emailController,
                       ),
                     ),
                     const SizedBox(width: 20),
-                    Expanded(child: _buildPasswordField('Password')),
+                    Expanded(child: _buildPasswordField('Password', _passwordController)),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -97,29 +314,31 @@ class StaffManagementScreen extends StatelessWidget {
                   children: [
                     SizedBox(
                       width: 320,
-                      child: _buildPasswordField('Password confirmation'),
+                      child: _buildPasswordField('Password confirmation', _confirmController),
                     ),
                     const Spacer(),
-                    ElevatedButton.icon(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 18,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                      ),
-                      icon: const Icon(Icons.save_rounded, size: 18),
-                      label: const Text(
-                        'Save staff',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                    _isSaving
+                        ? const CircularProgressIndicator(color: Color(0xFF10B981))
+                        : ElevatedButton.icon(
+                            onPressed: _handleSaveStaff,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 18,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 0,
+                            ),
+                            icon: const Icon(Icons.save_rounded, size: 18),
+                            label: const Text(
+                              'Save staff',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
                   ],
                 ),
               ],
@@ -130,7 +349,7 @@ class StaffManagementScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStaffList() {
+  Widget _buildStaffListSection() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -164,14 +383,21 @@ class StaffManagementScreen extends StatelessWidget {
               ],
             ),
           ),
-          _buildStaffTable(),
+          _isLoading
+              ? const Padding(
+                  padding: EdgeInsets.all(40),
+                  child: Center(
+                    child: CircularProgressIndicator(color: Color(0xFF10B981)),
+                  ),
+                )
+              : _buildStaffTable(),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const Text(
-                  'Showing 1 to 5 of 6 entries',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                Text(
+                  'Showing 1 to ${_filteredStaffList.length} of ${_filteredStaffList.length} entries',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                 ),
                 const Spacer(),
                 _buildPagination(),
@@ -187,6 +413,7 @@ class StaffManagementScreen extends StatelessWidget {
     String label,
     String hint, {
     TextInputType? keyboardType,
+    required TextEditingController controller,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,6 +436,7 @@ class StaffManagementScreen extends StatelessWidget {
             border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           child: TextField(
+            controller: controller,
             keyboardType: keyboardType,
             decoration: InputDecoration(
               hintText: hint,
@@ -225,7 +453,7 @@ class StaffManagementScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPasswordField(String label) {
+  Widget _buildPasswordField(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -248,10 +476,11 @@ class StaffManagementScreen extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: TextField(
+                  controller: controller,
                   obscureText: true,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: '••••••••',
                     hintStyle: TextStyle(
                       color: Color(0xFF94A3B8),
@@ -274,7 +503,7 @@ class StaffManagementScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDropdownField(String label, String value) {
+  Widget _buildDropdownField(String label) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -295,19 +524,26 @@ class StaffManagementScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
-          child: Row(
-            children: [
-              Text(
-                value,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
-              ),
-              const Spacer(),
-              const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 18,
-                color: Color(0xFF94A3B8),
-              ),
-            ],
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedUserType,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF94A3B8), size: 18),
+              isExpanded: true,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
+              items: <String>['Normal User', 'Admin'].map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    _selectedUserType = newValue;
+                  });
+                }
+              },
+            ),
           ),
         ),
       ],
@@ -315,6 +551,14 @@ class StaffManagementScreen extends StatelessWidget {
   }
 
   Widget _buildStaffTable() {
+    if (_filteredStaffList.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(32),
+        alignment: Alignment.center,
+        child: const Text('No staff members found.', style: TextStyle(color: Color(0xFF64748B))),
+      );
+    }
+
     return Column(
       children: [
         Container(
@@ -333,51 +577,19 @@ class StaffManagementScreen extends StatelessWidget {
             ],
           ),
         ),
-        _buildStaffRow(
-          1,
-          'Shibli',
-          'Calicut, Kerala',
-          '+91 9876543210',
-          'shibli@mail.com',
-          'Normal User',
-          false,
-        ),
-        _buildStaffRow(
-          2,
-          'Soumya',
-          'Kochi, Kerala',
-          '+91 9876543211',
-          'soumya@mail.com',
-          'Normal User',
-          true,
-        ),
-        _buildStaffRow(
-          3,
-          'Sahla',
-          'Malappuram, Kerala',
-          '+91 9876543212',
-          'sahla@mail.com',
-          'Normal User',
-          true,
-        ),
-        _buildStaffRow(
-          4,
-          'Irfan Sadique',
-          'Palakkad, Kerala',
-          '+91 9876543213',
-          'irfan@mail.com',
-          'Normal User',
-          true,
-        ),
-        _buildStaffRow(
-          5,
-          'Sheeja',
-          'Kannur, Kerala',
-          '+91 9876543214',
-          'sheeja@mail.com',
-          'Normal User',
-          true,
-        ),
+        ..._filteredStaffList.asMap().entries.map((entry) {
+          final index = entry.key + 1;
+          final staff = entry.value;
+          return _buildStaffRow(
+            index,
+            staff.name,
+            staff.address,
+            staff.mobile,
+            staff.email,
+            staff.userType.toUpperCase() == 'ADMIN' ? 'Admin' : 'Normal User',
+            staff.status.toUpperCase() == 'ACTIVE',
+          );
+        }).toList(),
       ],
     );
   }
@@ -440,12 +652,16 @@ class StaffManagementScreen extends StatelessWidget {
               children: [
                 _buildAvatar(name),
                 const SizedBox(width: 12),
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E293B),
+                Expanded(
+                  child: Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1E293B),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -455,18 +671,24 @@ class StaffManagementScreen extends StatelessWidget {
             child: Text(
               address,
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Expanded(
             child: Text(
               mobile,
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Expanded(
             child: Text(
               email,
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           SizedBox(
@@ -558,12 +780,17 @@ class StaffManagementScreen extends StatelessWidget {
   }
 
   Widget _buildAvatar(String name) {
-    String initials = name
-        .split(' ')
-        .map((e) => e[0])
-        .take(2)
-        .join('')
-        .toUpperCase();
+    String initials = 'RM';
+    if (name.isNotEmpty) {
+      initials = name
+          .split(' ')
+          .map((e) => e.isNotEmpty ? e[0] : '')
+          .take(2)
+          .join('')
+          .toUpperCase();
+      if (initials.isEmpty) initials = 'U';
+    }
+    
     return Container(
       width: 28,
       height: 28,
@@ -607,10 +834,13 @@ class StaffManagementScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: const TextField(
-        decoration: InputDecoration(
+      child: TextField(
+        controller: _searchController,
+        decoration: const InputDecoration(
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          hintText: 'Search...',
+          hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
         ),
       ),
     );
@@ -621,7 +851,7 @@ class StaffManagementScreen extends StatelessWidget {
       children: [
         _buildPageBtn('Previous', isEnabled: false),
         _buildPageBtn('1', isActive: true),
-        _buildPageBtn('Next'),
+        _buildPageBtn('Next', isEnabled: false),
       ],
     );
   }

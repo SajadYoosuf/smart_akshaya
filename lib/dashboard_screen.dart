@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_akshaya/widgets/quick_document_finder.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -12,19 +13,8 @@ class DashboardScreen extends StatelessWidget {
         children: [
           _buildSummaryCards(),
           const SizedBox(height: 24),
-          const Text(
-            'QUICK ACTIONS',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-              color: Color(0xFF64748B),
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildQuickActionsGrid(),
-          const SizedBox(height: 24),
-          _buildQuickDocumentFinder(),
+
+          const QuickDocumentFinder(),
           const SizedBox(height: 24),
           _buildHeroSection(),
           const SizedBox(height: 32),
@@ -121,158 +111,6 @@ class DashboardScreen extends StatelessWidget {
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1E293B),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionsGrid() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildActionCard(
-            'APP USERS',
-            '6',
-            Icons.people_outline_rounded,
-          ),
-        ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: _buildActionCard('WORK QUEUE', '0', Icons.list_alt_rounded),
-        ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: _buildActionCard(
-            'BOOKINGS',
-            '0',
-            Icons.bookmark_border_rounded,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionCard(String title, String value, IconData icon) {
-    return Container(
-      height: 180,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: const Color(0xFF3B82F6), size: 28),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-              color: Color(0xFF64748B),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickDocumentFinder() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Quick document finder',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1E293B),
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Select the required service from the list below to generate and print documents instantly.',
-            style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Row(
-                    children: const [
-                      Text(
-                        'Select service...',
-                        style: TextStyle(color: Color(0xFF94A3B8)),
-                      ),
-                      Spacer(),
-                      Icon(
-                        Icons.unfold_more_rounded,
-                        color: Color(0xFF94A3B8),
-                        size: 18,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              ElevatedButton.icon(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF10B981),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 18,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 0,
-                ),
-                icon: const Icon(Icons.print_rounded, size: 20),
-                label: const Text(
-                  'Print',
-                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ],

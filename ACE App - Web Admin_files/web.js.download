@@ -1,0 +1,40 @@
+"use strict";
+
+$(document).ready(function() {
+	hideLoader()
+});
+
+$(window).on('beforeunload', function() {
+	showLoader()
+});
+
+$('.pen-url').html(window.location.href)
+
+const showLoader = () =>{
+	$('.loader').css('display','grid')
+}
+const hideLoader = ()=>{
+	$('.loader').css('display','none')
+}
+
+
+
+$('.model-close').click(function(e){
+	e.preventDefault();
+	// var target = $(this).data('target');
+    // $('#'+target).css('display','none');
+    $(this).parent('.model').parent('.model-wrap').css({'display':'none'});
+});
+
+function open_model(target){
+    $('#'+target).css('display','block');
+}
+
+function close_model(target){
+    $('#'+target).css('display','none');
+}
+
+$('.open-model').click(function(e){
+    e.preventDefault();
+    $('#' + $(this).data('target') ).css({'display':'block'});
+});

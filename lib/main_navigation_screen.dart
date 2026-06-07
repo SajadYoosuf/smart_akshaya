@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
 import 'new_entry_screen.dart';
+import 'application_forms_screen.dart';
 import 'service_reports_screen.dart';
 import 'expenses_screen.dart';
 import 'settings_screen.dart';
 import 'master_services_screen.dart';
 import 'staff_management_screen.dart';
 import 'login_screen.dart';
+import 'services/auth_service.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final String? userRole;
@@ -22,6 +24,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   bool _isServicesExpanded = true;
   bool _isReportsExpanded = true;
   bool _isSettingsExpanded = false;
+  bool _isToolsExpanded = true;
+  String _userName = 'Admin User';
+  String _userEmail = '';
 
   @override
   void initState() {
@@ -29,6 +34,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     _role = widget.userRole ?? 'admin';
     // Default index for staff is 'New Entry' (1)
     _selectedIndex = _role == 'staff' ? 1 : 0;
+    _loadSessionDetails();
+  }
+
+  void _loadSessionDetails() async {
+    final session = await AuthService().getSessionDetails();
+    if (session['name']!.isNotEmpty) {
+      setState(() {
+        _userName = session['name']!;
+        _userEmail = session['email']!;
+      });
+    }
   }
 
   final List<String> _pageTitles = [
@@ -36,6 +52,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     'New entry',
     'Service reports',
     'Services',
+    "Application Forms",
     'Expenses',
     'Settings — password reset',
     'Services — Master',
@@ -55,7 +72,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           Expanded(
             child: Column(
               children: [
-                _buildTopBar(),
+                if (_selectedIndex != 4) _buildTopBar(),
                 Expanded(
                   child: IndexedStack(
                     index: _selectedIndex,
@@ -64,8 +81,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       const NewEntryScreen(),
                       const ServiceReportsScreen(),
                       _buildPlaceholderPage('Services'),
+                      const ApplicationFormsScreen(),
                       const ExpensesScreen(),
                       const SettingsScreen(),
+                      const MasterServicesScreen(),
+                      const StaffManagementScreen(),
                       const MasterServicesScreen(),
                       const StaffManagementScreen(),
                     ],
@@ -129,9 +149,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       title: 'Services',
                       icon: Icons.grid_view_rounded,
                       isExpanded: _isServicesExpanded,
-                      onExpandToggle: () =>
-                          setState(() => _isServicesExpanded = !_isServicesExpanded),
-                      children: [_buildSubNavItem('New entry', 1)],
+                      onExpandToggle: () => setState(
+                        () => _isServicesExpanded = !_isServicesExpanded,
+                      ),
+                      children: [
+                        _buildSubNavItem('New entry', 1),
+                      ],
+                    ),
+                    _buildSidebarSectionTitle('TOOLS'),
+                    _buildExpandableNavItem(
+                      title: 'Tools',
+                      icon: Icons.build_outlined,
+                      isExpanded: _isToolsExpanded,
+                      onExpandToggle: () => setState(
+                        () => _isToolsExpanded = !_isToolsExpanded,
+                      ),
+                      children: [
+                        _buildSubNavItem('Application forms', 4),
+                      ],
                     ),
                   ],
 
@@ -140,11 +175,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     title: 'Reports',
                     icon: Icons.bar_chart_rounded,
                     isExpanded: _isReportsExpanded,
-                    onExpandToggle: () =>
-                        setState(() => _isReportsExpanded = !_isReportsExpanded),
+                    onExpandToggle: () => setState(
+                      () => _isReportsExpanded = !_isReportsExpanded,
+                    ),
                     children: [_buildSubNavItem('Service reports', 2)],
                   ),
-                  _buildNavItem('Expenses', Icons.payments_outlined, 4),
+                  _buildNavItem('Expenses', Icons.payments_outlined, 5),
 
                   if (_role == 'admin') ...[
                     _buildSidebarSectionTitle('SYSTEM'),
@@ -152,12 +188,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       title: 'Settings',
                       icon: Icons.settings_rounded,
                       isExpanded: _isSettingsExpanded,
-                      onExpandToggle: () =>
-                          setState(() => _isSettingsExpanded = !_isSettingsExpanded),
+                      onExpandToggle: () => setState(
+                        () => _isSettingsExpanded = !_isSettingsExpanded,
+                      ),
                       children: [
-                        _buildSubNavItem('Password reset', 5),
-                        _buildSubNavItem('Services', 6),
-                        _buildSubNavItem('Staff management', 7),
+                        _buildSubNavItem('Password reset', 6),
+                        _buildSubNavItem('Services', 7),
+                        _buildSubNavItem('Staff management', 8),
                       ],
                     ),
                   ],
@@ -212,7 +249,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               Text(
                 title,
                 style: TextStyle(
-                  color: isActive ? Colors.white : Colors.white.withOpacity(0.6),
+                  color: isActive
+                      ? Colors.white
+                      : Colors.white.withOpacity(0.6),
                   fontSize: 14,
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                 ),
@@ -233,9 +272,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }) {
     // Check if any child is active
     bool isAnyChildActive = false;
-    if (title == 'Services' && _selectedIndex == 1) isAnyChildActive = true;
+    if (title == 'Services' && _selectedIndex == 1)
+      isAnyChildActive = true;
     if (title == 'Reports' && _selectedIndex == 2) isAnyChildActive = true;
-    if (title == 'Settings' && (_selectedIndex == 5 || _selectedIndex == 6 || _selectedIndex == 7)) isAnyChildActive = true;
+    if (title == 'Settings' &&
+        (_selectedIndex == 6 || _selectedIndex == 7 || _selectedIndex == 8))
+      isAnyChildActive = true;
 
     return Column(
       children: [
@@ -310,7 +352,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               Text(
                 title,
                 style: TextStyle(
-                  color: isActive ? Colors.white : Colors.white.withOpacity(0.6),
+                  color: isActive
+                      ? Colors.white
+                      : Colors.white.withOpacity(0.6),
                   fontSize: 13,
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                 ),
@@ -323,6 +367,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Widget _buildUserProfile() {
+    String initials = 'RM';
+    if (_userName.isNotEmpty) {
+      initials = _userName
+          .split(' ')
+          .map((e) => e.isNotEmpty ? e[0] : '')
+          .take(2)
+          .join('')
+          .toUpperCase();
+      if (initials.isEmpty) initials = 'U';
+    }
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -337,10 +392,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               color: Color(0xFF10B981),
               shape: BoxShape.circle,
             ),
-            child: const Center(
+            child: Center(
               child: Text(
-                'RM',
-                style: TextStyle(
+                initials,
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
@@ -354,12 +409,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _role == 'admin' ? 'Admin User' : 'Staff Member',
+                  _userName,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   _role == 'admin' ? 'System Admin' : 'Service Operator',
@@ -372,10 +429,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ),
           ),
           IconButton(
-            onPressed: () => Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-            ),
+            onPressed: () async {
+              await AuthService().logout();
+              if (mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              }
+            },
             icon: const Icon(Icons.logout_rounded, color: Colors.red, size: 20),
             tooltip: 'Log out',
           ),
@@ -403,35 +465,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ),
           ),
           const Spacer(),
-          Stack(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.notifications_none_rounded,
-                  color: Color(0xFF64748B),
-                  size: 22,
-                ),
-              ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
