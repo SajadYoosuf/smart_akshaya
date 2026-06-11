@@ -11,7 +11,7 @@ class DashboardScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSummaryCards(),
+          _buildSummaryCards(context),
           const SizedBox(height: 24),
 
           const QuickDocumentFinder(),
@@ -23,49 +23,66 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCards() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildSummaryCard(
-            'Today entry',
-            '0',
-            Icons.edit_note_rounded,
-            const Color(0xFFECFDF5),
-            const Color(0xFF10B981),
-          ),
-        ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: _buildSummaryCard(
-            'Today completed',
-            '0',
-            Icons.check_circle_outline_rounded,
-            const Color(0xFFECFDF5),
-            const Color(0xFF10B981),
-          ),
-        ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: _buildSummaryCard(
-            'Total service charge',
-            '₹0',
-            Icons.payments_outlined,
-            const Color(0xFFEFF6FF),
-            const Color(0xFF3B82F6),
-          ),
-        ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: _buildSummaryCard(
-            'Total wallet charge',
-            '₹0',
-            Icons.account_balance_wallet_outlined,
-            const Color(0xFFFEF2F2),
-            const Color(0xFFEF4444),
-          ),
-        ),
-      ],
+  Widget _buildSummaryCards(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double width = constraints.maxWidth;
+        double itemWidth;
+        if (width < 600) {
+          itemWidth = width;
+        } else if (width < 900) {
+          itemWidth = (width - 20) / 2;
+        } else {
+          itemWidth = (width - 60) / 4;
+        }
+
+        return Wrap(
+          spacing: 20,
+          runSpacing: 20,
+          children: [
+            SizedBox(
+              width: itemWidth,
+              child: _buildSummaryCard(
+                'Today entry',
+                '0',
+                Icons.edit_note_rounded,
+                const Color(0xFFECFDF5),
+                const Color(0xFF10B981),
+              ),
+            ),
+            SizedBox(
+              width: itemWidth,
+              child: _buildSummaryCard(
+                'Today completed',
+                '0',
+                Icons.check_circle_outline_rounded,
+                const Color(0xFFECFDF5),
+                const Color(0xFF10B981),
+              ),
+            ),
+            SizedBox(
+              width: itemWidth,
+              child: _buildSummaryCard(
+                'Total service charge',
+                '₹0',
+                Icons.payments_outlined,
+                const Color(0xFFEFF6FF),
+                const Color(0xFF3B82F6),
+              ),
+            ),
+            SizedBox(
+              width: itemWidth,
+              child: _buildSummaryCard(
+                'Total wallet charge',
+                '₹0',
+                Icons.account_balance_wallet_outlined,
+                const Color(0xFFFEF2F2),
+                const Color(0xFFEF4444),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -159,8 +176,8 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              width: 500,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
               child: Text(
                 'Access all e-governance services through Kerala\'s smartest IT initiative. Streamlined, secure, and built for the future.',
                 style: TextStyle(
@@ -177,19 +194,18 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildFooter() {
-    return Row(
+    return Wrap(
+      spacing: 24,
+      runSpacing: 12,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         const Text(
           '© 2024 Smart Akshaya - Kerala State IT Mission. All rights reserved.',
           style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
         ),
-        const Spacer(),
         _footerLink('Privacy Policy'),
-        const SizedBox(width: 24),
         _footerLink('Terms of Service'),
-        const SizedBox(width: 24),
         _footerLink('Help Desk'),
-        const SizedBox(width: 24),
         _footerLink('Contact Us'),
       ],
     );

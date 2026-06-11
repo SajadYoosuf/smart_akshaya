@@ -8,7 +8,10 @@ import 'settings_screen.dart';
 import 'master_services_screen.dart';
 import 'staff_management_screen.dart';
 import 'login_screen.dart';
+import 'photo_resizer_screen.dart';
+import 'passport_photo_screen.dart';
 import 'services/auth_service.dart';
+import 'screens/biodata/biodata_dashboard_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final String? userRole;
@@ -26,7 +29,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   bool _isSettingsExpanded = false;
   bool _isToolsExpanded = true;
   String _userName = 'Admin User';
-  String _userEmail = '';
 
   @override
   void initState() {
@@ -42,7 +44,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     if (session['name']!.isNotEmpty) {
       setState(() {
         _userName = session['name']!;
-        _userEmail = session['email']!;
       });
     }
   }
@@ -57,45 +58,56 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     'Settings — password reset',
     'Services — Master',
     'Staff management',
+    'Photo Resizer',
+    'Passport Size Photos',
+    'Biodata Maker',
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
-      body: Row(
-        children: [
-          // Sidebar
-          _buildSidebar(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isDesktop = constraints.maxWidth >= 800;
 
-          // Main Content Shell
-          Expanded(
-            child: Column(
-              children: [
-                if (_selectedIndex != 4) _buildTopBar(),
-                Expanded(
-                  child: IndexedStack(
-                    index: _selectedIndex,
-                    children: [
-                      const DashboardScreen(),
-                      const NewEntryScreen(),
-                      const ServiceReportsScreen(),
-                      _buildPlaceholderPage('Services'),
-                      const ApplicationFormsScreen(),
-                      const ExpensesScreen(),
-                      const SettingsScreen(),
-                      const MasterServicesScreen(),
-                      const StaffManagementScreen(),
-                      const MasterServicesScreen(),
-                      const StaffManagementScreen(),
-                    ],
-                  ),
+        return Scaffold(
+          backgroundColor: const Color(0xFFF1F5F9),
+          drawer: isDesktop ? null : Drawer(child: _buildSidebar()),
+          body: Row(
+            children: [
+              // Sidebar
+              if (isDesktop) _buildSidebar(),
+
+              // Main Content Shell
+              Expanded(
+                child: Column(
+                  children: [
+                    if (_selectedIndex != 4) _buildTopBar(isDesktop: isDesktop),
+                    Expanded(
+                      child: IndexedStack(
+                        index: _selectedIndex,
+                        children: [
+                          const DashboardScreen(),
+                          const NewEntryScreen(),
+                          const ServiceReportsScreen(),
+                          _buildPlaceholderPage('Services'),
+                          const ApplicationFormsScreen(),
+                          const ExpensesScreen(),
+                          const SettingsScreen(),
+                          const MasterServicesScreen(),
+                          const StaffManagementScreen(),
+                          const PhotoResizerScreen(),
+                          const PassportPhotoScreen(),
+                          const BiodataDashboardScreen(),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -152,20 +164,20 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       onExpandToggle: () => setState(
                         () => _isServicesExpanded = !_isServicesExpanded,
                       ),
-                      children: [
-                        _buildSubNavItem('New entry', 1),
-                      ],
+                      children: [_buildSubNavItem('New entry', 1)],
                     ),
                     _buildSidebarSectionTitle('TOOLS'),
                     _buildExpandableNavItem(
                       title: 'Tools',
                       icon: Icons.build_outlined,
                       isExpanded: _isToolsExpanded,
-                      onExpandToggle: () => setState(
-                        () => _isToolsExpanded = !_isToolsExpanded,
-                      ),
+                      onExpandToggle: () =>
+                          setState(() => _isToolsExpanded = !_isToolsExpanded),
                       children: [
                         _buildSubNavItem('Application forms', 4),
+                        _buildSubNavItem('Photo resizer', 9),
+                        _buildSubNavItem('Passport size photos', 10),
+                        _buildSubNavItem('Biodata maker', 11),
                       ],
                     ),
                   ],
@@ -272,8 +284,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }) {
     // Check if any child is active
     bool isAnyChildActive = false;
-    if (title == 'Services' && _selectedIndex == 1)
-      isAnyChildActive = true;
+    if (title == 'Services' && _selectedIndex == 1) isAnyChildActive = true;
     if (title == 'Reports' && _selectedIndex == 2) isAnyChildActive = true;
     if (title == 'Settings' &&
         (_selectedIndex == 6 || _selectedIndex == 7 || _selectedIndex == 8))
@@ -446,7 +457,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  Widget _buildTopBar() {
+  Widget _buildTopBar({bool isDesktop = true}) {
     return Container(
       height: 70,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -456,6 +467,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ),
       child: Row(
         children: [
+          if (!isDesktop) ...[
+            Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
+            ),
+            const SizedBox(width: 16),
+          ],
           Text(
             _pageTitles[_selectedIndex],
             style: const TextStyle(

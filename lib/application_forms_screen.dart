@@ -75,40 +75,33 @@ class _ApplicationFormsScreenState extends State<ApplicationFormsScreen> {
         Container(
           color: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              const Text(
-                'Application Forms',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const Spacer(),
-              // Search Bar
-              Row(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = MediaQuery.of(context).size.width >= 800;
+              final isSmall = constraints.maxWidth < 500;
+              
+              final searchBar = Row(
                 children: [
-                  Container(
-                    width: 300,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(4),
-                        bottomLeft: Radius.circular(4),
+                  Expanded(
+                    child: Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(4),
+                          bottomLeft: Radius.circular(4),
+                        ),
                       ),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: const InputDecoration(
-                        hintText: 'Search forms',
-                        hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Search forms',
+                          hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.only(bottom: 12),
+                        ),
                       ),
                     ),
                   ),
@@ -148,8 +141,49 @@ class _ApplicationFormsScreenState extends State<ApplicationFormsScreen> {
                     ),
                   ),
                 ],
-              ),
-            ],
+              );
+
+              final headerContent = Row(
+                children: [
+                  if (!isDesktop) ...[
+                    Builder(
+                      builder: (context) => IconButton(
+                        icon: const Icon(Icons.menu),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  const Text(
+                    'Application Forms',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              );
+
+              if (isSmall) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    headerContent,
+                    const SizedBox(height: 16),
+                    SizedBox(width: double.infinity, child: searchBar),
+                  ],
+                );
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  headerContent,
+                  SizedBox(width: 380, child: searchBar),
+                ],
+              );
+            },
           ),
         ),
 
