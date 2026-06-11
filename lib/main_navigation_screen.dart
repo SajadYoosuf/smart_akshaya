@@ -11,7 +11,6 @@ import 'login_screen.dart';
 import 'photo_resizer_screen.dart';
 import 'passport_photo_screen.dart';
 import 'services/auth_service.dart';
-// import 'screens/biodata/biodata_dashboard_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final String? userRole;
@@ -60,7 +59,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     'Staff management',
     'Photo Resizer',
     'Passport Size Photos',
-    'Biodata Maker',
   ];
 
   @override
@@ -97,7 +95,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                           const StaffManagementScreen(),
                           const PhotoResizerScreen(),
                           const PassportPhotoScreen(),
-                          _buildPlaceholderPage('Biodata Maker'),
                         ],
                       ),
                     ),
@@ -177,7 +174,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         _buildSubNavItem('Application forms', 4),
                         _buildSubNavItem('Photo resizer', 9),
                         _buildSubNavItem('Passport size photos', 10),
-                        _buildSubNavItem('Biodata maker (Upcoming)', 11),
                       ],
                     ),
                   ],

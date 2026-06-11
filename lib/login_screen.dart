@@ -350,16 +350,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ],
                               ),
-                              TextButton(
-                                onPressed: () {},
-                                style: TextButton.styleFrom(
-                                  foregroundColor: const Color(0xFF1A237E),
-                                ),
-                                child: const Text(
-                                  'Forgot Password?',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                              ),
+                              const SizedBox(),
                             ],
                           ),
                           const SizedBox(height: 24),

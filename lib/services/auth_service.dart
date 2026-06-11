@@ -10,6 +10,7 @@ import 'google_sheets_service.dart';
 import 'local_excel_service.dart';
 
 class StaffMember {
+  final int rowIndex; // Google Sheets row index
   final String id;
   final String name;
   final String address;
@@ -21,6 +22,7 @@ class StaffMember {
   final bool synced;
 
   StaffMember({
+    this.rowIndex = 0,
     required this.id,
     required this.name,
     required this.address,
@@ -32,9 +34,10 @@ class StaffMember {
     this.synced = false,
   });
 
-  factory StaffMember.fromRow(List<dynamic> row) {
+  factory StaffMember.fromRow(List<dynamic> row, {int rowIndex = 0}) {
     // Expected order: ID, Name, Address, Mobile, Email, User Type, Status, Password, Synced
     return StaffMember(
+      rowIndex: rowIndex,
       id: row.length > 0 ? row[0].toString() : '',
       name: row.length > 1 ? row[1].toString() : '',
       address: row.length > 2 ? row[2].toString() : '',
@@ -187,10 +190,10 @@ class AuthService {
         throw Exception('No staff details found in Google Sheets.');
       }
 
-      final List<StaffMember> staffList = rows
-          .skip(1)
-          .map((row) => StaffMember.fromRow(row))
-          .toList();
+      final List<StaffMember> staffList = [];
+      for (int i = 1; i < rows.length; i++) {
+        staffList.add(StaffMember.fromRow(rows[i], rowIndex: i + 1));
+      }
 
       final normalizedEmail = email.trim().toLowerCase();
       final hashedInput = generatePasswordHash(password);
@@ -238,8 +241,9 @@ class AuthService {
         final headers = ['ID', 'Name', 'Address', 'Mobile', 'Email', 'User Type', 'Status', 'Password', 'Synced'];
         
         List<List<dynamic>> batchRows = [headers];
-        for (var googleRow in dataRows) {
-          final staff = StaffMember.fromRow(googleRow);
+        for (int i = 0; i < dataRows.length; i++) {
+          final googleRow = dataRows[i];
+          final staff = StaffMember.fromRow(googleRow, rowIndex: i + 2);
           batchRows.add(staff.toRow(true));
         }
 
@@ -362,8 +366,9 @@ class AuthService {
         List<List<dynamic>> batchRows = [headers];
         
         final List<StaffMember> list = [];
-        for (var googleRow in dataRows) {
-          final staff = StaffMember.fromRow(googleRow);
+        for (int i = 0; i < dataRows.length; i++) {
+          final googleRow = dataRows[i];
+          final staff = StaffMember.fromRow(googleRow, rowIndex: i + 2);
           batchRows.add(staff.toRow(true));
           list.add(staff);
         }

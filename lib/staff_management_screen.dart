@@ -26,6 +26,13 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   bool _isLoading = false;
   bool _isSaving = false;
   
+  bool _isEditing = false;
+  int? _editingRowIndex;
+  String? _editingStaffId;
+
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
+
   List<StaffMember> _staffList = [];
   List<StaffMember> _filteredStaffList = [];
   String _spreadsheetId = '';
@@ -129,6 +136,49 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     });
   }
 
+  void _onEditStaff(StaffMember staff) {
+    setState(() {
+      _isEditing = true;
+      _editingRowIndex = staff.rowIndex;
+      _editingStaffId = staff.id;
+      _nameController.text = staff.name;
+      _addressController.text = staff.address;
+      _mobileController.text = staff.mobile;
+      _emailController.text = staff.email;
+      _selectedUserType = staff.userType.toLowerCase() == 'admin' ? 'Admin' : 'Normal User';
+      _passwordController.clear();
+      _confirmController.clear();
+    });
+  }
+
+  void _resetForm() {
+    setState(() {
+      _isEditing = false;
+      _editingRowIndex = null;
+      _editingStaffId = null;
+      _nameController.clear();
+      _addressController.clear();
+      _mobileController.clear();
+      _emailController.clear();
+      _passwordController.clear();
+      _confirmController.clear();
+      _selectedUserType = 'Normal User';
+    });
+  }
+
+  Future<void> _deleteStaff(StaffMember staff) async {
+    setState(() => _isLoading = true);
+    try {
+      await _sheetsService.clearRow(_spreadsheetId, GoogleSheetsConfig.staffSheetName, staff.rowIndex, 8);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Staff deleted!'), backgroundColor: Colors.green));
+      await _fetchStaffData();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed deleting: $e'), backgroundColor: Colors.redAccent));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _handleSaveStaff() async {
     if (_spreadsheetId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -147,14 +197,18 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     final password = _passwordController.text.trim();
     final confirm = _confirmController.text.trim();
 
-    if (name.isEmpty || address.isEmpty || mobile.isEmpty || email.isEmpty || password.isEmpty) {
+    if (name.isEmpty || address.isEmpty || mobile.isEmpty || email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All fields are required'), backgroundColor: Colors.orangeAccent),
+        const SnackBar(content: Text('All fields except password are required'), backgroundColor: Colors.orangeAccent),
       );
       return;
     }
 
-    if (password != confirm) {
+    String computedPassword = password;
+    if (!_isEditing && password.isEmpty) {
+      final firstName = name.split(' ').first.toLowerCase();
+      computedPassword = '${firstName}akshaya';
+    } else if (password.isNotEmpty && password != confirm) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Passwords do not match'), backgroundColor: Colors.redAccent),
       );
@@ -166,50 +220,65 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     });
 
     try {
-      // Calculate new numeric ID
-      int nextId = 1;
-      if (_staffList.isNotEmpty) {
-        final ids = _staffList.map((s) => int.tryParse(s.id) ?? 0).toList();
-        nextId = ids.reduce((curr, next) => curr > next ? curr : next) + 1;
-      }
-
       final type = _selectedUserType == 'Admin' ? 'admin' : 'staff';
-      final status = 'Active';
-      final hashedPassword = AuthService.generatePasswordHash(password);
+      String finalPassword = '';
+      String status = 'Active';
 
-      final newRow = [
-        '$nextId',
-        name,
-        address,
-        mobile,
-        email,
-        type,
-        status,
-        hashedPassword,
-      ];
+      if (_isEditing && _editingRowIndex != null) {
+        final oldStaff = _staffList.firstWhere((s) => s.rowIndex == _editingRowIndex);
+        finalPassword = computedPassword.isEmpty ? oldStaff.password : AuthService.generatePasswordHash(computedPassword);
+        status = oldStaff.status; // Preserve old status
 
-      // Append row to Google Sheets
-      await _sheetsService.appendRow(_spreadsheetId, GoogleSheetsConfig.staffSheetName, newRow);
-      
-      // Refresh cache
-      await _fetchStaffData();
+        final updatedRow = [
+          _editingStaffId ?? '',
+          name,
+          address,
+          mobile,
+          email,
+          type,
+          status,
+          finalPassword,
+        ];
 
-      // Clear Form
-      _nameController.clear();
-      _addressController.clear();
-      _mobileController.clear();
-      _emailController.clear();
-      _passwordController.clear();
-      _confirmController.clear();
-      setState(() {
-        _selectedUserType = 'Normal User';
-      });
+        await _sheetsService.updateRow(_spreadsheetId, GoogleSheetsConfig.staffSheetName, _editingRowIndex!, updatedRow);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Staff updated successfully!'), backgroundColor: Colors.green),
+          );
+        }
+      } else {
+        int nextId = 1;
+        if (_staffList.isNotEmpty) {
+          final ids = _staffList.map((s) => int.tryParse(s.id) ?? 0).toList();
+          nextId = ids.reduce((curr, next) => curr > next ? curr : next) + 1;
+        }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Staff saved successfully to Google Sheets!'), backgroundColor: Colors.green),
-        );
+        finalPassword = AuthService.generatePasswordHash(computedPassword);
+
+        final newRow = [
+          '$nextId',
+          name,
+          address,
+          mobile,
+          email,
+          type,
+          status,
+          finalPassword,
+        ];
+
+        await _sheetsService.appendRow(_spreadsheetId, GoogleSheetsConfig.staffSheetName, newRow);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Staff added successfully!'), backgroundColor: Colors.green),
+          );
+        }
       }
+      
+      await _fetchStaffData();
+      _resetForm();
+
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -251,21 +320,30 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
-              children: const [
-                Icon(
+              children: [
+                const Icon(
                   Icons.person_add_alt_1_rounded,
                   color: Color(0xFF10B981),
                   size: 20,
                 ),
                 SizedBox(width: 8),
-                Text(
-                  'Add staff',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+                  Text(
+                    _isEditing ? 'Edit staff' : 'Add staff',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
                   ),
-                ),
+                  if (_isEditing) ...[
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
+                      onPressed: _resetForm,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
               ],
             ),
           ),
@@ -306,7 +384,14 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                       ),
                     ),
                     const SizedBox(width: 20),
-                    Expanded(child: _buildPasswordField('Password', _passwordController)),
+                    Expanded(
+                      child: _buildPasswordField(
+                        'Password',
+                        _passwordController,
+                        _obscurePassword,
+                        () => setState(() => _obscurePassword = !_obscurePassword),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -314,7 +399,12 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                   children: [
                     SizedBox(
                       width: 320,
-                      child: _buildPasswordField('Password confirmation', _confirmController),
+                      child: _buildPasswordField(
+                        'Password confirmation',
+                        _confirmController,
+                        _obscureConfirm,
+                        () => setState(() => _obscureConfirm = !_obscureConfirm),
+                      ),
                     ),
                     const Spacer(),
                     _isSaving
@@ -334,9 +424,9 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                               elevation: 0,
                             ),
                             icon: const Icon(Icons.save_rounded, size: 18),
-                            label: const Text(
-                              'Save staff',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                            label: Text(
+                              _isEditing ? 'Update staff' : 'Save staff',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
                   ],
@@ -453,7 +543,12 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     );
   }
 
-  Widget _buildPasswordField(String label, TextEditingController controller) {
+  Widget _buildPasswordField(
+    String label,
+    TextEditingController controller,
+    bool obscureText,
+    VoidCallback onToggleVisibility,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -479,7 +574,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
               Expanded(
                 child: TextField(
                   controller: controller,
-                  obscureText: true,
+                  obscureText: obscureText,
                   decoration: const InputDecoration(
                     hintText: '••••••••',
                     hintStyle: TextStyle(
@@ -491,10 +586,17 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                   ),
                 ),
               ),
-              const Icon(
-                Icons.visibility_outlined,
-                size: 18,
-                color: Color(0xFF94A3B8),
+              InkWell(
+                onTap: onToggleVisibility,
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Icon(
+                    obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    size: 18,
+                    color: const Color(0xFF94A3B8),
+                  ),
+                ),
               ),
             ],
           ),
@@ -580,15 +682,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         ..._filteredStaffList.asMap().entries.map((entry) {
           final index = entry.key + 1;
           final staff = entry.value;
-          return _buildStaffRow(
-            index,
-            staff.name,
-            staff.address,
-            staff.mobile,
-            staff.email,
-            staff.userType.toUpperCase() == 'ADMIN' ? 'Admin' : 'Normal User',
-            staff.status.toUpperCase() == 'ACTIVE',
-          );
+          return _buildStaffRow(index, staff);
         }).toList(),
       ],
     );
@@ -624,15 +718,10 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     return SizedBox(width: width, child: content);
   }
 
-  Widget _buildStaffRow(
-    int id,
-    String name,
-    String address,
-    String mobile,
-    String email,
-    String type,
-    bool isActive,
-  ) {
+  Widget _buildStaffRow(int index, StaffMember staff) {
+    final isActive = staff.status.toUpperCase() == 'ACTIVE';
+    final type = staff.userType.toUpperCase() == 'ADMIN' ? 'Admin' : 'Normal User';
+    
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: const BoxDecoration(
@@ -643,18 +732,18 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           SizedBox(
             width: 40,
             child: Text(
-              '$id',
+              '${staff.id}',
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
           ),
           Expanded(
             child: Row(
               children: [
-                _buildAvatar(name),
+                _buildAvatar(staff.name),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    name,
+                    staff.name,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -669,7 +758,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           ),
           Expanded(
             child: Text(
-              address,
+              staff.address,
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -677,7 +766,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           ),
           Expanded(
             child: Text(
-              mobile,
+              staff.mobile,
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -685,7 +774,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           ),
           Expanded(
             child: Text(
-              email,
+              staff.email,
               style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -760,18 +849,43 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
             ),
           ),
           SizedBox(
-            width: 60,
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF7ED),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(
-                Icons.edit_outlined,
-                size: 14,
-                color: Color(0xFFF97316),
-              ),
+            width: 70,
+            child: Row(
+              children: [
+                InkWell(
+                  onTap: () => _onEditStaff(staff),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(
+                      Icons.edit_outlined,
+                      size: 14,
+                      color: Color(0xFFF97316),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                InkWell(
+                  onTap: () => _deleteStaff(staff),
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 14,
+                      color: Color(0xFFEF4444),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

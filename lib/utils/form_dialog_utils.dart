@@ -8,13 +8,21 @@ import 'package:flutter/gestures.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class FormDialogUtils {
-  static void showFormDialog(BuildContext context, Map<String, dynamic> form) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return _PdfViewerDialogContent(form: form);
-      },
-    );
+  static void showFormDialog(BuildContext context, Map<String, dynamic> form) async {
+    final driveLink = form['drive_link'];
+    if (driveLink != null && driveLink.toString().isNotEmpty) {
+      final uri = Uri.parse(driveLink.toString());
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    }
+    
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Form file is not available locally and has no valid Drive Link.')),
+      );
+    }
   }
 
   static Future<void> openLocalFile(BuildContext context, String filename) async {
