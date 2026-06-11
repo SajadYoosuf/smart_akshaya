@@ -25,7 +25,7 @@ class _BiodataFormPanelState extends State<BiodataFormPanel> {
   }
 
   Future<void> _pickPhoto() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    final result = await FilePicker.pickFiles(type: FileType.image);
     if (result != null && result.files.single.path != null) {
       setState(() {
         widget.biodata.photoPath = result.files.single.path!;

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+
 class BiodataModel {
   String id;
   String applicantName;
@@ -104,6 +105,8 @@ class BiodataModel {
       skills: json['skills'] != null ? List<String>.from(json['skills']) : [],
     );
   }
+
+
 }
 
 class LanguageItem {

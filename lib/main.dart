@@ -3,7 +3,25 @@ import 'login_screen.dart';
 import 'services/auth_service.dart';
 import 'main_navigation_screen.dart';
 
-void main() {
+import 'package:window_manager/window_manager.dart';
+import 'package:provider/provider.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await windowManager.ensureInitialized();
+  
+  WindowOptions windowOptions = const WindowOptions(
+    size: Size(1200, 800),
+    minimumSize: Size(1000, 700),
+    center: true,
+    title: 'Smart Akshaya',
+  );
+  
+  await windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.show();
+    await windowManager.focus();
+  });
+
   runApp(const MainApp());
 }
 

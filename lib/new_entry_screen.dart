@@ -557,6 +557,9 @@ class NewEntryScreen extends StatelessWidget {
   }
 
   Widget _buildCustomDatePicker(BuildContext context) {
+    final now = DateTime.now();
+    final formattedDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
     return InkWell(
       onTap: () async {
         await showDatePicker(
@@ -592,23 +595,23 @@ class NewEntryScreen extends StatelessWidget {
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Row(
-          children: const [
-            Icon(
+          children: [
+            const Icon(
               Icons.calendar_month_rounded,
               size: 16,
               color: Color(0xFF3B82F6),
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Text(
-              '2026-05-09',
-              style: TextStyle(
+              formattedDate,
+              style: const TextStyle(
                 fontSize: 13,
                 color: Color(0xFF1E293B),
                 fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(width: 8),
-            Icon(
+            const SizedBox(width: 8),
+            const Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 16,
               color: Color(0xFF94A3B8),
