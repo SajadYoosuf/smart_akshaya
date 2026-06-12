@@ -1,13 +1,14 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:excel/excel.dart';
 import 'package:intl/intl.dart';
 import '../models/saved_bill.dart';
-import 'dart:io';
 
 class ExportUtils {
-  static Future<void> generatePdfReport(List<SavedBill> reports, String title) async {
+  static Future<Uint8List> createPdfReportBytes(List<SavedBill> reports, String title) async {
     final pdf = pw.Document();
 
     final headers = [
@@ -61,13 +62,18 @@ class ExportUtils {
       ),
     );
 
+    return Uint8List.fromList(await pdf.save());
+  }
+
+  static Future<void> generatePdfReport(List<SavedBill> reports, String title) async {
+    final bytes = await createPdfReportBytes(reports, title);
     await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
+      onLayout: (PdfPageFormat format) async => bytes,
       name: 'Service_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
     );
   }
 
-  static Future<void> generateExcelReport(List<SavedBill> reports, String title) async {
+  static Future<Uint8List> createExcelReportBytes(List<SavedBill> reports, String title) async {
     var excel = Excel.createExcel();
     Sheet sheetObject = excel['Reports'];
     excel.setDefaultSheet('Reports');
@@ -95,33 +101,32 @@ class ExportUtils {
       ]);
     }
 
-    // Save
     var fileBytes = excel.save();
-    if (fileBytes != null) {
-      // Create a temporary file and save
-      final directory = Directory.systemTemp;
-      final file = File('${directory.path}/Service_Report_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.xlsx');
+    return Uint8List.fromList(fileBytes ?? []);
+  }
+
+  static Future<void> generateExcelReport(List<SavedBill> reports, String title) async {
+    final bytes = await createExcelReportBytes(reports, title);
+    if (bytes.isEmpty) return;
+
+    final directory = Directory.systemTemp;
+    final file = File('${directory.path}/Service_Report_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.xlsx');
+    
+    file
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(bytes);
       
-      file
-        ..createSync(recursive: true)
-        ..writeAsBytesSync(fileBytes);
-        
-      // Try to open the file via Printing share (which might work on desktop)
-      // Since `printing` is a dependency we can use `Printing.sharePdf` but it works best for PDFs.
-      // Instead, for windows, we might use url_launcher or just show the path.
-      // For now, let's print the path
-      print("Saved Excel at ${file.path}");
-      
-      // On Windows/Desktop we can just run the file to open it if excel is installed
-      try {
-        if (Platform.isWindows) {
-          Process.run('explorer', [file.path]);
-        } else if (Platform.isMacOS) {
-          Process.run('open', [file.path]);
-        }
-      } catch (e) {
-        print("Could not automatically open excel file");
+    print("Saved Excel at ${file.path}");
+    
+    try {
+      if (Platform.isWindows) {
+        Process.run('explorer', [file.path]);
+      } else if (Platform.isMacOS) {
+        Process.run('open', [file.path]);
       }
+    } catch (e) {
+      print("Could not automatically open excel file");
     }
   }
 }
+

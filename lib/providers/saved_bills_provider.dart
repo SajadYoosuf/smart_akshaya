@@ -19,6 +19,7 @@ class SavedBillsProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   String get searchQuery => _searchQuery;
+  List<SavedBill> get allBills => _bills;
 
   int get totalCustomers => _bills.map((b) => b.mobile).toSet().length;
   int get totalItems => _bills.fold(0, (sum, b) => sum + b.quantity);
@@ -75,9 +76,13 @@ class SavedBillsProvider extends ChangeNotifier {
       );
 
       if (rows.length > 1) {
-        _bills = rows
-            .skip(1)
-            .map((row) => SavedBill.fromRow(row))
+        final List<SavedBill> parsed = [];
+        for (int i = 1; i < rows.length; i++) {
+          final row = rows[i];
+          if (row.isEmpty || row[0].toString().trim().isEmpty) continue;
+          parsed.add(SavedBill.fromRow(row, rowIndex: i + 1));
+        }
+        _bills = parsed
             .where((b) => b.status == EntryStatus.saved)
             .toList();
       } else {

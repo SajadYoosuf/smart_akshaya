@@ -3,7 +3,18 @@ import 'package:googleapis/sheets/v4.dart' as sheets;
 import 'package:googleapis_auth/auth_io.dart';
 import '../config/google_sheets_config.dart';
 
-class GoogleSheetsService {
+abstract class GoogleSheetsServiceBase {
+  bool get isInitialized;
+  Future<void> init(String credentialsJson);
+  Future<String> getOrCreateSpreadsheet(String? spreadsheetId);
+  Future<String> createNewSpreadsheet();
+  Future<void> appendRow(String spreadsheetId, String sheetName, List<dynamic> row);
+  Future<List<List<dynamic>>> getRows(String spreadsheetId, String sheetName);
+  Future<void> updateRow(String spreadsheetId, String sheetName, int rowIndex, List<dynamic> row);
+  Future<void> clearRow(String spreadsheetId, String sheetName, int rowIndex, int numColumns);
+}
+
+class GoogleSheetsService implements GoogleSheetsServiceBase {
   sheets.SheetsApi? _sheetsApi;
   bool _initialized = false;
 

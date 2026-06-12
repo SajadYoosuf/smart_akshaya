@@ -81,7 +81,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     }
 
     final expense = ExpenseItem(
-      id: _isEditing ? _editingId : DateTime.now().millisecondsSinceEpoch.toString(),
+      id: _isEditing
+          ? _editingId
+          : DateTime.now().millisecondsSinceEpoch.toString(),
       date: date,
       category: category,
       amount: amount,
@@ -99,7 +101,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     if (success) {
       _clearForm();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_isEditing ? 'Expense updated.' : 'Expense added.')),
+        SnackBar(
+          content: Text(_isEditing ? 'Expense updated.' : 'Expense added.'),
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -116,8 +120,14 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         title: const Text('Delete Expense'),
         content: const Text('Are you sure you want to delete this expense?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
@@ -128,9 +138,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         if (_isEditing && _editingRowIndex == rowIndex) {
           _clearForm();
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Expense deleted.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Expense deleted.')));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(provider.error ?? 'Error deleting expense.')),
@@ -161,15 +171,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Left Side - Add Expense Form
-          SizedBox(
-            width: 320,
-            child: _buildAddExpenseForm(),
-          ),
+          SizedBox(width: 320, child: _buildAddExpenseForm()),
           const SizedBox(width: 24),
           // Right Side - Expense List
-          Expanded(
-            child: _buildExpenseList(),
-          ),
+          Expanded(child: _buildExpenseList()),
         ],
       ),
     );
@@ -199,7 +204,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 Row(
                   children: [
                     Icon(
-                      _isEditing ? Icons.edit_rounded : Icons.add_circle_outline_rounded,
+                      _isEditing
+                          ? Icons.edit_rounded
+                          : Icons.add_circle_outline_rounded,
                       color: const Color(0xFF10B981),
                       size: 18,
                     ),
@@ -218,8 +225,11 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   InkWell(
                     onHover: (value) {},
                     onTap: _clearForm,
-                    child: const Text('Cancel', style: TextStyle(color: Colors.red, fontSize: 12)),
-                  )
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -229,13 +239,34 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildFormField('Date *', 'Select Date', controller: _dateController, prefixIcon: Icons.calendar_today_rounded, readOnly: true, onTap: () => _selectDate(context)),
+                _buildFormField(
+                  'Date *',
+                  'Select Date',
+                  controller: _dateController,
+                  prefixIcon: Icons.calendar_today_rounded,
+                  readOnly: true,
+                  onTap: () => _selectDate(context),
+                ),
                 const SizedBox(height: 20),
-                _buildFormField('Expense Category *', 'Type category name...', controller: _categoryController),
+                _buildFormField(
+                  'Expense Category *',
+                  'Type category name...',
+                  controller: _categoryController,
+                ),
                 const SizedBox(height: 20),
-                _buildFormField('Amount *', 'Enter amount', controller: _amountController, prefixIcon: Icons.currency_rupee_rounded, keyboardType: TextInputType.number),
+                _buildFormField(
+                  'Amount *',
+                  'Enter amount',
+                  controller: _amountController,
+                  prefixIcon: Icons.currency_rupee_rounded,
+                  keyboardType: TextInputType.number,
+                ),
                 const SizedBox(height: 20),
-                _buildFormField('Description', 'Enter description', controller: _descriptionController),
+                _buildFormField(
+                  'Description',
+                  'Enter description',
+                  controller: _descriptionController,
+                ),
                 const SizedBox(height: 32),
                 SizedBox(
                   width: 120,
@@ -245,13 +276,30 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                       elevation: 0,
                     ),
                     icon: provider.isLoading
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : Icon(_isEditing ? Icons.update_rounded : Icons.save_rounded, size: 16),
-                    label: Text(_isEditing ? 'Update' : 'Submit', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Icon(
+                            _isEditing
+                                ? Icons.update_rounded
+                                : Icons.save_rounded,
+                            size: 16,
+                          ),
+                    label: Text(
+                      _isEditing ? 'Update' : 'Submit',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               ],
@@ -262,13 +310,25 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     );
   }
 
-  Widget _buildFormField(String label, String hint, {TextEditingController? controller, IconData? prefixIcon, TextInputType? keyboardType, bool readOnly = false, VoidCallback? onTap}) {
+  Widget _buildFormField(
+    String label,
+    String hint, {
+    TextEditingController? controller,
+    IconData? prefixIcon,
+    TextInputType? keyboardType,
+    bool readOnly = false,
+    VoidCallback? onTap,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF475569),
+          ),
         ),
         const SizedBox(height: 8),
         Container(
@@ -293,7 +353,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   onTap: onTap,
                   decoration: InputDecoration(
                     hintText: hint,
-                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 13,
+                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.only(bottom: 10),
                   ),
@@ -312,8 +375,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         final query = _searchController.text.toLowerCase();
         final filteredList = provider.expenses.where((e) {
           return e.category.toLowerCase().contains(query) ||
-                 e.date.toLowerCase().contains(query) ||
-                 e.description.toLowerCase().contains(query);
+              e.date.toLowerCase().contains(query) ||
+              e.description.toLowerCase().contains(query);
         }).toList();
 
         return Container(
@@ -329,7 +392,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    const Text('Search:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                    const Text(
+                      'Search:',
+                      style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                    ),
                     const SizedBox(width: 8),
                     Container(
                       width: 200,
@@ -344,14 +410,12 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                         onChanged: (v) => setState(() {}),
                         decoration: const InputDecoration(
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 10,
+                          ),
                         ),
                       ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.refresh),
-                      onPressed: provider.isLoading ? null : () => provider.fetchExpenses(),
                     ),
                   ],
                 ),
@@ -359,7 +423,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
               // Table Header
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
                 child: Row(
                   children: [
                     _buildTableHeadCell('DATE', isExpand: true),
@@ -383,13 +450,20 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline_rounded, size: 48, color: Color(0xFFEF4444)),
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        size: 48,
+                        color: Color(0xFFEF4444),
+                      ),
                       const SizedBox(height: 16),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Text(
                           provider.error!,
-                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                          style: const TextStyle(
+                            color: Color(0xFF64748B),
+                            fontSize: 13,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -413,11 +487,19 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const [
-                      Icon(Icons.assignment_outlined, size: 48, color: Color(0xFFCBD5E1)),
+                      Icon(
+                        Icons.assignment_outlined,
+                        size: 48,
+                        color: Color(0xFFCBD5E1),
+                      ),
                       SizedBox(height: 16),
                       Text(
                         'No expenses recorded yet',
-                        style: TextStyle(color: Color(0xFF64748B), fontSize: 13, fontStyle: FontStyle.italic),
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ],
                   ),
@@ -430,28 +512,61 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   itemBuilder: (context, index) {
                     final item = filteredList[index];
                     return Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 16,
+                      ),
                       decoration: const BoxDecoration(
-                        border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+                        border: Border(
+                          bottom: BorderSide(color: Color(0xFFF1F5F9)),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          Expanded(child: Text(item.date, style: const TextStyle(fontSize: 13))),
-                          Expanded(child: Text(item.category, style: const TextStyle(fontSize: 13))),
-                          Expanded(child: Text('₹${item.amount}', style: const TextStyle(fontSize: 13))),
-                          Expanded(child: Text(item.description, style: const TextStyle(fontSize: 13))),
+                          Expanded(
+                            child: Text(
+                              item.date,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              item.category,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              '₹${item.amount}',
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              item.description,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
                           SizedBox(
                             width: 80,
                             child: Row(
                               children: [
                                 InkWell(
                                   onTap: () => _editExpense(item),
-                                  child: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF3B82F6)),
+                                  child: const Icon(
+                                    Icons.edit_outlined,
+                                    size: 18,
+                                    color: Color(0xFF3B82F6),
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 InkWell(
                                   onTap: () => _deleteExpense(item.rowIndex),
-                                  child: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.red),
+                                  child: const Icon(
+                                    Icons.delete_outline_rounded,
+                                    size: 18,
+                                    color: Colors.red,
+                                  ),
                                 ),
                               ],
                             ),
@@ -468,12 +583,20 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     );
   }
 
-  Widget _buildTableHeadCell(String label, {double? width, bool isExpand = false}) {
+  Widget _buildTableHeadCell(
+    String label, {
+    double? width,
+    bool isExpand = false,
+  }) {
     Widget content = Row(
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF475569),
+          ),
         ),
       ],
     );

@@ -5,8 +5,8 @@ import '../config/google_sheets_config.dart';
 import '../core/exceptions.dart';
 
 class ExpensesRepository {
-  final GoogleSheetsService _sheetsService;
-  final AuthService _authService;
+  final GoogleSheetsServiceBase _sheetsService;
+  final AuthServiceBase _authService;
 
   ExpensesRepository(this._sheetsService, this._authService);
 
@@ -16,7 +16,7 @@ class ExpensesRepository {
       if (spreadsheetId.isEmpty) {
         throw AuthException('Spreadsheet ID is not configured.');
       }
-      
+
       await _authService.ensureSheetsServiceInitialized();
 
       final rows = await _sheetsService.getRows(
@@ -26,10 +26,18 @@ class ExpensesRepository {
 
       if (rows.isEmpty) return [];
 
+      // Detect if the first row is a header row (e.g., starts with 'id')
+      final bool hasHeader =
+          rows.first.isNotEmpty &&
+          rows.first[0].toString().trim().toLowerCase() == 'id';
+
       final List<ExpenseItem> parsedList = [];
-      for (int i = 1; i < rows.length; i++) {
+      final int startRowIndex = hasHeader ? 1 : 0;
+
+      for (int i = startRowIndex; i < rows.length; i++) {
         final row = rows[i];
-        if (row.isEmpty || row.length == 0 || row[0].toString().trim().isEmpty) continue;
+        if (row.isEmpty || row.isEmpty || row[0].toString().trim().isEmpty)
+          continue;
         parsedList.add(ExpenseItem.fromRow(row, rowIndex: i + 1));
       }
       return parsedList;
@@ -41,7 +49,9 @@ class ExpensesRepository {
   Future<void> addExpense(ExpenseItem expense) async {
     try {
       final spreadsheetId = await _authService.getSpreadsheetId();
-      if (spreadsheetId.isEmpty) throw AuthException('Spreadsheet ID is not configured.');
+      if (spreadsheetId.isEmpty) {
+        throw AuthException('Spreadsheet ID is not configured.');
+      }
 
       await _authService.ensureSheetsServiceInitialized();
 
@@ -58,7 +68,8 @@ class ExpensesRepository {
   Future<void> updateExpense(ExpenseItem expense) async {
     try {
       final spreadsheetId = await _authService.getSpreadsheetId();
-      if (spreadsheetId.isEmpty) throw AuthException('Spreadsheet ID is not configured.');
+      if (spreadsheetId.isEmpty)
+        throw AuthException('Spreadsheet ID is not configured.');
 
       await _authService.ensureSheetsServiceInitialized();
 
@@ -76,7 +87,8 @@ class ExpensesRepository {
   Future<void> deleteExpense(int rowIndex) async {
     try {
       final spreadsheetId = await _authService.getSpreadsheetId();
-      if (spreadsheetId.isEmpty) throw AuthException('Spreadsheet ID is not configured.');
+      if (spreadsheetId.isEmpty)
+        throw AuthException('Spreadsheet ID is not configured.');
 
       await _authService.ensureSheetsServiceInitialized();
 

@@ -628,13 +628,17 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     bool hasSort = false,
   }) {
     Widget content = Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF475569),
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF475569),
+            ),
           ),
         ),
         if (hasSort) ...[

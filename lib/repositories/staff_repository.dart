@@ -5,8 +5,8 @@ import '../config/google_sheets_config.dart';
 import '../core/exceptions.dart';
 
 class StaffRepository {
-  final GoogleSheetsService _sheetsService;
-  final AuthService _authService;
+  final GoogleSheetsServiceBase _sheetsService;
+  final AuthServiceBase _authService;
 
   StaffRepository(this._sheetsService, this._authService);
 

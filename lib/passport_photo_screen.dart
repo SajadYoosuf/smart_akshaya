@@ -679,7 +679,7 @@ Future<Uint8List?> _generateHighResImage(_DownloadConfig config) async {
   // Adjustments
   source = img.adjustColor(
     source,
-    brightness: config.brightness,
+    brightness: 1.0 + config.brightness,
     contrast: config.contrast,
     saturation: config.saturation,
     hue: config.hue,

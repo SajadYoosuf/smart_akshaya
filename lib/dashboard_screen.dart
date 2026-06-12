@@ -1,17 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:smart_akshaya/providers/service_reports_provider.dart';
+import 'package:smart_akshaya/providers/saved_bills_provider.dart';
 import 'package:smart_akshaya/widgets/quick_document_finder.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ServiceReportsProvider>().fetchReports();
+      context.read<SavedBillsProvider>().fetchSavedBills();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final reportsProvider = context.watch<ServiceReportsProvider>();
+    final savedBillsProvider = context.watch<SavedBillsProvider>();
+
+    final now = DateTime.now();
+    final todayStr = DateFormat('yyyy-MM-dd').format(now);
+
+    final todayReports = reportsProvider.allReports.where((r) => r.date == todayStr).toList();
+    final todaySaved = savedBillsProvider.allBills.where((b) => b.date == todayStr).toList();
+
+    final int todayEntriesCount = todayReports.length + todaySaved.length;
+    final int todayCompletedCount = todayReports.length;
+
+    final double totalServiceCharge = reportsProvider.allReports.fold(0.0, (sum, r) => sum + r.cash);
+    final double totalWalletCharge = reportsProvider.allReports.fold(0.0, (sum, r) => sum + r.gpayUpi);
+
+    final bool isLoading = reportsProvider.isLoading || savedBillsProvider.isLoading;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSummaryCards(context),
+          if (isLoading && reportsProvider.allReports.isEmpty && savedBillsProvider.allBills.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else
+            _buildSummaryCards(
+              context,
+              todayEntriesCount: todayEntriesCount,
+              todayCompletedCount: todayCompletedCount,
+              totalServiceCharge: totalServiceCharge,
+              totalWalletCharge: totalWalletCharge,
+            ),
           const SizedBox(height: 24),
 
           const QuickDocumentFinder(),
@@ -23,7 +72,13 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCards(BuildContext context) {
+  Widget _buildSummaryCards(
+    BuildContext context, {
+    required int todayEntriesCount,
+    required int todayCompletedCount,
+    required double totalServiceCharge,
+    required double totalWalletCharge,
+  }) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double width = constraints.maxWidth;
@@ -44,7 +99,7 @@ class DashboardScreen extends StatelessWidget {
               width: itemWidth,
               child: _buildSummaryCard(
                 'Today entry',
-                '0',
+                todayEntriesCount.toString(),
                 Icons.edit_note_rounded,
                 const Color(0xFFECFDF5),
                 const Color(0xFF10B981),
@@ -54,7 +109,7 @@ class DashboardScreen extends StatelessWidget {
               width: itemWidth,
               child: _buildSummaryCard(
                 'Today completed',
-                '0',
+                todayCompletedCount.toString(),
                 Icons.check_circle_outline_rounded,
                 const Color(0xFFECFDF5),
                 const Color(0xFF10B981),
@@ -64,7 +119,7 @@ class DashboardScreen extends StatelessWidget {
               width: itemWidth,
               child: _buildSummaryCard(
                 'Total service charge',
-                '₹0',
+                '₹${totalServiceCharge.toStringAsFixed(2)}',
                 Icons.payments_outlined,
                 const Color(0xFFEFF6FF),
                 const Color(0xFF3B82F6),
@@ -74,7 +129,7 @@ class DashboardScreen extends StatelessWidget {
               width: itemWidth,
               child: _buildSummaryCard(
                 'Total wallet charge',
-                '₹0',
+                '₹${totalWalletCharge.toStringAsFixed(2)}',
                 Icons.account_balance_wallet_outlined,
                 const Color(0xFFFEF2F2),
                 const Color(0xFFEF4444),
@@ -111,26 +166,32 @@ class DashboardScreen extends StatelessWidget {
             child: Icon(icon, color: iconColor, size: 24),
           ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF64748B),
-                  fontWeight: FontWeight.w500,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

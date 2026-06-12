@@ -9,7 +9,8 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:smart_akshaya/utils/form_dialog_utils.dart';
 
 class ApplicationFormsScreen extends StatefulWidget {
-  const ApplicationFormsScreen({super.key});
+  final AssetBundle? assetBundle;
+  const ApplicationFormsScreen({super.key, this.assetBundle});
 
   @override
   State<ApplicationFormsScreen> createState() => _ApplicationFormsScreenState();
@@ -31,7 +32,8 @@ class _ApplicationFormsScreenState extends State<ApplicationFormsScreen> {
 
   Future<void> _loadFormsData() async {
     try {
-      final jsonString = await rootBundle.loadString('assets/forms_data.json');
+      final bundle = widget.assetBundle ?? rootBundle;
+      final jsonString = await bundle.loadString('assets/forms_data.json');
       final List<dynamic> jsonData = json.decode(jsonString);
 
       setState(() {

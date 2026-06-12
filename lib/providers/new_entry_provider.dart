@@ -75,6 +75,7 @@ class NewEntryProvider extends ChangeNotifier {
   // Added Services
   List<ServiceItem> addedServices = [];
   int? editingServiceIndex;
+  int? editingRowIndex;
 
   // Current Service Input
   ServiceModel? selectedServiceModel;
@@ -96,12 +97,14 @@ class NewEntryProvider extends ChangeNotifier {
   );
   final TextEditingController cashController = TextEditingController(text: '0');
 
-  NewEntryProvider() {
+  NewEntryProvider({bool loadCustomers = true}) {
     gpayUpiController.addListener(notifyListeners);
     cashController.addListener(notifyListeners);
     serviceChargeController.addListener(notifyListeners);
     quantityController.addListener(notifyListeners);
-    _loadCustomers();
+    if (loadCustomers) {
+      _loadCustomers();
+    }
   }
 
   Future<void> _loadCustomers() async {
@@ -281,6 +284,7 @@ class NewEntryProvider extends ChangeNotifier {
   double get balance => totalPaid - totalAmount;
 
   void loadFromSavedBill(SavedBill bill) {
+    editingRowIndex = bill.rowIndex;
     mobileController.text = bill.mobile;
     nameController.text = bill.customerName;
 
@@ -417,11 +421,20 @@ class NewEntryProvider extends ChangeNotifier {
       ];
 
       // Save to Google Sheets
-      await sheetsService.appendRow(
-        spreadsheetId,
-        GoogleSheetsConfig.serviceEntrySheetName,
-        entryRow,
-      );
+      if (editingRowIndex != null) {
+        await sheetsService.updateRow(
+          spreadsheetId,
+          GoogleSheetsConfig.serviceEntrySheetName,
+          editingRowIndex!,
+          entryRow,
+        );
+      } else {
+        await sheetsService.appendRow(
+          spreadsheetId,
+          GoogleSheetsConfig.serviceEntrySheetName,
+          entryRow,
+        );
+      }
 
       if (existingCustomer != null && existingCustomer.rowIndex > 0) {
         await sheetsService.updateRow(
@@ -473,6 +486,7 @@ class NewEntryProvider extends ChangeNotifier {
     cashController.text = '0';
     addedServices.clear();
     editingServiceIndex = null;
+    editingRowIndex = null;
     notifyListeners();
   }
 }

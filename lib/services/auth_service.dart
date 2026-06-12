@@ -11,7 +11,12 @@ import 'local_excel_service.dart';
 
 import '../models/staff_member.dart';
 
-class AuthService {
+abstract class AuthServiceBase {
+  Future<String> getSpreadsheetId();
+  Future<void> ensureSheetsServiceInitialized();
+}
+
+class AuthService implements AuthServiceBase {
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
   AuthService._internal();

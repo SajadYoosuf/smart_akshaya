@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'providers/service_reports_provider.dart';
+import 'providers/new_entry_provider.dart';
 import 'utils/export_utils.dart';
+import 'main_navigation_screen.dart';
+
 
 class ServiceReportsScreen extends StatefulWidget {
   const ServiceReportsScreen({super.key});
@@ -414,18 +417,64 @@ class _ServiceReportsScreenState extends State<ServiceReportsScreen> {
             width: 100.0,
             child: Row(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
-                  onPressed: () {},
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.zero,
+                InkWell(
+                  onTap: () {
+                    // Load report into NewEntryProvider
+                    context.read<NewEntryProvider>().loadFromSavedBill(report);
+                    // Navigate to New Entry tab (index 1)
+                    context.findAncestorStateOfType<MainNavigationScreenState>()?.setSelectedIndex(1);
+                  },
+                  child: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),
-                  onPressed: () {},
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.zero,
+                const SizedBox(width: 12),
+                InkWell(
+                  onTap: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Delete Entry'),
+                        content: Text('Are you sure you want to delete the entry for "${report.customerName}"?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            style: TextButton.styleFrom(foregroundColor: Colors.red),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true && mounted) {
+                      try {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Deleting entry...')),
+                        );
+                        await context.read<ServiceReportsProvider>().deleteReport(report.rowIndex);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Entry deleted successfully!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error deleting entry: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  },
+                  child: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),
                 ),
               ],
             ),

@@ -15,6 +15,8 @@ import 'package:provider/provider.dart';
 import 'providers/staff_provider.dart';
 import 'providers/services_provider.dart';
 import 'providers/expenses_provider.dart';
+import 'providers/service_reports_provider.dart';
+import 'providers/saved_bills_provider.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final String? userRole;
@@ -22,12 +24,18 @@ class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key, this.userRole, this.initialIndex});
 
   @override
-  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+  State<MainNavigationScreen> createState() => MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
+class MainNavigationScreenState extends State<MainNavigationScreen> {
   late int _selectedIndex;
   late String _role;
+
+  void setSelectedIndex(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
   bool _isServicesExpanded = true;
   bool _isReportsExpanded = true;
   bool _isSettingsExpanded = false;
@@ -501,6 +509,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   context.read<StaffProvider>().loadStaff(),
                   context.read<ServicesProvider>().loadServices(),
                   context.read<ExpensesProvider>().fetchExpenses(),
+                  context.read<ServiceReportsProvider>().fetchReports(),
+                  context.read<SavedBillsProvider>().fetchSavedBills(),
                 ]);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(

@@ -17,6 +17,7 @@ class ServiceReportsProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   String get searchQuery => _searchQuery;
+  List<SavedBill> get allReports => _allReports;
 
   // Filter properties
   DateTime? get fromDate => _fromDate;
@@ -125,10 +126,13 @@ class ServiceReportsProvider extends ChangeNotifier {
       debugPrint('ServiceReportsProvider: Fetched ${rows.length} total rows');
 
       if (rows.length > 1) {
-        _allReports = rows
-            .skip(1)
-            .where((row) => row.isNotEmpty)
-            .map((row) => SavedBill.fromRow(row))
+        final List<SavedBill> parsed = [];
+        for (int i = 1; i < rows.length; i++) {
+          final row = rows[i];
+          if (row.isEmpty || row[0].toString().trim().isEmpty) continue;
+          parsed.add(SavedBill.fromRow(row, rowIndex: i + 1));
+        }
+        _allReports = parsed
             .where((b) => b.status == EntryStatus.completed || b.status == EntryStatus.billed)
             .toList();
         debugPrint('ServiceReportsProvider: ${_allReports.length} reports after status filter');
@@ -142,5 +146,31 @@ class ServiceReportsProvider extends ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<void> deleteReport(int rowIndex) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await AuthService().ensureSheetsServiceInitialized();
+      final sheetsService = AuthService().sheetsService;
+      final spreadsheetId = await AuthService().getSpreadsheetId();
+
+      await sheetsService.clearRow(
+        spreadsheetId,
+        GoogleSheetsConfig.serviceEntrySheetName,
+        rowIndex,
+        12, // 12 columns in Service Entries sheet
+      );
+      
+      _allReports.removeWhere((r) => r.rowIndex == rowIndex);
+    } catch (e) {
+      debugPrint('Error deleting service report: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }
