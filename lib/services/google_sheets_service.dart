@@ -134,7 +134,6 @@ class GoogleSheetsService {
   Future<void> _writeServiceHeaders(String spreadsheetId) async {
     final headers = [
       [
-        'ID',
         'Service Name',
         'Website',
         'Department Fee',
@@ -149,7 +148,7 @@ class GoogleSheetsService {
   }
 
   Future<void> _writeCustomerHeaders(String spreadsheetId) async {
-    final headers = [['ID', 'Name', 'Mobile', 'Email', 'Address', 'Remarks']];
+    final headers = [['ID', 'Name', 'Mobile', 'Email', 'Address', 'Remarks', 'Total Paid', 'GPay/UPI', 'Cash', 'Balance']];
     await _writeRange(spreadsheetId, '${GoogleSheetsConfig.customerSheetName}!A1', headers);
   }
 

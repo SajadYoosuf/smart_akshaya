@@ -9,87 +9,15 @@ import '../config/google_sheets_config.dart';
 import 'google_sheets_service.dart';
 import 'local_excel_service.dart';
 
-class StaffMember {
-  final int rowIndex; // Google Sheets row index
-  final String id;
-  final String name;
-  final String address;
-  final String mobile;
-  final String email;
-  final String userType; // 'admin' or 'staff'
-  final String status;   // 'Active' or 'Inactive'
-  final String password;
-  final bool synced;
-
-  StaffMember({
-    this.rowIndex = 0,
-    required this.id,
-    required this.name,
-    required this.address,
-    required this.mobile,
-    required this.email,
-    required this.userType,
-    required this.status,
-    required this.password,
-    this.synced = false,
-  });
-
-  factory StaffMember.fromRow(List<dynamic> row, {int rowIndex = 0}) {
-    // Expected order: ID, Name, Address, Mobile, Email, User Type, Status, Password, Synced
-    return StaffMember(
-      rowIndex: rowIndex,
-      id: row.length > 0 ? row[0].toString() : '',
-      name: row.length > 1 ? row[1].toString() : '',
-      address: row.length > 2 ? row[2].toString() : '',
-      mobile: row.length > 3 ? row[3].toString() : '',
-      email: row.length > 4 ? row[4].toString() : '',
-      userType: row.length > 5 ? row[5].toString().toLowerCase() : 'staff',
-      status: row.length > 6 ? row[6].toString() : 'Inactive',
-      password: row.length > 7 ? row[7].toString() : '',
-      synced: row.length > 8 ? row[8].toString().toLowerCase() == 'true' : false,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'address': address,
-      'mobile': mobile,
-      'email': email,
-      'userType': userType,
-      'status': status,
-      'password': password,
-      'synced': synced,
-    };
-  }
-
-  factory StaffMember.fromJson(Map<String, dynamic> json) {
-    return StaffMember(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      address: json['address'] ?? '',
-      mobile: json['mobile'] ?? '',
-      email: json['email'] ?? '',
-      userType: json['userType'] ?? 'staff',
-      status: json['status'] ?? 'Inactive',
-      password: json['password'] ?? '',
-      synced: json['synced'] ?? false,
-    );
-  }
-
-  List<dynamic> toRow(bool isSynced) {
-    return [id, name, address, mobile, email, userType, status, password, isSynced];
-  }
-}
+import '../models/staff_member.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
   AuthService._internal();
 
-  final GoogleSheetsService _sheetsService = GoogleSheetsService();
-  final LocalExcelService _localExcelService = LocalExcelService();
+  final GoogleSheetsService sheetsService = GoogleSheetsService();
+  final LocalExcelService localExcelService = LocalExcelService();
   
   // Keys for SharedPreferences
   static const String _keyUserEmail = 'logged_in_user_email';
@@ -120,7 +48,15 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyLocalDbPath, path);
     // Re-initialize local excel service with the new path
-    await _localExcelService.initDatabase(path);
+    await localExcelService.initDatabase(path);
+  }
+
+  /// Ensures the Google Sheets service is initialized with credentials
+  Future<void> ensureSheetsServiceInitialized() async {
+    if (!sheetsService.isInitialized) {
+      final credentialsJson = await rootBundle.loadString(GoogleSheetsConfig.credentialsPath);
+      await sheetsService.init(credentialsJson);
+    }
   }
 
   /// Retrieves the user selected local Excel database directory path.
@@ -157,7 +93,7 @@ class AuthService {
       final directory = await getApplicationDocumentsDirectory();
       dbPath = directory.path;
     }
-    await _localExcelService.initDatabase(dbPath);
+    await localExcelService.initDatabase(dbPath);
     
     final spreadsheetId = await getSpreadsheetId();
 
@@ -178,13 +114,13 @@ class AuthService {
 
     // Validate credentials directly from Google Sheets
     try {
-      if (!_sheetsService.isInitialized) {
+      if (!sheetsService.isInitialized) {
         final credentialsJson = await rootBundle.loadString(GoogleSheetsConfig.credentialsPath);
-        await _sheetsService.init(credentialsJson);
+        await sheetsService.init(credentialsJson);
       }
 
       print('Authenticating directly with Google Sheets...');
-      final rows = await _sheetsService.getRows(spreadsheetId, GoogleSheetsConfig.staffSheetName);
+      final rows = await sheetsService.getRows(spreadsheetId, GoogleSheetsConfig.staffSheetName);
       
       if (rows.isEmpty || rows.length <= 1) {
         throw Exception('No staff details found in Google Sheets.');
@@ -224,14 +160,14 @@ class AuthService {
   Future<void> _syncFromGoogleSheets(String spreadsheetId) async {
     try {
       // 1. Initialize Sheets Service
-      if (!_sheetsService.isInitialized) {
+      if (!sheetsService.isInitialized) {
         final credentialsJson = await rootBundle.loadString(GoogleSheetsConfig.credentialsPath);
-        await _sheetsService.init(credentialsJson);
+        await sheetsService.init(credentialsJson);
       }
 
       // 2. Fetch fresh staff list from Google Sheets
       print('Online: Fetching fresh staff list from Google Sheets...');
-      final rows = await _sheetsService.getRows(spreadsheetId, GoogleSheetsConfig.staffSheetName);
+      final rows = await sheetsService.getRows(spreadsheetId, GoogleSheetsConfig.staffSheetName);
       
       if (rows.isNotEmpty) {
         // Skip header row
@@ -248,7 +184,7 @@ class AuthService {
         }
 
         // Write all data to local Excel in a single batch to avoid UI hanging
-        await _localExcelService.replaceAllRowsBatch(GoogleSheetsConfig.staffSheetName, batchRows);
+        await localExcelService.replaceAllRowsBatch(GoogleSheetsConfig.staffSheetName, batchRows);
         print('Updated local Excel staff details from Google Sheets via Batch.');
       }
 
@@ -297,13 +233,13 @@ class AuthService {
     print('Starting offline synchronization routine...');
     try {
       // Initialize Sheets Service if not already initialized
-      if (!_sheetsService.isInitialized) {
+      if (!sheetsService.isInitialized) {
         final credentialsJson = await rootBundle.loadString(GoogleSheetsConfig.credentialsPath);
-        await _sheetsService.init(credentialsJson);
+        await sheetsService.init(credentialsJson);
       }
 
       // 1. Sync Pending Staff Rows
-      final pendingStaff = await _localExcelService.getPendingSyncRows(GoogleSheetsConfig.staffSheetName);
+      final pendingStaff = await localExcelService.getPendingSyncRows(GoogleSheetsConfig.staffSheetName);
       if (pendingStaff.isNotEmpty) {
         print('Syncing ${pendingStaff.length} pending staff members...');
         for (var item in pendingStaff) {
@@ -312,13 +248,13 @@ class AuthService {
           // Strip the Synced column
           final googleRow = row.sublist(0, row.length - 1);
           
-          await _sheetsService.appendRow(spreadsheetId, GoogleSheetsConfig.staffSheetName, googleRow);
-          await _localExcelService.markRowAsSynced(GoogleSheetsConfig.staffSheetName, localIndex);
+          await sheetsService.appendRow(spreadsheetId, GoogleSheetsConfig.staffSheetName, googleRow);
+          await localExcelService.markRowAsSynced(GoogleSheetsConfig.staffSheetName, localIndex);
         }
       }
 
       // 2. Sync Pending Service Rows
-      final pendingServices = await _localExcelService.getPendingSyncRows(GoogleSheetsConfig.serviceSheetName);
+      final pendingServices = await localExcelService.getPendingSyncRows(GoogleSheetsConfig.serviceSheetName);
       if (pendingServices.isNotEmpty) {
         print('Syncing ${pendingServices.length} pending master services...');
         for (var item in pendingServices) {
@@ -327,8 +263,8 @@ class AuthService {
           // Strip the Synced column
           final googleRow = row.sublist(0, row.length - 1);
           
-          await _sheetsService.appendRow(spreadsheetId, GoogleSheetsConfig.serviceSheetName, googleRow);
-          await _localExcelService.markRowAsSynced(GoogleSheetsConfig.serviceSheetName, localIndex);
+          await sheetsService.appendRow(spreadsheetId, GoogleSheetsConfig.serviceSheetName, googleRow);
+          await localExcelService.markRowAsSynced(GoogleSheetsConfig.serviceSheetName, localIndex);
         }
       }
 
@@ -346,18 +282,18 @@ class AuthService {
       final directory = await getApplicationDocumentsDirectory();
       dbPath = directory.path;
     }
-    await _localExcelService.initDatabase(dbPath);
+    await localExcelService.initDatabase(dbPath);
     
     final spreadsheetId = await getSpreadsheetId();
     if (spreadsheetId.isEmpty) return [];
 
     try {
-      if (!_sheetsService.isInitialized) {
+      if (!sheetsService.isInitialized) {
         final credentialsJson = await rootBundle.loadString(GoogleSheetsConfig.credentialsPath);
-        await _sheetsService.init(credentialsJson);
+        await sheetsService.init(credentialsJson);
       }
 
-      final rows = await _sheetsService.getRows(spreadsheetId, GoogleSheetsConfig.staffSheetName);
+      final rows = await sheetsService.getRows(spreadsheetId, GoogleSheetsConfig.staffSheetName);
       if (rows.isNotEmpty) {
         final dataRows = rows.skip(1).toList();
         
@@ -374,7 +310,7 @@ class AuthService {
         }
 
         // Write all data to local Excel in a single batch
-        await _localExcelService.replaceAllRowsBatch(GoogleSheetsConfig.staffSheetName, batchRows);
+        await localExcelService.replaceAllRowsBatch(GoogleSheetsConfig.staffSheetName, batchRows);
         return list;
       }
     } catch (e) {
@@ -383,7 +319,7 @@ class AuthService {
 
     // Fallback: load local rows
     try {
-      final localRows = await _localExcelService.getRows(GoogleSheetsConfig.staffSheetName);
+      final localRows = await localExcelService.getRows(GoogleSheetsConfig.staffSheetName);
       if (localRows.isNotEmpty) {
         return localRows.skip(1).map((row) => StaffMember.fromRow(row)).toList();
       }

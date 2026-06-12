@@ -4,17 +4,22 @@ import 'new_entry_screen.dart';
 import 'application_forms_screen.dart';
 import 'service_reports_screen.dart';
 import 'expenses_screen.dart';
-import 'settings_screen.dart';
 import 'master_services_screen.dart';
 import 'staff_management_screen.dart';
 import 'login_screen.dart';
 import 'photo_resizer_screen.dart';
 import 'passport_photo_screen.dart';
+import 'saved_bills_screen.dart';
 import 'services/auth_service.dart';
+import 'package:provider/provider.dart';
+import 'providers/staff_provider.dart';
+import 'providers/services_provider.dart';
+import 'providers/expenses_provider.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final String? userRole;
-  const MainNavigationScreen({super.key, this.userRole});
+  final int? initialIndex;
+  const MainNavigationScreen({super.key, this.userRole, this.initialIndex});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -33,9 +38,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void initState() {
     super.initState();
     _role = widget.userRole ?? 'admin';
-    // Default index for staff is 'New Entry' (1)
-    _selectedIndex = _role == 'staff' ? 1 : 0;
     _loadSessionDetails();
+    if (widget.initialIndex != null) {
+      _selectedIndex = widget.initialIndex!;
+    } else {
+      _selectedIndex = _role == 'staff' ? 1 : 0;
+    }
   }
 
   void _loadSessionDetails() async {
@@ -54,11 +62,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     'Services',
     "Application Forms",
     'Expenses',
-    'Settings — password reset',
     'Services — Master',
     'Staff management',
     'Photo Resizer',
     'Passport Size Photos',
+    'Saved Bills',
   ];
 
   @override
@@ -90,11 +98,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                           _buildPlaceholderPage('Services'),
                           const ApplicationFormsScreen(),
                           const ExpensesScreen(),
-                          const SettingsScreen(),
                           const MasterServicesScreen(),
                           const StaffManagementScreen(),
                           const PhotoResizerScreen(),
                           const PassportPhotoScreen(),
+                          const SavedBillsScreen(),
                         ],
                       ),
                     ),
@@ -161,7 +169,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       onExpandToggle: () => setState(
                         () => _isServicesExpanded = !_isServicesExpanded,
                       ),
-                      children: [_buildSubNavItem('New entry', 1)],
+                      children: [
+                        _buildSubNavItem('New entry', 1),
+                        _buildSubNavItem('Saved Bills', 10),
+                      ],
                     ),
                     _buildSidebarSectionTitle('TOOLS'),
                     _buildExpandableNavItem(
@@ -172,8 +183,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                           setState(() => _isToolsExpanded = !_isToolsExpanded),
                       children: [
                         _buildSubNavItem('Application forms', 4),
-                        _buildSubNavItem('Photo resizer', 9),
-                        _buildSubNavItem('Passport size photos', 10),
+                        _buildSubNavItem('Photo resizer', 8),
+                        _buildSubNavItem('Passport size photos', 9),
                       ],
                     ),
                   ],
@@ -200,9 +211,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         () => _isSettingsExpanded = !_isSettingsExpanded,
                       ),
                       children: [
-                        _buildSubNavItem('Password reset', 6),
-                        _buildSubNavItem('Services', 7),
-                        _buildSubNavItem('Staff management', 8),
+                        _buildSubNavItem('Services', 6),
+                        _buildSubNavItem('Staff management', 7),
                       ],
                     ),
                   ],
@@ -283,7 +293,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     if (title == 'Services' && _selectedIndex == 1) isAnyChildActive = true;
     if (title == 'Reports' && _selectedIndex == 2) isAnyChildActive = true;
     if (title == 'Settings' &&
-        (_selectedIndex == 6 || _selectedIndex == 7 || _selectedIndex == 8))
+        (_selectedIndex == 6 || _selectedIndex == 7))
       isAnyChildActive = true;
 
     return Column(
@@ -481,6 +491,40 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ),
           ),
           const Spacer(),
+          IconButton(
+            onPressed: () async {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Refreshing live data...'), duration: Duration(seconds: 1)),
+              );
+              try {
+                await Future.wait([
+                  context.read<StaffProvider>().loadStaff(),
+                  context.read<ServicesProvider>().loadServices(),
+                  context.read<ExpensesProvider>().fetchExpenses(),
+                ]);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Data refreshed successfully!'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error refreshing data: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.sync_rounded, color: Color(0xFF64748B)),
+            tooltip: 'Reload live data from server',
+          ),
         ],
       ),
     );

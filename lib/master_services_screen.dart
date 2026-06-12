@@ -1,65 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html_parser;
 import 'package:url_launcher/url_launcher.dart';
-import 'services/auth_service.dart';
-import 'services/google_sheets_service.dart';
-import 'services/local_excel_service.dart';
-import 'config/google_sheets_config.dart';
+import 'package:provider/provider.dart';
+import 'providers/services_provider.dart';
+import 'core/data_state.dart';
 
-class ServiceItem {
-  final int rowIndex;
-  final String serviceName;
-  final String website;
-  final String departmentFee;
-  final String serviceCharge;
-  final String commission;
-  final bool allowEdit;
-  final String followupDays;
-  final String defaultWallet;
-
-  ServiceItem({
-    required this.rowIndex,
-    required this.serviceName,
-    required this.website,
-    required this.departmentFee,
-    required this.serviceCharge,
-    required this.commission,
-    required this.allowEdit,
-    required this.followupDays,
-    required this.defaultWallet,
-  });
-
-  factory ServiceItem.fromRow(List<dynamic> row, int rowIndex) {
-    return ServiceItem(
-      rowIndex: rowIndex,
-      serviceName: row.length > 0 ? row[0].toString() : '',
-      website: row.length > 1 ? row[1].toString() : '',
-      departmentFee: row.length > 2 ? row[2].toString() : '0.00',
-      serviceCharge: row.length > 3 ? row[3].toString() : '0.00',
-      commission: row.length > 4 ? row[4].toString() : '0.00',
-      allowEdit: row.length > 5
-          ? row[5].toString().toLowerCase() == 'true'
-          : false,
-      followupDays: row.length > 6 ? row[6].toString() : '0',
-      defaultWallet: row.length > 7 ? row[7].toString() : 'CASH',
-    );
-  }
-
-  List<dynamic> toRow() {
-    return [
-      serviceName,
-      website,
-      departmentFee,
-      serviceCharge,
-      commission,
-      allowEdit.toString(),
-      followupDays,
-      defaultWallet,
-    ];
-  }
-}
+import 'models/service_item.dart';
 
 class MasterServicesScreen extends StatefulWidget {
   const MasterServicesScreen({super.key});
@@ -73,7 +20,8 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _websiteController = TextEditingController();
   final TextEditingController _deptFeeController = TextEditingController();
-  final TextEditingController _serviceChargeController = TextEditingController();
+  final TextEditingController _serviceChargeController =
+      TextEditingController();
   final TextEditingController _commissionController = TextEditingController();
   final TextEditingController _followupDaysController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
@@ -87,19 +35,16 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
 
   bool _isLoading = false;
   bool _isSaving = false;
-  List<ServiceItem> _servicesList = [];
-  List<ServiceItem> _filteredServicesList = [];
-  String _spreadsheetId = '';
-
-  final GoogleSheetsService _sheetsService = GoogleSheetsService();
-  final LocalExcelService _localExcelService = LocalExcelService();
-  final AuthService _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
-    _initAndLoadServices();
-    _searchController.addListener(_filterServices);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ServicesProvider>().loadServices();
+    });
+    _searchController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -112,60 +57,6 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
     _followupDaysController.dispose();
     _searchController.dispose();
     super.dispose();
-  }
-
-  Future<void> _initAndLoadServices() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      await _localExcelService.initDatabase(directory.path);
-
-      _spreadsheetId = await _authService.getSpreadsheetId();
-      if (_spreadsheetId.isNotEmpty) {
-        // Authenticate service
-        final credentialsJson = await DefaultAssetBundle.of(context).loadString('assets/credentials/google_sheets_credentials.json');
-        await _sheetsService.init(credentialsJson);
-
-        await _fetchServicesData();
-      }
-    } catch (e) {
-      print('Error initializing services list: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _fetchServicesData() async {
-    try {
-      final rows = await _sheetsService.getRows(
-        _spreadsheetId,
-        GoogleSheetsConfig.serviceSheetName,
-      );
-      if (rows.isNotEmpty) {
-        final List<ServiceItem> parsedList = [];
-        for (int i = 1; i < rows.length; i++) {
-          final row = rows[i];
-          if (row.isEmpty || row.length == 0 || row[0].toString().trim().isEmpty) continue; // skip blank/deleted rows
-          parsedList.add(ServiceItem.fromRow(row, i + 1)); // 1-based index in Google Sheets
-        }
-        setState(() {
-          _servicesList = parsedList;
-          _filteredServicesList = List.from(_servicesList);
-        });
-      } else {
-        setState(() {
-          _servicesList = [];
-          _filteredServicesList = [];
-        });
-      }
-    } catch (e) {
-      print('Error fetching services from Google Sheets: $e');
-    }
   }
 
   Future<void> _fetchNameFromLink() async {
@@ -186,7 +77,6 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
     try {
       final uri = Uri.parse(url);
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
@@ -216,23 +106,29 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
           backgroundColor: Colors.redAccent,
         ),
       );
+    } finally {}
+  }
+
+  Future<void> _deleteService(ServiceItem service) async {
+    setState(() => _isLoading = true);
+    try {
+      await context.read<ServicesProvider>().deleteService(service.rowIndex);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Service deleted!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete service: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     } finally {
       setState(() => _isLoading = false);
     }
-  }
-
-  void _filterServices() {
-    final query = _searchController.text.toLowerCase().trim();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredServicesList = List.from(_servicesList);
-      } else {
-        _filteredServicesList = _servicesList.where((service) {
-          return service.serviceName.toLowerCase().contains(query) ||
-              service.defaultWallet.toLowerCase().contains(query);
-        }).toList();
-      }
-    });
   }
 
   // --- NEW DIALOG & CARD LOGIC ---
@@ -269,88 +165,70 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
   }
 
   Future<void> _handleSaveOrUpdateService(BuildContext dialogContext) async {
-    if (_spreadsheetId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please configure Spreadsheet ID on the Login screen first.'), backgroundColor: Colors.redAccent),
-      );
-      return;
-    }
-
     final name = _nameController.text.trim();
-    final website = _websiteController.text.trim();
-    final deptFee = _deptFeeController.text.trim().isEmpty ? '0.00' : _deptFeeController.text.trim();
-    final serviceCharge = _serviceChargeController.text.trim().isEmpty ? '0.00' : _serviceChargeController.text.trim();
-    final commission = _commissionController.text.trim().isEmpty ? '0.00' : _commissionController.text.trim();
-    final followupDays = _followupDaysController.text.trim().isEmpty ? '0' : _followupDaysController.text.trim();
-
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Service Name is required'), backgroundColor: Colors.orangeAccent),
+        const SnackBar(
+          content: Text('Service name is required'),
+          backgroundColor: Colors.orangeAccent,
+        ),
       );
       return;
     }
 
-    setState(() {
-      _isSaving = true;
-    });
-
+    setState(() => _isSaving = true);
     try {
-      if (_isEditing && _editingRowIndex != null) {
-        final updatedService = ServiceItem(
-          rowIndex: _editingRowIndex!,
-          serviceName: name,
-          website: website,
-          departmentFee: deptFee,
-          serviceCharge: serviceCharge,
-          commission: commission,
-          allowEdit: _allowEdit,
-          followupDays: followupDays,
-          defaultWallet: _selectedWallet,
-        );
+      final provider = context.read<ServicesProvider>();
 
-        await _sheetsService.updateRow(_spreadsheetId, GoogleSheetsConfig.serviceSheetName, _editingRowIndex!, updatedService.toRow());
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Service updated successfully!'), backgroundColor: Colors.green));
+      final updatedService = ServiceItem(
+        rowIndex: _isEditing ? _editingRowIndex! : 0,
+        serviceName: name,
+        website: _websiteController.text.trim(),
+        departmentFee: _deptFeeController.text.trim().isEmpty
+            ? '0.00'
+            : _deptFeeController.text.trim(),
+        serviceCharge: _serviceChargeController.text.trim().isEmpty
+            ? '0.00'
+            : _serviceChargeController.text.trim(),
+        commission: _commissionController.text.trim().isEmpty
+            ? '0.00'
+            : _commissionController.text.trim(),
+        allowEdit: _allowEdit,
+        followupDays: _followupDaysController.text.trim().isEmpty
+            ? '0'
+            : _followupDaysController.text.trim(),
+        defaultWallet: _selectedWallet,
+      );
+      if (_isEditing) {
+        await provider.updateService(updatedService);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Service updated successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
       } else {
-        final newService = ServiceItem(
-          rowIndex: 0,
-          serviceName: name,
-          website: website,
-          departmentFee: deptFee,
-          serviceCharge: serviceCharge,
-          commission: commission,
-          allowEdit: _allowEdit,
-          followupDays: followupDays,
-          defaultWallet: _selectedWallet,
+        await provider.addService(updatedService);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Service added successfully!'),
+            backgroundColor: Colors.green,
+          ),
         );
-
-        await _sheetsService.appendRow(_spreadsheetId, GoogleSheetsConfig.serviceSheetName, newService.toRow());
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Service added successfully!'), backgroundColor: Colors.green));
       }
-
-      await _fetchServicesData();
-      _resetForm();
-      if (dialogContext.mounted) {
-        Navigator.of(dialogContext).pop();
+      // ignore: use_build_context_synchronously
+      if (mounted && Navigator.canPop(dialogContext)) {
+        Navigator.pop(dialogContext);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Operation failed: $e'), backgroundColor: Colors.redAccent));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saving service: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     } finally {
-      setState(() {
-        _isSaving = false;
-      });
-    }
-  }
-
-  Future<void> _deleteService(ServiceItem service) async {
-    setState(() => _isLoading = true);
-    try {
-      await _sheetsService.clearRow(_spreadsheetId, GoogleSheetsConfig.serviceSheetName, service.rowIndex, 8);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Service deleted!'), backgroundColor: Colors.green));
-      await _fetchServicesData();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed deleting: $e'), backgroundColor: Colors.redAccent));
-    } finally {
-      setState(() => _isLoading = false);
+      setState(() => _isSaving = false);
     }
   }
 
@@ -362,7 +240,9 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Container(
                 width: 600,
                 padding: const EdgeInsets.all(24),
@@ -376,7 +256,11 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
                         children: [
                           Text(
                             isEdit ? 'Edit service' : 'Add service',
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.close_rounded),
@@ -391,12 +275,20 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
                       _buildLabel('Service name'),
                       Row(
                         children: [
-                          Expanded(child: _buildTextField('Enter name', _nameController)),
+                          Expanded(
+                            child: _buildTextField(
+                              'Enter name',
+                              _nameController,
+                            ),
+                          ),
                           const SizedBox(width: 8),
                           IconButton(
-                            icon: const Icon(Icons.download_rounded, color: Color(0xFF00695C)),
+                            icon: const Icon(
+                              Icons.download_rounded,
+                              color: Color(0xFF00695C),
+                            ),
                             onPressed: () async {
-                               await _fetchNameFromLink();
+                              await _fetchNameFromLink();
                             },
                             tooltip: 'Fetch Name from Webpage Link',
                           ),
@@ -408,11 +300,29 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          Expanded(child: _buildMiniField('DEPT FEE', '0.00', _deptFeeController)),
+                          Expanded(
+                            child: _buildMiniField(
+                              'DEPT FEE',
+                              '0.00',
+                              _deptFeeController,
+                            ),
+                          ),
                           const SizedBox(width: 12),
-                          Expanded(child: _buildMiniField('SRV CHARGE', '0.00', _serviceChargeController)),
+                          Expanded(
+                            child: _buildMiniField(
+                              'SRV CHARGE',
+                              '0.00',
+                              _serviceChargeController,
+                            ),
+                          ),
                           const SizedBox(width: 12),
-                          Expanded(child: _buildMiniField('COMMISSION', '0.00', _commissionController)),
+                          Expanded(
+                            child: _buildMiniField(
+                              'COMMISSION',
+                              '0.00',
+                              _commissionController,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -428,9 +338,18 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
                           child: DropdownButton<String>(
                             value: _selectedWallet,
                             isExpanded: true,
-                            items: <String>['CASH', 'EDISTRICT', 'GATEWAY', 'SBI'].map((String val) {
-                              return DropdownMenuItem<String>(value: val, child: Text(val));
-                            }).toList(),
+                            items:
+                                <String>[
+                                  'CASH',
+                                  'EDISTRICT',
+                                  'GATEWAY',
+                                  'SBI',
+                                ].map((String val) {
+                                  return DropdownMenuItem<String>(
+                                    value: val,
+                                    child: Text(val),
+                                  );
+                                }).toList(),
                             onChanged: (String? newVal) {
                               if (newVal != null) {
                                 setDialogState(() => _selectedWallet = newVal);
@@ -441,7 +360,11 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _buildLabelAndField('Followup Days', '0', _followupDaysController),
+                      _buildLabelAndField(
+                        'Followup Days',
+                        '0',
+                        _followupDaysController,
+                      ),
                       const SizedBox(height: 20),
                       Row(
                         children: [
@@ -458,7 +381,13 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Text('Allow Edit', style: TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
+                          const Text(
+                            'Allow Edit',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 32),
@@ -466,15 +395,27 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
                         width: double.infinity,
                         height: 44,
                         child: _isSaving
-                            ? const Center(child: CircularProgressIndicator(color: Color(0xFF00695C)))
+                            ? const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFF00695C),
+                                ),
+                              )
                             : ElevatedButton(
-                                onPressed: () => _handleSaveOrUpdateService(dialogContext),
+                                onPressed: () =>
+                                    _handleSaveOrUpdateService(dialogContext),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF00695C),
                                   foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
-                                child: Text(isEdit ? 'Update service' : 'Save service', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                child: Text(
+                                  isEdit ? 'Update service' : 'Save service',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                       ),
                     ],
@@ -499,63 +440,123 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
         },
         backgroundColor: const Color(0xFF00695C),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Add Service', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text(
+          'Add Service',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            // Search and Controls
-            Row(
+      body: Consumer<ServicesProvider>(
+        builder: (context, provider, child) {
+          final state = provider.state;
+          List<ServiceItem> filteredList = [];
+          if (state is DataSuccess<List<ServiceItem>>) {
+            final query = _searchController.text.toLowerCase().trim();
+            filteredList = query.isEmpty
+                ? state.data
+                : state.data
+                      .where(
+                        (s) =>
+                            s.serviceName.toLowerCase().contains(query) ||
+                            s.defaultWallet.toLowerCase().contains(query),
+                      )
+                      .toList();
+          }
+
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
               children: [
-                const Text('Service Management', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                const Spacer(),
-                Container(
-                  width: 280,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    textAlignVertical: TextAlignVertical.center,
-                    decoration: const InputDecoration(
-                      hintText: 'Search services...',
-                      hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                      prefixIcon: Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 20),
-                      prefixIconConstraints: BoxConstraints(minWidth: 40, minHeight: 40),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(vertical: 12),
+                // Search and Controls
+                Row(
+                  children: [
+                    const Text(
+                      'Service Management',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // Cards Grid
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF00695C)))
-                  : _filteredServicesList.isEmpty
-                      ? const Center(child: Text('No services found.', style: TextStyle(color: Color(0xFF64748B), fontSize: 16)))
-                      : GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 400,
-                            mainAxisExtent: 180,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
+                    const Spacer(),
+                    Container(
+                      width: 280,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        textAlignVertical: TextAlignVertical.center,
+                        decoration: const InputDecoration(
+                          hintText: 'Search services...',
+                          hintStyle: TextStyle(
+                            color: Color(0xFF94A3B8),
+                            fontSize: 14,
                           ),
-                          itemCount: _filteredServicesList.length,
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            color: Color(0xFF94A3B8),
+                            size: 20,
+                          ),
+                          prefixIconConstraints: BoxConstraints(
+                            minWidth: 40,
+                            minHeight: 40,
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Cards Grid
+                Expanded(
+                  child:
+                      state is DataLoading || state is DataInitial || _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF00695C),
+                          ),
+                        )
+                      : state is DataError
+                      ? Center(
+                          child: Text(
+                            (state as DataError).message,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        )
+                      : state is DataEmpty || filteredList.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No services found.',
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 16,
+                            ),
+                          ),
+                        )
+                      : GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 400,
+                                mainAxisExtent: 180,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                              ),
+                          itemCount: filteredList.length,
                           itemBuilder: (context, index) {
-                            final service = _filteredServicesList[index];
+                            final service = filteredList[index];
                             return _buildCard(service);
                           },
                         ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -580,7 +581,11 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
                 Expanded(
                   child: Text(
                     service.serviceName,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -605,20 +610,41 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
               children: [
                 Text(
                   service.allowEdit ? 'Editable' : 'Non-editable',
-                  style: TextStyle(fontSize: 12, color: service.allowEdit ? const Color(0xFF10B981) : const Color(0xFF64748B), fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: service.allowEdit
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 Row(
                   children: [
                     if (service.website.isNotEmpty) ...[
-                      _buildActionButton(Icons.language_rounded, const Color(0xFFEFF6FF), const Color(0xFF3B82F6), () async {
-                        final url = Uri.parse(service.website);
-                        if (await canLaunchUrl(url)) await launchUrl(url);
-                      }),
+                      _buildActionButton(
+                        Icons.language_rounded,
+                        const Color(0xFFEFF6FF),
+                        const Color(0xFF3B82F6),
+                        () async {
+                          final url = Uri.parse(service.website);
+                          if (await canLaunchUrl(url)) await launchUrl(url);
+                        },
+                      ),
                       const SizedBox(width: 8),
                     ],
-                    _buildActionButton(Icons.edit_outlined, const Color(0xFFFFF7ED), const Color(0xFFF97316), () => _onEditService(service)),
+                    _buildActionButton(
+                      Icons.edit_outlined,
+                      const Color(0xFFFFF7ED),
+                      const Color(0xFFF97316),
+                      () => _onEditService(service),
+                    ),
                     const SizedBox(width: 8),
-                    _buildActionButton(Icons.delete_outline_rounded, const Color(0xFFFEF2F2), const Color(0xFFEF4444), () => _deleteService(service)),
+                    _buildActionButton(
+                      Icons.delete_outline_rounded,
+                      const Color(0xFFFEF2F2),
+                      const Color(0xFFEF4444),
+                      () => _deleteService(service),
+                    ),
                   ],
                 ),
               ],
@@ -633,9 +659,23 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: Color(0xFF94A3B8),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+          ),
+        ),
       ],
     );
   }
@@ -654,18 +694,30 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
       ),
     );
   }
 
-  Widget _buildActionButton(IconData icon, Color bg, Color iconColor, VoidCallback onTap) {
+  Widget _buildActionButton(
+    IconData icon,
+    Color bg,
+    Color iconColor,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Container(
         padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(6),
+        ),
         child: Icon(icon, size: 16, color: iconColor),
       ),
     );
@@ -674,7 +726,14 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
   Widget _buildLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          color: Color(0xFF64748B),
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 
@@ -700,18 +759,33 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
     );
   }
 
-  Widget _buildMiniField(String label, String value, TextEditingController controller) {
+  Widget _buildMiniField(
+    String label,
+    String value,
+    TextEditingController controller,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF94A3B8),
+          ),
+        ),
         const SizedBox(height: 4),
         _buildTextField(value, controller),
       ],
     );
   }
 
-  Widget _buildLabelAndField(String label, String hint, TextEditingController controller) {
+  Widget _buildLabelAndField(
+    String label,
+    String hint,
+    TextEditingController controller,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [_buildLabel(label), _buildTextField(hint, controller)],

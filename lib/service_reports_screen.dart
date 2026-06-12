@@ -1,10 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'providers/service_reports_provider.dart';
+import 'utils/export_utils.dart';
 
-class ServiceReportsScreen extends StatelessWidget {
+class ServiceReportsScreen extends StatefulWidget {
   const ServiceReportsScreen({super.key});
 
   @override
+  State<ServiceReportsScreen> createState() => _ServiceReportsScreenState();
+}
+
+class _ServiceReportsScreenState extends State<ServiceReportsScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ServiceReportsProvider>().fetchReports();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isFromDate) async {
+    final provider = context.read<ServiceReportsProvider>();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: isFromDate ? (provider.fromDate ?? DateTime.now()) : (provider.toDate ?? DateTime.now()),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+    if (picked != null) {
+      if (isFromDate) {
+        provider.setDateRange(picked, provider.toDate);
+      } else {
+        provider.setDateRange(provider.fromDate, picked);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final provider = context.watch<ServiceReportsProvider>();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -21,17 +65,33 @@ class ServiceReportsScreen extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Expanded(child: _buildFilterField('FROM DATE', '05/09/2026', Icons.calendar_month_rounded)),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _selectDate(context, true),
+                    child: _buildFilterField(
+                      'FROM DATE', 
+                      provider.fromDate != null ? DateFormat('dd/MM/yyyy').format(provider.fromDate!) : 'Select Date', 
+                      Icons.calendar_month_rounded,
+                    ),
+                  ),
+                ),
                 const SizedBox(width: 16),
-                Expanded(child: _buildFilterField('TO DATE', '05/09/2026', Icons.calendar_month_rounded)),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _selectDate(context, false),
+                    child: _buildFilterField(
+                      'TO DATE', 
+                      provider.toDate != null ? DateFormat('dd/MM/yyyy').format(provider.toDate!) : 'Select Date', 
+                      Icons.calendar_month_rounded,
+                    ),
+                  ),
+                ),
                 const SizedBox(width: 16),
-                Expanded(child: _buildFilterDropdown('USERS', 'Display all')),
+                Expanded(child: _buildFilterDropdown(context, provider)),
                 const SizedBox(width: 16),
-                _buildSearchButton(),
+                _buildSearchButton(provider),
                 const SizedBox(width: 12),
-                _buildClearButton(),
-                const Spacer(),
-                _buildVerificationReportButton(),
+                _buildClearButton(provider),
               ],
             ),
           ),
@@ -40,11 +100,15 @@ class ServiceReportsScreen extends StatelessWidget {
           // Export & Search Section
           Row(
             children: [
-              _buildExportButton('PDF', Icons.picture_as_pdf_outlined),
+              _buildExportButton('PDF', Icons.picture_as_pdf_outlined, () {
+                ExportUtils.generatePdfReport(provider.filteredReports, 'Service Reports');
+              }),
               const SizedBox(width: 10),
-              _buildExportButton('Excel', Icons.table_chart_outlined),
+              _buildExportButton('Excel', Icons.table_chart_outlined, () {
+                ExportUtils.generateExcelReport(provider.filteredReports, 'Service Reports');
+              }),
               const Spacer(),
-              _buildTableSearchField(),
+              _buildTableSearchField(provider),
             ],
           ),
           const SizedBox(height: 16),
@@ -65,16 +129,38 @@ class ServiceReportsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildTableHeader(),
-                      Container(
-                        width: 1632, // Matches columns sum (1600) + horizontal padding (32)
-                        height: 350,
-                        alignment: Alignment.center,
-                        child: const Text(
-                          'No data available for the selected date range',
-                          style: TextStyle(color: Color(0xFF64748B), fontSize: 13, fontStyle: FontStyle.italic),
+                      if (provider.isLoading)
+                        Container(
+                          width: 1252,
+                          height: 350,
+                          alignment: Alignment.center,
+                          child: const CircularProgressIndicator(),
+                        )
+                      else if (provider.filteredReports.isEmpty)
+                        Container(
+                          width: 1252,
+                          height: 350,
+                          alignment: Alignment.center,
+                          child: const Text(
+                            'No data available for the selected date range',
+                            style: TextStyle(color: Color(0xFF64748B), fontSize: 13, fontStyle: FontStyle.italic),
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 1252,
+                          constraints: const BoxConstraints(minHeight: 350),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: provider.filteredReports.length,
+                            itemBuilder: (context, index) {
+                              final report = provider.filteredReports[index];
+                              return _buildTableRow(report, index + 1);
+                            },
+                          ),
                         ),
-                      ),
-                      _buildTableFooter(),
+                      _buildTableFooter(provider),
                     ],
                   ),
                 ),
@@ -86,9 +172,9 @@ class ServiceReportsScreen extends StatelessWidget {
           // Pagination Footer
           Row(
             children: [
-              const Text(
-                'Showing 0 to 0 of 0 entries',
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
+              Text(
+                'Showing 1 to ${provider.filteredReports.length} of ${provider.filteredReports.length} entries',
+                style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
               ),
               const Spacer(),
               _buildPaginationButton('Previous', isEnabled: false),
@@ -113,11 +199,18 @@ class ServiceReportsScreen extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: const Color(0xFFE2E8F0)),
+            color: Colors.transparent,
           ),
           child: Row(
             children: [
-              Text(value, style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
-              const Spacer(),
+              Expanded(
+                child: Text(
+                  value, 
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 4),
               Icon(icon, size: 16, color: const Color(0xFF64748B)),
             ],
           ),
@@ -126,11 +219,14 @@ class ServiceReportsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFilterDropdown(String label, String value) {
+  Widget _buildFilterDropdown(BuildContext context, ServiceReportsProvider provider) {
+    final List<String> users = ['Display all', ...provider.availableUsers];
+    final String currentVal = provider.selectedUser ?? 'Display all';
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+        const Text('USERS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
         const SizedBox(height: 8),
         Container(
           height: 42,
@@ -139,23 +235,35 @@ class ServiceReportsScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
-          child: Row(
-            children: [
-              Text(value, style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
-              const Spacer(),
-              const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF64748B)),
-            ],
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: currentVal.isEmpty ? 'Display all' : currentVal,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF64748B)),
+              items: users.map((String user) {
+                return DropdownMenuItem<String>(
+                  value: user,
+                  child: Text(user, style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
+                );
+              }).toList(),
+              onChanged: (val) {
+                provider.setSelectedUser(val == 'Display all' ? null : val);
+              },
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSearchButton() {
+  Widget _buildSearchButton(ServiceReportsProvider provider) {
     return Container(
       height: 42,
       child: ElevatedButton.icon(
-        onPressed: () {},
+        onPressed: () {
+          // Filtering happens reactively but we can trigger a refresh if needed
+          provider.fetchReports();
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF065F46),
           foregroundColor: Colors.white,
@@ -169,11 +277,14 @@ class ServiceReportsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildClearButton() {
+  Widget _buildClearButton(ServiceReportsProvider provider) {
     return Container(
       height: 42,
       child: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed: () {
+          provider.clearFilters();
+          _searchController.clear();
+        },
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFF64748B),
           side: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -186,32 +297,11 @@ class ServiceReportsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildVerificationReportButton() {
-    return Container(
-      height: 42,
-      child: ElevatedButton.icon(
-        onPressed: () {},
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFEFF6FF),
-          foregroundColor: const Color(0xFF3B82F6),
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: Color(0xFFDBEAFE)),
-          ),
-          elevation: 0,
-        ),
-        icon: const Icon(Icons.verified_user_outlined, size: 18),
-        label: const Text('Verification report', style: TextStyle(fontWeight: FontWeight.w600)),
-      ),
-    );
-  }
-
-  Widget _buildExportButton(String label, IconData icon) {
+  Widget _buildExportButton(String label, IconData icon, VoidCallback onPressed) {
     return Container(
       height: 36,
       child: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed: onPressed,
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFF64748B),
           side: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -224,7 +314,7 @@ class ServiceReportsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTableSearchField() {
+  Widget _buildTableSearchField(ServiceReportsProvider provider) {
     return Row(
       children: [
         const Text('Search:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
@@ -237,8 +327,10 @@ class ServiceReportsScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(6),
             border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
-          child: const TextField(
-            decoration: InputDecoration(
+          child: TextField(
+            controller: _searchController,
+            onChanged: (val) => provider.setSearchQuery(val),
+            decoration: const InputDecoration(
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             ),
@@ -256,22 +348,18 @@ class ServiceReportsScreen extends StatelessWidget {
       {'title': 'Contact', 'width': 120.0},
       {'title': 'Services', 'width': 150.0},
       {'title': 'Wallet charge', 'width': 100.0},
-      {'title': 'Charge 1', 'width': 80.0},
-      {'title': 'Charge 2', 'width': 80.0},
-      {'title': 'Charge 3', 'width': 80.0},
-      {'title': 'Gateway charge', 'width': 120.0},
+      {'title': 'Charge', 'width': 80.0},
       {'title': 'Total', 'width': 80.0},
       {'title': 'Payment', 'width': 100.0},
       {'title': 'Entry staff', 'width': 120.0},
       {'title': 'Re-print', 'width': 80.0},
-      {'title': 'App enquiry', 'width': 100.0},
       {'title': 'Action', 'width': 100.0},
     ];
 
     return Container(
       color: const Color(0xFFF8FAFC),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      width: 1632, // sum(col widths) + padding
+      width: 1252, // sum(col widths) + padding
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: columns.map((col) => Container(
@@ -293,10 +381,80 @@ class ServiceReportsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTableFooter() {
+  Widget _buildTableRow(dynamic report, int index) {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      width: 1252,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _tableCell(index.toString(), 40.0),
+          _tableCell(report.date, 100.0),
+          _tableCell(report.customerName, 150.0, isBold: true),
+          _tableCell(report.mobile, 120.0),
+          _tableCell(report.services, 150.0),
+          _tableCell(report.gpayUpi.toStringAsFixed(2), 100.0),
+          _tableCell(report.cash.toStringAsFixed(2), 80.0),
+          _tableCell(report.totalAmount.toStringAsFixed(2), 80.0, isBold: true, color: const Color(0xFF0F172A)),
+          _tableCell('Cash', 100.0, color: const Color(0xFF10B981)), // Static for now
+          _tableCell(report.staffName, 120.0),
+          Container(
+            width: 80.0,
+            child: IconButton(
+              icon: const Icon(Icons.print_rounded, size: 18, color: Color(0xFF3B82F6)),
+              onPressed: () {},
+              constraints: const BoxConstraints(),
+              padding: EdgeInsets.zero,
+            ),
+          ),
+          Container(
+            width: 100.0,
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
+                  onPressed: () {},
+                  constraints: const BoxConstraints(),
+                  padding: EdgeInsets.zero,
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),
+                  onPressed: () {},
+                  constraints: const BoxConstraints(),
+                  padding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tableCell(String text, double width, {bool isBold = false, Color color = const Color(0xFF475569)}) {
+    return Container(
+      width: width,
+      padding: const EdgeInsets.only(right: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          color: color,
+        ),
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  Widget _buildTableFooter(ServiceReportsProvider provider) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      width: 1632,
+      width: 1252,
       decoration: const BoxDecoration(
         color: Color(0xFFEFF6FF),
         border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
@@ -307,18 +465,25 @@ class ServiceReportsScreen extends StatelessWidget {
           const SizedBox(width: 40 + 100 + 150 + 120 + 150), // Skip previous columns
           Container(
             width: 100,
-            child: const Text(
-              'Total:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF1E293B)),
+            child: Text(
+              provider.totalWalletCharge.toStringAsFixed(2),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF1E293B)),
             ),
           ),
-          ...List.generate(5, (index) => Container(
-            width: index == 0 ? 80.0 : index == 1 ? 80.0 : index == 2 ? 80.0 : index == 3 ? 120.0 : 80.0,
-            child: const Text(
-              '0.00',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF1E293B)),
+          Container(
+            width: 80.0,
+            child: Text(
+              provider.totalServiceCharge.toStringAsFixed(2),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF1E293B)),
             ),
-          )),
+          ),
+          Container(
+            width: 80.0,
+            child: Text(
+              provider.totalAmount.toStringAsFixed(2),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF1E293B)),
+            ),
+          ),
         ],
       ),
     );
@@ -341,3 +506,4 @@ class ServiceReportsScreen extends StatelessWidget {
     );
   }
 }
+

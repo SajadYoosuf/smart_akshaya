@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
+import 'providers/staff_provider.dart';
+import 'core/data_state.dart';
+import 'models/staff_member.dart';
 import 'services/auth_service.dart';
-import 'services/google_sheets_service.dart';
-import 'services/local_excel_service.dart';
-import 'config/google_sheets_config.dart';
 
 class StaffManagementScreen extends StatefulWidget {
   const StaffManagementScreen({super.key});
@@ -23,7 +23,6 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   String _selectedUserType = 'Normal User';
-  bool _isLoading = false;
   bool _isSaving = false;
   
   bool _isEditing = false;
@@ -33,19 +32,15 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
 
-  List<StaffMember> _staffList = [];
-  List<StaffMember> _filteredStaffList = [];
-  String _spreadsheetId = '';
-
-  final GoogleSheetsService _sheetsService = GoogleSheetsService();
-  final LocalExcelService _localExcelService = LocalExcelService();
-  final AuthService _authService = AuthService();
-
   @override
   void initState() {
     super.initState();
-    _initAndLoadStaff();
-    _searchController.addListener(_filterStaff);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<StaffProvider>().loadStaff();
+    });
+    _searchController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -58,82 +53,6 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     _confirmController.dispose();
     _searchController.dispose();
     super.dispose();
-  }
-
-  Future<void> _initAndLoadStaff() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      await _localExcelService.initDatabase(directory.path);
-      
-      _spreadsheetId = await _authService.getSpreadsheetId();
-      
-      if (_spreadsheetId.isNotEmpty) {
-        // Authenticate service
-        final credentialsJson = await DefaultAssetBundle.of(context)
-            .loadString('assets/credentials/google_sheets_credentials.json');
-        await _sheetsService.init(credentialsJson);
-
-        // Fetch staff
-        await _fetchStaffData();
-      } else {
-        print('No spreadsheet ID configured.');
-      }
-    } catch (e) {
-      print('Error initializing staff list: $e');
-      // Load offline cache as fallback
-      await _loadFromLocalCache();
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _fetchStaffData() async {
-    try {
-      final staff = await _authService.refreshStaffCache();
-      setState(() {
-        _staffList = staff;
-        _filteredStaffList = List.from(_staffList);
-      });
-    } catch (e) {
-      print('Failed fetching staff: $e');
-      await _loadFromLocalCache();
-    }
-  }
-
-  Future<void> _loadFromLocalCache() async {
-    // Attempt loading from cache via AuthService
-    try {
-      final staff = await _authService.refreshStaffCache(); // will read from sheets or fallback
-      setState(() {
-        _staffList = staff;
-        _filteredStaffList = List.from(_staffList);
-      });
-    } catch (e) {
-      print('Local cache read failed: $e');
-    }
-  }
-
-  void _filterStaff() {
-    final query = _searchController.text.toLowerCase().trim();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredStaffList = List.from(_staffList);
-      } else {
-        _filteredStaffList = _staffList.where((staff) {
-          return staff.name.toLowerCase().contains(query) ||
-              staff.email.toLowerCase().contains(query) ||
-              staff.mobile.contains(query) ||
-              staff.address.toLowerCase().contains(query) ||
-              staff.userType.toLowerCase().contains(query);
-        }).toList();
-      }
-    });
   }
 
   void _onEditStaff(StaffMember staff) {
@@ -167,29 +86,18 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   }
 
   Future<void> _deleteStaff(StaffMember staff) async {
-    setState(() => _isLoading = true);
+    setState(() => _isSaving = true);
     try {
-      await _sheetsService.clearRow(_spreadsheetId, GoogleSheetsConfig.staffSheetName, staff.rowIndex, 8);
+      await context.read<StaffProvider>().deleteStaff(staff.rowIndex);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Staff deleted!'), backgroundColor: Colors.green));
-      await _fetchStaffData();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed deleting: $e'), backgroundColor: Colors.redAccent));
     } finally {
-      setState(() => _isLoading = false);
+      setState(() => _isSaving = false);
     }
   }
 
   Future<void> _handleSaveStaff() async {
-    if (_spreadsheetId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please configure Spreadsheet ID on the Login screen first.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
     final name = _nameController.text.trim();
     final address = _addressController.text.trim();
     final mobile = _mobileController.text.trim();
@@ -221,26 +129,30 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
 
     try {
       final type = _selectedUserType == 'Admin' ? 'admin' : 'staff';
-      String finalPassword = '';
       String status = 'Active';
 
+      final staffProvider = context.read<StaffProvider>();
+      final currentState = staffProvider.state;
+      final staffList = currentState is DataSuccess<List<StaffMember>> ? currentState.data : <StaffMember>[];
+
       if (_isEditing && _editingRowIndex != null) {
-        final oldStaff = _staffList.firstWhere((s) => s.rowIndex == _editingRowIndex);
-        finalPassword = computedPassword.isEmpty ? oldStaff.password : AuthService.generatePasswordHash(computedPassword);
-        status = oldStaff.status; // Preserve old status
+        final oldStaff = staffList.firstWhere((s) => s.rowIndex == _editingRowIndex);
+        final finalPassword = computedPassword.isEmpty ? oldStaff.password : AuthService.generatePasswordHash(computedPassword);
+        status = oldStaff.status;
 
-        final updatedRow = [
-          _editingStaffId ?? '',
-          name,
-          address,
-          mobile,
-          email,
-          type,
-          status,
-          finalPassword,
-        ];
+        final updatedStaff = StaffMember(
+          rowIndex: _editingRowIndex!,
+          id: _editingStaffId ?? '',
+          name: name,
+          address: address,
+          mobile: mobile,
+          email: email,
+          userType: type,
+          status: status,
+          password: finalPassword,
+        );
 
-        await _sheetsService.updateRow(_spreadsheetId, GoogleSheetsConfig.staffSheetName, _editingRowIndex!, updatedRow);
+        await staffProvider.updateStaff(updatedStaff);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -249,25 +161,25 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         }
       } else {
         int nextId = 1;
-        if (_staffList.isNotEmpty) {
-          final ids = _staffList.map((s) => int.tryParse(s.id) ?? 0).toList();
+        if (staffList.isNotEmpty) {
+          final ids = staffList.map((s) => int.tryParse(s.id) ?? 0).toList();
           nextId = ids.reduce((curr, next) => curr > next ? curr : next) + 1;
         }
 
-        finalPassword = AuthService.generatePasswordHash(computedPassword);
+        final finalPassword = AuthService.generatePasswordHash(computedPassword);
 
-        final newRow = [
-          '$nextId',
-          name,
-          address,
-          mobile,
-          email,
-          type,
-          status,
-          finalPassword,
-        ];
+        final newStaff = StaffMember(
+          id: '$nextId',
+          name: name,
+          address: address,
+          mobile: mobile,
+          email: email,
+          userType: type,
+          status: status,
+          password: finalPassword,
+        );
 
-        await _sheetsService.appendRow(_spreadsheetId, GoogleSheetsConfig.staffSheetName, newRow);
+        await staffProvider.addStaff(newStaff);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -276,7 +188,6 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         }
       }
       
-      await _fetchStaffData();
       _resetForm();
 
     } catch (e) {
@@ -286,9 +197,11 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         );
       }
     } finally {
-      setState(() {
-        _isSaving = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 
@@ -440,62 +353,82 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   }
 
   Widget _buildStaffListSection() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const Text(
-                  'Show',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                ),
-                const SizedBox(width: 8),
-                _buildEntriesDropdown(),
-                const SizedBox(width: 8),
-                const Text(
-                  'entries',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                ),
-                const Spacer(),
-                const Text(
-                  'Search:',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                ),
-                const SizedBox(width: 8),
-                _buildSearchBox(),
-              ],
-            ),
+    return Consumer<StaffProvider>(
+      builder: (context, provider, child) {
+        final state = provider.state;
+        
+        List<StaffMember> filteredList = [];
+        if (state is DataSuccess<List<StaffMember>>) {
+          final query = _searchController.text.toLowerCase().trim();
+          filteredList = query.isEmpty 
+              ? state.data 
+              : state.data.where((staff) {
+                  return staff.name.toLowerCase().contains(query) ||
+                      staff.email.toLowerCase().contains(query) ||
+                      staff.mobile.contains(query) ||
+                      staff.address.toLowerCase().contains(query) ||
+                      staff.userType.toLowerCase().contains(query);
+                }).toList();
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
-          _isLoading
-              ? const Padding(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    const Text('Show', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                    const SizedBox(width: 8),
+                    _buildEntriesDropdown(),
+                    const SizedBox(width: 8),
+                    const Text('entries', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                    const Spacer(),
+                    const Text('Search:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                    const SizedBox(width: 8),
+                    _buildSearchBox(),
+                  ],
+                ),
+              ),
+              if (state is DataLoading || state is DataInitial)
+                const Padding(
                   padding: EdgeInsets.all(40),
-                  child: Center(
-                    child: CircularProgressIndicator(color: Color(0xFF10B981)),
-                  ),
+                  child: Center(child: CircularProgressIndicator(color: Color(0xFF10B981))),
                 )
-              : _buildStaffTable(),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Text(
-                  'Showing 1 to ${_filteredStaffList.length} of ${_filteredStaffList.length} entries',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              else if (state is DataError)
+                Padding(
+                  padding: const EdgeInsets.all(40),
+                  child: Center(child: Text((state as DataError).message, style: const TextStyle(color: Colors.red))),
+                )
+              else if (state is DataEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(40),
+                  child: Center(child: Text('No staff members found.', style: TextStyle(color: Color(0xFF64748B)))),
+                )
+              else
+                _buildStaffTable(filteredList),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Text(
+                      'Showing 1 to ${filteredList.length} of ${filteredList.length} entries',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                    const Spacer(),
+                    _buildPagination(),
+                  ],
                 ),
-                const Spacer(),
-                _buildPagination(),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -652,12 +585,12 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     );
   }
 
-  Widget _buildStaffTable() {
-    if (_filteredStaffList.isEmpty) {
+  Widget _buildStaffTable(List<StaffMember> filteredStaffList) {
+    if (filteredStaffList.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(32),
         alignment: Alignment.center,
-        child: const Text('No staff members found.', style: TextStyle(color: Color(0xFF64748B))),
+        child: const Text('No staff members found matching your search.', style: TextStyle(color: Color(0xFF64748B))),
       );
     }
 
@@ -679,7 +612,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
             ],
           ),
         ),
-        ..._filteredStaffList.asMap().entries.map((entry) {
+        ...filteredStaffList.asMap().entries.map((entry) {
           final index = entry.key + 1;
           final staff = entry.value;
           return _buildStaffRow(index, staff);
