@@ -376,6 +376,36 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   height: 300,
                   child: Center(child: CircularProgressIndicator()),
                 )
+              else if (provider.error != null)
+                Container(
+                  height: 300,
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline_rounded, size: 48, color: Color(0xFFEF4444)),
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          provider.error!,
+                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        onPressed: () => provider.fetchExpenses(),
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text('Retry'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF10B981),
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
               else if (filteredList.isEmpty)
                 Container(
                   height: 300,

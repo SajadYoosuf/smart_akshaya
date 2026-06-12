@@ -30,9 +30,9 @@ class SavedBill {
   });
 
   factory SavedBill.fromRow(List<dynamic> row) {
-    String statusStr = row.length > 11 ? row[11].toString().trim() : 'billed';
+    String statusStr = row.length > 11 ? row[11].toString().trim().toLowerCase() : 'billed';
     EntryStatus status = EntryStatus.values.firstWhere(
-      (e) => e.name == statusStr,
+      (e) => e.name.toLowerCase() == statusStr,
       orElse: () => EntryStatus.billed,
     );
 

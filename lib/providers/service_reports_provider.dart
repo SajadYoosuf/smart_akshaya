@@ -104,21 +104,34 @@ class ServiceReportsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // IMPORTANT: Always initialize first, THEN use the service
+      await AuthService().ensureSheetsServiceInitialized();
       final sheetsService = AuthService().sheetsService;
       final spreadsheetId = await AuthService().getSpreadsheetId();
-      await AuthService().ensureSheetsServiceInitialized();
+
+      if (spreadsheetId.isEmpty) {
+        debugPrint('ServiceReportsProvider: Spreadsheet ID is empty');
+        _allReports = [];
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
 
       final rows = await sheetsService.getRows(
         spreadsheetId,
         GoogleSheetsConfig.serviceEntrySheetName,
       );
 
+      debugPrint('ServiceReportsProvider: Fetched ${rows.length} total rows');
+
       if (rows.length > 1) {
         _allReports = rows
             .skip(1)
+            .where((row) => row.isNotEmpty)
             .map((row) => SavedBill.fromRow(row))
             .where((b) => b.status == EntryStatus.completed || b.status == EntryStatus.billed)
             .toList();
+        debugPrint('ServiceReportsProvider: ${_allReports.length} reports after status filter');
       } else {
         _allReports = [];
       }

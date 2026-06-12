@@ -64,9 +64,10 @@ class SavedBillsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // IMPORTANT: Always initialize first, THEN use the service
+      await AuthService().ensureSheetsServiceInitialized();
       final sheetsService = AuthService().sheetsService;
       final spreadsheetId = await AuthService().getSpreadsheetId();
-      await AuthService().ensureSheetsServiceInitialized();
 
       final rows = await sheetsService.getRows(
         spreadsheetId,

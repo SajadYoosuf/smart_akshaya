@@ -43,6 +43,8 @@ class StaffRepository {
       final spreadsheetId = await _authService.getSpreadsheetId();
       if (spreadsheetId.isEmpty) throw AuthException('Spreadsheet ID is not configured.');
 
+      await _authService.ensureSheetsServiceInitialized();
+
       await _sheetsService.appendRow(
         spreadsheetId,
         GoogleSheetsConfig.staffSheetName,
@@ -57,6 +59,8 @@ class StaffRepository {
     try {
       final spreadsheetId = await _authService.getSpreadsheetId();
       if (spreadsheetId.isEmpty) throw AuthException('Spreadsheet ID is not configured.');
+
+      await _authService.ensureSheetsServiceInitialized();
 
       await _sheetsService.updateRow(
         spreadsheetId,
@@ -73,6 +77,8 @@ class StaffRepository {
     try {
       final spreadsheetId = await _authService.getSpreadsheetId();
       if (spreadsheetId.isEmpty) throw AuthException('Spreadsheet ID is not configured.');
+
+      await _authService.ensureSheetsServiceInitialized();
 
       await _sheetsService.clearRow(
         spreadsheetId,
