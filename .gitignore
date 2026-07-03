@@ -18,14 +18,19 @@ migrate_working_dir/
 *.iws
 .idea/
 .env
-assets/credentials/
+.env*
+**/.env*
+**/assets/credentials/
 scripts/*.json
-smart-akshaya-498217-9f22b5fe79e0.json
+**/smart-akshaya-*.json
+**/google_sheets_credentials.json
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# Outside design images and PDFs/Invoices
+/*.jpeg
+/*.jpg
+/*.png
+/Invoice*.pdf
+/*.pdf
 
 # Flutter/Dart/Pub related
 **/doc/api/

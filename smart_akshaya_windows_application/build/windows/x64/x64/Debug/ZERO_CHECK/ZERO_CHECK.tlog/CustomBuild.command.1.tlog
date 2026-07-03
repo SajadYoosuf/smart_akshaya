@@ -1,0 +1,10 @@
+^C:\CLIENT_PROJECTS\SMART_AKSHAYA\SMART_AKSHAYA_WINDOWS_APPLICATION\BUILD\WINDOWS\X64\CMAKEFILES\A49F6AD2B52AB802251AEC320564313C\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\Microsoft Visual Studio\18\Insiders\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/client_projects/smart_akshaya/smart_akshaya_windows_application/windows -BC:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64 --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/smart_akshaya.slnx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\client_projects\smart_akshaya\smart_akshaya_windows_application\build\windows\x64\x64\Debug\ZERO_CHECK</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\client_projects\smart_akshaya\smart_akshaya_windows_application\build\windows\x64\flutter\x64\Debug\flutter_assemble</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\client_projects\smart_akshaya\smart_akshaya_windows_application\build\windows\x64\plugins\file_selector_windows\Debug\file_selector_windows_plugin.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\client_projects\smart_akshaya\smart_akshaya_windows_application\build\windows\x64\plugins\jni\shared\Debug\dartjni.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\client_projects\smart_akshaya\smart_akshaya_windows_application\build\windows\x64\plugins\printing\Debug\printing_plugin.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\client_projects\smart_akshaya\smart_akshaya_windows_application\build\windows\x64\plugins\screen_retriever\Debug\screen_retriever_plugin.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\client_projects\smart_akshaya\smart_akshaya_windows_application\build\windows\x64\plugins\syncfusion_pdfviewer_windows\Debug\syncfusion_pdfviewer_windows_plugin.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\client_projects\smart_akshaya\smart_akshaya_windows_application\build\windows\x64\plugins\url_launcher_windows\Debug\url_launcher_windows_plugin.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\client_projects\smart_akshaya\smart_akshaya_windows_application\build\windows\x64\plugins\window_manager\Debug\window_manager_plugin.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\client_projects\smart_akshaya\smart_akshaya_windows_application\build\windows\x64\runner\Debug\smart_akshaya.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>C:\client_projects\smart_akshaya\smart_akshaya_windows_application\build\windows\x64\x64\Debug\ALL_BUILD</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles />
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>

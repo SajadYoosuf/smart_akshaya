@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<!-- saved from url=(0032)https://akshayaapp.com/web_forms -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>ACE App - Web Admin</title>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+    <meta name="description" content="ACE App - Simplifies the Needs">
+    <meta name="keywords" content="ACE App - Simplifies the Needs">
+
+    <meta property="og:title" content="ACE App - Simplifies the Needs">
+    <meta property="og:description" content="ACE App - Simplifies the Needs">
+    <meta property="og:type" content="product">
+    <meta property="og:url" content="https://akshayaapp.com/">
+    <meta property="og:image" content="https://akshayaapp.com/assets/images/icons/72x72.png">
+    <meta property="og:site_name" content="ACE App">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#3e3fe9">
+    <link rel="icon" sizes="16x16" href="https://akshayaapp.com/assets/images/icons/72x72.png">
+
+    <link rel="icon" type="image/png" sizes="16x16" href="https://akshayaapp.com/assets/images/icons/72x72.png">
+
+    <link href="./ACE App - Web Admin_files/css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" media="screen" href="./ACE App - Web Admin_files/reset.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="./ACE App - Web Admin_files/public-style.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="./ACE App - Web Admin_files/animate.min.css">
+    <link rel="stylesheet" href="./ACE App - Web Admin_files/sweetalert2.min.css">
+    <!--<script src="https://kit.fontawesome.com/d0adc961d0.js" crossorigin="anonymous"></script>-->
+    <link rel="stylesheet" href="./ACE App - Web Admin_files/font-awesome.min.css">
+
+    <script src="./ACE App - Web Admin_files/jquery-3.2.1.min.js.download"></script>
+    <script src="./ACE App - Web Admin_files/sweetalert2@11"></script><style>:root{--swal2-outline: 0 0 0 3px rgba(100, 150, 200, 0.5);--swal2-container-padding: 0.625em;--swal2-backdrop: rgba(0, 0, 0, 0.4);--swal2-backdrop-transition: background-color 0.15s;--swal2-width: 32em;--swal2-padding: 0 0 1.25em;--swal2-border: none;--swal2-border-radius: 0.3125rem;--swal2-background: white;--swal2-color: #545454;--swal2-show-animation: swal2-show 0.3s;--swal2-hide-animation: swal2-hide 0.15s forwards;--swal2-icon-zoom: 1;--swal2-title-padding: 0.8em 1em 0;--swal2-html-container-padding: 1em 1.6em 0.3em;--swal2-input-border: 1px solid #d9d9d9;--swal2-input-border-radius: 0.1875em;--swal2-input-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.06), 0 0 0 3px transparent;--swal2-input-background: transparent;--swal2-input-transition: border-color 0.2s, box-shadow 0.2s;--swal2-input-hover-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.06), 0 0 0 3px transparent;--swal2-input-focus-border: 1px solid #b4dbed;--swal2-input-focus-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.06), 0 0 0 3px rgba(100, 150, 200, 0.5);--swal2-progress-step-background: #add8e6;--swal2-validation-message-background: #f0f0f0;--swal2-validation-message-color: #666;--swal2-footer-border-color: #eee;--swal2-footer-background: transparent;--swal2-footer-color: inherit;--swal2-timer-progress-bar-background: rgba(0, 0, 0, 0.3);--swal2-close-button-position: initial;--swal2-close-button-inset: auto;--swal2-close-button-font-size: 2.5em;--swal2-close-button-color: #ccc;--swal2-close-button-transition: color 0.2s, box-shadow 0.2s;--swal2-close-button-outline: initial;--swal2-close-button-box-shadow: inset 0 0 0 3px transparent;--swal2-close-button-focus-box-shadow: inset var(--swal2-outline);--swal2-close-button-hover-transform: none;--swal2-actions-justify-content: center;--swal2-actions-width: auto;--swal2-actions-margin: 1.25em auto 0;--swal2-actions-padding: 0;--swal2-actions-border-radius: 0;--swal2-actions-background: transparent;--swal2-action-button-transition: background-color 0.2s, box-shadow 0.2s;--swal2-action-button-hover: black 10%;--swal2-action-button-active: black 10%;--swal2-confirm-button-box-shadow: none;--swal2-confirm-button-border-radius: 0.25em;--swal2-confirm-button-background-color: #7066e0;--swal2-confirm-button-color: #fff;--swal2-deny-button-box-shadow: none;--swal2-deny-button-border-radius: 0.25em;--swal2-deny-button-background-color: #dc3741;--swal2-deny-button-color: #fff;--swal2-cancel-button-box-shadow: none;--swal2-cancel-button-border-radius: 0.25em;--swal2-cancel-button-background-color: #6e7881;--swal2-cancel-button-color: #fff;--swal2-toast-show-animation: swal2-toast-show 0.5s;--swal2-toast-hide-animation: swal2-toast-hide 0.1s forwards;--swal2-toast-border: none;--swal2-toast-box-shadow: 0 0 1px hsl(0deg 0% 0% / 0.075), 0 1px 2px hsl(0deg 0% 0% / 0.075), 1px 2px 4px hsl(0deg 0% 0% / 0.075), 1px 3px 8px hsl(0deg 0% 0% / 0.075), 2px 4px 16px hsl(0deg 0% 0% / 0.075)}[data-swal2-theme=dark]{--swal2-dark-theme-black: #19191a;--swal2-dark-theme-white: #e1e1e1;--swal2-background: var(--swal2-dark-theme-black);--swal2-color: var(--swal2-dark-theme-white);--swal2-footer-border-color: #555;--swal2-input-background: color-mix(in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10%);--swal2-validation-message-background: color-mix( in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10% );--swal2-validation-message-color: var(--swal2-dark-theme-white);--swal2-timer-progress-bar-background: rgba(255, 255, 255, 0.7)}@media(prefers-color-scheme: dark){[data-swal2-theme=auto]{--swal2-dark-theme-black: #19191a;--swal2-dark-theme-white: #e1e1e1;--swal2-background: var(--swal2-dark-theme-black);--swal2-color: var(--swal2-dark-theme-white);--swal2-footer-border-color: #555;--swal2-input-background: color-mix(in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10%);--swal2-validation-message-background: color-mix( in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10% );--swal2-validation-message-color: var(--swal2-dark-theme-white);--swal2-timer-progress-bar-background: rgba(255, 255, 255, 0.7)}}body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown){overflow:hidden}body.swal2-height-auto{height:auto !important}body.swal2-no-backdrop .swal2-container{background-color:rgba(0,0,0,0) !important;pointer-events:none}body.swal2-no-backdrop .swal2-container .swal2-popup{pointer-events:auto}body.swal2-no-backdrop .swal2-container .swal2-modal{box-shadow:0 0 10px var(--swal2-backdrop)}body.swal2-toast-shown .swal2-container{box-sizing:border-box;width:360px;max-width:100%;background-color:rgba(0,0,0,0);pointer-events:none}body.swal2-toast-shown .swal2-container.swal2-top{inset:0 auto auto 50%;transform:translateX(-50%)}body.swal2-toast-shown .swal2-container.swal2-top-end,body.swal2-toast-shown .swal2-container.swal2-top-right{inset:0 0 auto auto}body.swal2-toast-shown .swal2-container.swal2-top-start,body.swal2-toast-shown .swal2-container.swal2-top-left{inset:0 auto auto 0}body.swal2-toast-shown .swal2-container.swal2-center-start,body.swal2-toast-shown .swal2-container.swal2-center-left{inset:50% auto auto 0;transform:translateY(-50%)}body.swal2-toast-shown .swal2-container.swal2-center{inset:50% auto auto 50%;transform:translate(-50%, -50%)}body.swal2-toast-shown .swal2-container.swal2-center-end,body.swal2-toast-shown .swal2-container.swal2-center-right{inset:50% 0 auto auto;transform:translateY(-50%)}body.swal2-toast-shown .swal2-container.swal2-bottom-start,body.swal2-toast-shown .swal2-container.swal2-bottom-left{inset:auto auto 0 0}body.swal2-toast-shown .swal2-container.swal2-bottom{inset:auto auto 0 50%;transform:translateX(-50%)}body.swal2-toast-shown .swal2-container.swal2-bottom-end,body.swal2-toast-shown .swal2-container.swal2-bottom-right{inset:auto 0 0 auto}@media print{body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown){overflow-y:scroll !important}body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown)>[aria-hidden=true]{display:none}body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown) .swal2-container{position:static !important}}div:where(.swal2-container){display:grid;position:fixed;z-index:1060;inset:0;box-sizing:border-box;grid-template-areas:"top-start     top            top-end" "center-start  center         center-end" "bottom-start  bottom-center  bottom-end";grid-template-rows:minmax(min-content, auto) minmax(min-content, auto) minmax(min-content, auto);height:100%;padding:var(--swal2-container-padding);overflow-x:hidden;transition:var(--swal2-backdrop-transition);-webkit-overflow-scrolling:touch}div:where(.swal2-container).swal2-backdrop-show,div:where(.swal2-container).swal2-noanimation{background:var(--swal2-backdrop)}div:where(.swal2-container).swal2-backdrop-hide{background:rgba(0,0,0,0) !important}div:where(.swal2-container).swal2-top-start,div:where(.swal2-container).swal2-center-start,div:where(.swal2-container).swal2-bottom-start{grid-template-columns:minmax(0, 1fr) auto auto}div:where(.swal2-container).swal2-top,div:where(.swal2-container).swal2-center,div:where(.swal2-container).swal2-bottom{grid-template-columns:auto minmax(0, 1fr) auto}div:where(.swal2-container).swal2-top-end,div:where(.swal2-container).swal2-center-end,div:where(.swal2-container).swal2-bottom-end{grid-template-columns:auto auto minmax(0, 1fr)}div:where(.swal2-container).swal2-top-start>.swal2-popup{align-self:start}div:where(.swal2-container).swal2-top>.swal2-popup{grid-column:2;place-self:start center}div:where(.swal2-container).swal2-top-end>.swal2-popup,div:where(.swal2-container).swal2-top-right>.swal2-popup{grid-column:3;place-self:start end}div:where(.swal2-container).swal2-center-start>.swal2-popup,div:where(.swal2-container).swal2-center-left>.swal2-popup{grid-row:2;align-self:center}div:where(.swal2-container).swal2-center>.swal2-popup{grid-column:2;grid-row:2;place-self:center center}div:where(.swal2-container).swal2-center-end>.swal2-popup,div:where(.swal2-container).swal2-center-right>.swal2-popup{grid-column:3;grid-row:2;place-self:center end}div:where(.swal2-container).swal2-bottom-start>.swal2-popup,div:where(.swal2-container).swal2-bottom-left>.swal2-popup{grid-column:1;grid-row:3;align-self:end}div:where(.swal2-container).swal2-bottom>.swal2-popup{grid-column:2;grid-row:3;place-self:end center}div:where(.swal2-container).swal2-bottom-end>.swal2-popup,div:where(.swal2-container).swal2-bottom-right>.swal2-popup{grid-column:3;grid-row:3;place-self:end end}div:where(.swal2-container).swal2-grow-row>.swal2-popup,div:where(.swal2-container).swal2-grow-fullscreen>.swal2-popup{grid-column:1/4;width:100%}div:where(.swal2-container).swal2-grow-column>.swal2-popup,div:where(.swal2-container).swal2-grow-fullscreen>.swal2-popup{grid-row:1/4;align-self:stretch}div:where(.swal2-container).swal2-no-transition{transition:none !important}div:where(.swal2-container)[popover]{width:auto;border:0}div:where(.swal2-container) div:where(.swal2-popup){display:none;position:relative;box-sizing:border-box;grid-template-columns:minmax(0, 100%);width:var(--swal2-width);max-width:100%;padding:var(--swal2-padding);border:var(--swal2-border);border-radius:var(--swal2-border-radius);background:var(--swal2-background);color:var(--swal2-color);font-family:inherit;font-size:1rem}div:where(.swal2-container) div:where(.swal2-popup):focus{outline:none}div:where(.swal2-container) div:where(.swal2-popup).swal2-loading{overflow-y:hidden}div:where(.swal2-container) div:where(.swal2-popup).swal2-draggable{cursor:grab}div:where(.swal2-container) div:where(.swal2-popup).swal2-draggable div:where(.swal2-icon){cursor:grab}div:where(.swal2-container) div:where(.swal2-popup).swal2-dragging{cursor:grabbing}div:where(.swal2-container) div:where(.swal2-popup).swal2-dragging div:where(.swal2-icon){cursor:grabbing}div:where(.swal2-container) h2:where(.swal2-title){position:relative;max-width:100%;margin:0;padding:var(--swal2-title-padding);color:inherit;font-size:1.875em;font-weight:600;text-align:center;text-transform:none;overflow-wrap:break-word;cursor:initial}div:where(.swal2-container) div:where(.swal2-actions){display:flex;z-index:1;box-sizing:border-box;flex-wrap:wrap;align-items:center;justify-content:var(--swal2-actions-justify-content);width:var(--swal2-actions-width);margin:var(--swal2-actions-margin);padding:var(--swal2-actions-padding);border-radius:var(--swal2-actions-border-radius);background:var(--swal2-actions-background)}div:where(.swal2-container) div:where(.swal2-loader){display:none;align-items:center;justify-content:center;width:2.2em;height:2.2em;margin:0 1.875em;animation:swal2-rotate-loading 1.5s linear 0s infinite normal;border-width:.25em;border-style:solid;border-radius:100%;border-color:#2778c4 rgba(0,0,0,0) #2778c4 rgba(0,0,0,0)}div:where(.swal2-container) button:where(.swal2-styled){margin:.3125em;padding:.625em 1.1em;transition:var(--swal2-action-button-transition);border:none;box-shadow:0 0 0 3px rgba(0,0,0,0);font-weight:500}div:where(.swal2-container) button:where(.swal2-styled):not([disabled]){cursor:pointer}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-confirm){border-radius:var(--swal2-confirm-button-border-radius);background:initial;background-color:var(--swal2-confirm-button-background-color);box-shadow:var(--swal2-confirm-button-box-shadow);color:var(--swal2-confirm-button-color);font-size:1em}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-confirm):hover{background-color:color-mix(in srgb, var(--swal2-confirm-button-background-color), var(--swal2-action-button-hover))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-confirm):active{background-color:color-mix(in srgb, var(--swal2-confirm-button-background-color), var(--swal2-action-button-active))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-deny){border-radius:var(--swal2-deny-button-border-radius);background:initial;background-color:var(--swal2-deny-button-background-color);box-shadow:var(--swal2-deny-button-box-shadow);color:var(--swal2-deny-button-color);font-size:1em}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-deny):hover{background-color:color-mix(in srgb, var(--swal2-deny-button-background-color), var(--swal2-action-button-hover))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-deny):active{background-color:color-mix(in srgb, var(--swal2-deny-button-background-color), var(--swal2-action-button-active))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-cancel){border-radius:var(--swal2-cancel-button-border-radius);background:initial;background-color:var(--swal2-cancel-button-background-color);box-shadow:var(--swal2-cancel-button-box-shadow);color:var(--swal2-cancel-button-color);font-size:1em}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-cancel):hover{background-color:color-mix(in srgb, var(--swal2-cancel-button-background-color), var(--swal2-action-button-hover))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-cancel):active{background-color:color-mix(in srgb, var(--swal2-cancel-button-background-color), var(--swal2-action-button-active))}div:where(.swal2-container) button:where(.swal2-styled):focus-visible{outline:none;box-shadow:var(--swal2-action-button-focus-box-shadow)}div:where(.swal2-container) button:where(.swal2-styled)[disabled]:not(.swal2-loading){opacity:.4}div:where(.swal2-container) button:where(.swal2-styled)::-moz-focus-inner{border:0}div:where(.swal2-container) div:where(.swal2-footer){margin:1em 0 0;padding:1em 1em 0;border-top:1px solid var(--swal2-footer-border-color);background:var(--swal2-footer-background);color:var(--swal2-footer-color);font-size:1em;text-align:center;cursor:initial}div:where(.swal2-container) .swal2-timer-progress-bar-container{position:absolute;right:0;bottom:0;left:0;grid-column:auto !important;overflow:hidden;border-bottom-right-radius:var(--swal2-border-radius);border-bottom-left-radius:var(--swal2-border-radius)}div:where(.swal2-container) div:where(.swal2-timer-progress-bar){width:100%;height:.25em;background:var(--swal2-timer-progress-bar-background)}div:where(.swal2-container) img:where(.swal2-image){max-width:100%;margin:2em auto 1em;cursor:initial}div:where(.swal2-container) button:where(.swal2-close){position:var(--swal2-close-button-position);inset:var(--swal2-close-button-inset);z-index:2;align-items:center;justify-content:center;width:1.2em;height:1.2em;margin-top:0;margin-right:0;margin-bottom:-1.2em;padding:0;overflow:hidden;transition:var(--swal2-close-button-transition);border:none;border-radius:var(--swal2-border-radius);outline:var(--swal2-close-button-outline);background:rgba(0,0,0,0);color:var(--swal2-close-button-color);font-family:monospace;font-size:var(--swal2-close-button-font-size);cursor:pointer;justify-self:end}div:where(.swal2-container) button:where(.swal2-close):hover{transform:var(--swal2-close-button-hover-transform);background:rgba(0,0,0,0);color:#f27474}div:where(.swal2-container) button:where(.swal2-close):focus-visible{outline:none;box-shadow:var(--swal2-close-button-focus-box-shadow)}div:where(.swal2-container) button:where(.swal2-close)::-moz-focus-inner{border:0}div:where(.swal2-container) div:where(.swal2-html-container){z-index:1;justify-content:center;margin:0;padding:var(--swal2-html-container-padding);overflow:auto;color:inherit;font-size:1.125em;font-weight:normal;line-height:normal;text-align:center;overflow-wrap:break-word;word-break:break-word;cursor:initial}div:where(.swal2-container) input:where(.swal2-input),div:where(.swal2-container) input:where(.swal2-file),div:where(.swal2-container) textarea:where(.swal2-textarea),div:where(.swal2-container) select:where(.swal2-select),div:where(.swal2-container) div:where(.swal2-radio),div:where(.swal2-container) label:where(.swal2-checkbox){margin:1em 2em 3px}div:where(.swal2-container) input:where(.swal2-input),div:where(.swal2-container) input:where(.swal2-file),div:where(.swal2-container) textarea:where(.swal2-textarea){box-sizing:border-box;width:auto;transition:var(--swal2-input-transition);border:var(--swal2-input-border);border-radius:var(--swal2-input-border-radius);background:var(--swal2-input-background);box-shadow:var(--swal2-input-box-shadow);color:inherit;font-size:1.125em}div:where(.swal2-container) input:where(.swal2-input).swal2-inputerror,div:where(.swal2-container) input:where(.swal2-file).swal2-inputerror,div:where(.swal2-container) textarea:where(.swal2-textarea).swal2-inputerror{border-color:#f27474 !important;box-shadow:0 0 2px #f27474 !important}div:where(.swal2-container) input:where(.swal2-input):hover,div:where(.swal2-container) input:where(.swal2-file):hover,div:where(.swal2-container) textarea:where(.swal2-textarea):hover{box-shadow:var(--swal2-input-hover-box-shadow)}div:where(.swal2-container) input:where(.swal2-input):focus,div:where(.swal2-container) input:where(.swal2-file):focus,div:where(.swal2-container) textarea:where(.swal2-textarea):focus{border:var(--swal2-input-focus-border);outline:none;box-shadow:var(--swal2-input-focus-box-shadow)}div:where(.swal2-container) input:where(.swal2-input)::placeholder,div:where(.swal2-container) input:where(.swal2-file)::placeholder,div:where(.swal2-container) textarea:where(.swal2-textarea)::placeholder{color:#ccc}div:where(.swal2-container) .swal2-range{margin:1em 2em 3px;background:var(--swal2-background)}div:where(.swal2-container) .swal2-range input{width:80%}div:where(.swal2-container) .swal2-range output{width:20%;color:inherit;font-weight:600;text-align:center}div:where(.swal2-container) .swal2-range input,div:where(.swal2-container) .swal2-range output{height:2.625em;padding:0;font-size:1.125em;line-height:2.625em}div:where(.swal2-container) .swal2-input{height:2.625em;padding:0 .75em}div:where(.swal2-container) .swal2-file{width:75%;margin-right:auto;margin-left:auto;background:var(--swal2-input-background);font-size:1.125em}div:where(.swal2-container) .swal2-textarea{height:6.75em;padding:.75em}div:where(.swal2-container) .swal2-select{min-width:50%;max-width:100%;padding:.375em .625em;background:var(--swal2-input-background);color:inherit;font-size:1.125em}div:where(.swal2-container) .swal2-radio,div:where(.swal2-container) .swal2-checkbox{align-items:center;justify-content:center;background:var(--swal2-background);color:inherit}div:where(.swal2-container) .swal2-radio label,div:where(.swal2-container) .swal2-checkbox label{margin:0 .6em;font-size:1.125em}div:where(.swal2-container) .swal2-radio input,div:where(.swal2-container) .swal2-checkbox input{flex-shrink:0;margin:0 .4em}div:where(.swal2-container) label:where(.swal2-input-label){display:flex;justify-content:center;margin:1em auto 0}div:where(.swal2-container) div:where(.swal2-validation-message){align-items:center;justify-content:center;margin:1em 0 0;padding:.625em;overflow:hidden;background:var(--swal2-validation-message-background);color:var(--swal2-validation-message-color);font-size:1em;font-weight:300}div:where(.swal2-container) div:where(.swal2-validation-message)::before{content:"!";display:inline-block;width:1.5em;min-width:1.5em;height:1.5em;margin:0 .625em;border-radius:50%;background-color:#f27474;color:#fff;font-weight:600;line-height:1.5em;text-align:center}div:where(.swal2-container) .swal2-progress-steps{flex-wrap:wrap;align-items:center;max-width:100%;margin:1.25em auto;padding:0;background:rgba(0,0,0,0);font-weight:600}div:where(.swal2-container) .swal2-progress-steps li{display:inline-block;position:relative}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step{z-index:20;flex-shrink:0;width:2em;height:2em;border-radius:2em;background:#2778c4;color:#fff;line-height:2em;text-align:center}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step.swal2-active-progress-step{background:#2778c4}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step.swal2-active-progress-step~.swal2-progress-step{background:var(--swal2-progress-step-background);color:#fff}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step.swal2-active-progress-step~.swal2-progress-step-line{background:var(--swal2-progress-step-background)}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step-line{z-index:10;flex-shrink:0;width:2.5em;height:.4em;margin:0 -1px;background:#2778c4}div:where(.swal2-icon){position:relative;box-sizing:content-box;justify-content:center;width:5em;height:5em;margin:2.5em auto .6em;zoom:var(--swal2-icon-zoom);border:.25em solid rgba(0,0,0,0);border-radius:50%;border-color:#000;font-family:inherit;line-height:5em;cursor:default;user-select:none}div:where(.swal2-icon) .swal2-icon-content{display:flex;align-items:center;font-size:3.75em}div:where(.swal2-icon).swal2-error{border-color:#f27474;color:#f27474}div:where(.swal2-icon).swal2-error .swal2-x-mark{position:relative;flex-grow:1}div:where(.swal2-icon).swal2-error [class^=swal2-x-mark-line]{display:block;position:absolute;top:2.3125em;width:2.9375em;height:.3125em;border-radius:.125em;background-color:#f27474}div:where(.swal2-icon).swal2-error [class^=swal2-x-mark-line][class$=left]{left:1.0625em;transform:rotate(45deg)}div:where(.swal2-icon).swal2-error [class^=swal2-x-mark-line][class$=right]{right:1em;transform:rotate(-45deg)}div:where(.swal2-icon).swal2-error.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-error.swal2-icon-show .swal2-x-mark{animation:swal2-animate-error-x-mark .5s}div:where(.swal2-icon).swal2-warning{border-color:#f8bb86;color:#f8bb86}div:where(.swal2-icon).swal2-warning.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-warning.swal2-icon-show .swal2-icon-content{animation:swal2-animate-i-mark .5s}div:where(.swal2-icon).swal2-info{border-color:#3fc3ee;color:#3fc3ee}div:where(.swal2-icon).swal2-info.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-info.swal2-icon-show .swal2-icon-content{animation:swal2-animate-i-mark .8s}div:where(.swal2-icon).swal2-question{border-color:#87adbd;color:#87adbd}div:where(.swal2-icon).swal2-question.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-question.swal2-icon-show .swal2-icon-content{animation:swal2-animate-question-mark .8s}div:where(.swal2-icon).swal2-success{border-color:#a5dc86;color:#a5dc86}div:where(.swal2-icon).swal2-success [class^=swal2-success-circular-line]{position:absolute;width:3.75em;height:7.5em;border-radius:50%}div:where(.swal2-icon).swal2-success [class^=swal2-success-circular-line][class$=left]{top:-0.4375em;left:-2.0635em;transform:rotate(-45deg);transform-origin:3.75em 3.75em;border-radius:7.5em 0 0 7.5em}div:where(.swal2-icon).swal2-success [class^=swal2-success-circular-line][class$=right]{top:-0.6875em;left:1.875em;transform:rotate(-45deg);transform-origin:0 3.75em;border-radius:0 7.5em 7.5em 0}div:where(.swal2-icon).swal2-success .swal2-success-ring{position:absolute;z-index:2;top:-0.25em;left:-0.25em;box-sizing:content-box;width:100%;height:100%;border:.25em solid rgba(165,220,134,.3);border-radius:50%}div:where(.swal2-icon).swal2-success .swal2-success-fix{position:absolute;z-index:1;top:.5em;left:1.625em;width:.4375em;height:5.625em;transform:rotate(-45deg)}div:where(.swal2-icon).swal2-success [class^=swal2-success-line]{display:block;position:absolute;z-index:2;height:.3125em;border-radius:.125em;background-color:#a5dc86}div:where(.swal2-icon).swal2-success [class^=swal2-success-line][class$=tip]{top:2.875em;left:.8125em;width:1.5625em;transform:rotate(45deg)}div:where(.swal2-icon).swal2-success [class^=swal2-success-line][class$=long]{top:2.375em;right:.5em;width:2.9375em;transform:rotate(-45deg)}div:where(.swal2-icon).swal2-success.swal2-icon-show .swal2-success-line-tip{animation:swal2-animate-success-line-tip .75s}div:where(.swal2-icon).swal2-success.swal2-icon-show .swal2-success-line-long{animation:swal2-animate-success-line-long .75s}div:where(.swal2-icon).swal2-success.swal2-icon-show .swal2-success-circular-line-right{animation:swal2-rotate-success-circular-line 4.25s ease-in}[class^=swal2]{-webkit-tap-highlight-color:rgba(0,0,0,0)}.swal2-show{animation:var(--swal2-show-animation)}.swal2-hide{animation:var(--swal2-hide-animation)}.swal2-noanimation{transition:none}.swal2-scrollbar-measure{position:absolute;top:-9999px;width:50px;height:50px;overflow:scroll}.swal2-rtl .swal2-close{margin-right:initial;margin-left:0}.swal2-rtl .swal2-timer-progress-bar{right:0;left:auto}.swal2-toast{box-sizing:border-box;grid-column:1/4 !important;grid-row:1/4 !important;grid-template-columns:min-content auto min-content;padding:1em;overflow-y:hidden;border:var(--swal2-toast-border);background:var(--swal2-background);box-shadow:var(--swal2-toast-box-shadow);pointer-events:auto}.swal2-toast>*{grid-column:2}.swal2-toast h2:where(.swal2-title){margin:.5em 1em;padding:0;font-size:1em;text-align:initial}.swal2-toast .swal2-loading{justify-content:center}.swal2-toast input:where(.swal2-input){height:2em;margin:.5em;font-size:1em}.swal2-toast .swal2-validation-message{font-size:1em}.swal2-toast div:where(.swal2-footer){margin:.5em 0 0;padding:.5em 0 0;font-size:.8em}.swal2-toast button:where(.swal2-close){grid-column:3/3;grid-row:1/99;align-self:center;width:.8em;height:.8em;margin:0;font-size:2em}.swal2-toast div:where(.swal2-html-container){margin:.5em 1em;padding:0;overflow:initial;font-size:1em;text-align:initial}.swal2-toast div:where(.swal2-html-container):empty{padding:0}.swal2-toast .swal2-loader{grid-column:1;grid-row:1/99;align-self:center;width:2em;height:2em;margin:.25em}.swal2-toast .swal2-icon{grid-column:1;grid-row:1/99;align-self:center;width:2em;min-width:2em;height:2em;margin:0 .5em 0 0}.swal2-toast .swal2-icon .swal2-icon-content{display:flex;align-items:center;font-size:1.8em;font-weight:bold}.swal2-toast .swal2-icon.swal2-success .swal2-success-ring{width:2em;height:2em}.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line]{top:.875em;width:1.375em}.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=left]{left:.3125em}.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=right]{right:.3125em}.swal2-toast div:where(.swal2-actions){justify-content:flex-start;height:auto;margin:0;margin-top:.5em;padding:0 .5em}.swal2-toast button:where(.swal2-styled){margin:.25em .5em;padding:.4em .6em;font-size:1em}.swal2-toast .swal2-success{border-color:#a5dc86}.swal2-toast .swal2-success [class^=swal2-success-circular-line]{position:absolute;width:1.6em;height:3em;border-radius:50%}.swal2-toast .swal2-success [class^=swal2-success-circular-line][class$=left]{top:-0.8em;left:-0.5em;transform:rotate(-45deg);transform-origin:2em 2em;border-radius:4em 0 0 4em}.swal2-toast .swal2-success [class^=swal2-success-circular-line][class$=right]{top:-0.25em;left:.9375em;transform-origin:0 1.5em;border-radius:0 4em 4em 0}.swal2-toast .swal2-success .swal2-success-ring{width:2em;height:2em}.swal2-toast .swal2-success .swal2-success-fix{top:0;left:.4375em;width:.4375em;height:2.6875em}.swal2-toast .swal2-success [class^=swal2-success-line]{height:.3125em}.swal2-toast .swal2-success [class^=swal2-success-line][class$=tip]{top:1.125em;left:.1875em;width:.75em}.swal2-toast .swal2-success [class^=swal2-success-line][class$=long]{top:.9375em;right:.1875em;width:1.375em}.swal2-toast .swal2-success.swal2-icon-show .swal2-success-line-tip{animation:swal2-toast-animate-success-line-tip .75s}.swal2-toast .swal2-success.swal2-icon-show .swal2-success-line-long{animation:swal2-toast-animate-success-line-long .75s}.swal2-toast.swal2-show{animation:var(--swal2-toast-show-animation)}.swal2-toast.swal2-hide{animation:var(--swal2-toast-hide-animation)}@keyframes swal2-show{0%{transform:translate3d(0, -50px, 0) scale(0.9);opacity:0}100%{transform:translate3d(0, 0, 0) scale(1);opacity:1}}@keyframes swal2-hide{0%{transform:translate3d(0, 0, 0) scale(1);opacity:1}100%{transform:translate3d(0, -50px, 0) scale(0.9);opacity:0}}@keyframes swal2-animate-success-line-tip{0%{top:1.1875em;left:.0625em;width:0}54%{top:1.0625em;left:.125em;width:0}70%{top:2.1875em;left:-0.375em;width:3.125em}84%{top:3em;left:1.3125em;width:1.0625em}100%{top:2.8125em;left:.8125em;width:1.5625em}}@keyframes swal2-animate-success-line-long{0%{top:3.375em;right:2.875em;width:0}65%{top:3.375em;right:2.875em;width:0}84%{top:2.1875em;right:0;width:3.4375em}100%{top:2.375em;right:.5em;width:2.9375em}}@keyframes swal2-rotate-success-circular-line{0%{transform:rotate(-45deg)}5%{transform:rotate(-45deg)}12%{transform:rotate(-405deg)}100%{transform:rotate(-405deg)}}@keyframes swal2-animate-error-x-mark{0%{margin-top:1.625em;transform:scale(0.4);opacity:0}50%{margin-top:1.625em;transform:scale(0.4);opacity:0}80%{margin-top:-0.375em;transform:scale(1.15)}100%{margin-top:0;transform:scale(1);opacity:1}}@keyframes swal2-animate-error-icon{0%{transform:rotateX(100deg);opacity:0}100%{transform:rotateX(0deg);opacity:1}}@keyframes swal2-rotate-loading{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes swal2-animate-question-mark{0%{transform:rotateY(-360deg)}100%{transform:rotateY(0)}}@keyframes swal2-animate-i-mark{0%{transform:rotateZ(45deg);opacity:0}25%{transform:rotateZ(-25deg);opacity:.4}50%{transform:rotateZ(15deg);opacity:.8}75%{transform:rotateZ(-5deg);opacity:1}100%{transform:rotateX(0);opacity:1}}@keyframes swal2-toast-show{0%{transform:translateY(-0.625em) rotateZ(2deg)}33%{transform:translateY(0) rotateZ(-2deg)}66%{transform:translateY(0.3125em) rotateZ(2deg)}100%{transform:translateY(0) rotateZ(0deg)}}@keyframes swal2-toast-hide{100%{transform:rotateZ(1deg);opacity:0}}@keyframes swal2-toast-animate-success-line-tip{0%{top:.5625em;left:.0625em;width:0}54%{top:.125em;left:.125em;width:0}70%{top:.625em;left:-0.25em;width:1.625em}84%{top:1.0625em;left:.75em;width:.5em}100%{top:1.125em;left:.1875em;width:.75em}}@keyframes swal2-toast-animate-success-line-long{0%{top:1.625em;right:1.375em;width:0}65%{top:1.25em;right:.9375em;width:0}84%{top:.9375em;right:0;width:1.125em}100%{top:.9375em;right:.1875em;width:1.375em}}</style>
+    <script src="./ACE App - Web Admin_files/web.js.download"></script>
+
+    <!--[if lt IE 8]>
+        <div style=' clear: both; text-align:center; position: relative;'>
+            <a href="http://windows.microsoft.com/en-US/internet-explorer/products/ie/home?ocid=ie6_countdown_bannercode">
+            <img src="http://storage.ie6countdown.com/assets/100/images/banners/warning_bar_0000_us.jpg" border="0" height="42" width="820" alt="You are using an outdated browser. For a faster, safer browsing experience, upgrade for free today." />
+            </a>
+        </div>
+        <![endif]-->
+    <!--[if lt IE 9]>
+            <script type="text/javascript" src="js/html5.js"></script>
+            <link rel="stylesheet" type="text/css" media="screen" href="css/ie.css">
+        <![endif]-->
+
+    <style>
+        .wrapper .code-box {display: none;}
+        .more{border:1px solid #444;display:inline-block;padding:10px 15px;box-sizing:border-box;color:#fff;background:#0b57a5;border-radius:20px;font-size:13px;}
+        .header{height:70px;background-image:linear-gradient(to right, #0b57a5, #0aafdd);}
+        .header img{width:70px;float:left;}
+        .header h1{float:right;margin-top:15px;font-size:25px;color:#fff;padding-right:10px;}
+        .header a{float:right;margin-top:25px;font-size:16px;color:#fff;padding-left:10px;border-left:3px solid #fff;}
+        .container{width:90%;}
+        .control{margin-top:10px;overflow:hidden;}
+        .inv-itm{display:none;}
+        #itm1{display:table-row;}
+    </style>
+    
+</head>
+<body style="background:#e7e7e8;position:relative;height:auto;min-height:100vh;">
+
+<div class="loader" style="display: none;">
+    <img src="./ACE App - Web Admin_files/quiz-loader.gif" alt="">
+    <p>Please Wait...</p>
+</div>
+
+<div class="blocker">
+    <div class="header">
+        <div class="container">
+        <img src="./ACE App - Web Admin_files/exam-logo.jpg" alt="">
+        </div>
+    </div>
+    <h1 style="font-size:30px;text-align:center;margin:100px 20px 0 20px;line-height:30px;">Minimum screen width is 800px</h1>
+    <p style="text-align:center;margin:10px 20px 0 20px;">Please use your browser in fullscreen mode.</p>
+  </div>
+
+<div class="header">
+    <div class="container">
+        <img src="./ACE App - Web Admin_files/exam-logo.jpg" alt="" onclick="window.location=&#39;https://akshayaapp.com/webadmin&#39;">
+        <a href="https://akshayaapp.com/webuser_logout">Logout</a>
+        <a style="margin-right:10px;" href="https://akshayaapp.com/biodata">Biodata</a>
+        <a style="margin-right:10px;" href="https://akshayaapp.com/nameslip">Nameslip</a>
+        <a style="margin-right:10px;" href="https://akshayaapp.com/web_paper_token">Token</a>
+        <a style="border:0;margin-right:10px;" href="https://akshayaapp.com/webadmin">Dashboard</a>
+        <!-- <h1 style="cursor:pointer;" onclick="window.location='https://akshayaapp.com/webadmin'">Dashboard</h1> -->
+    </div>
+</div><style>
+    .invoice {width: 100%;overflow: hidden;margin: auto;}
+    .invoice .inv-body{background: none;}
+    .forms{width:100%;}
+    .forms li{width:16.666%;float:left;height:auto;min-height:370px;}
+    .forms li .li-content{padding:10px;border:1px solid #bdb9b9;box-sizing:border-box;text-align:center;transition:all 0.3s;border-radius:8px;cursor:pointer;}
+    .forms li .li-content:hover{transition:all 0.3s;box-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);}
+    .forms li .img{padding:10px;box-sizing:border-box;}
+    .forms li img{width:100%;height:auto;}
+    .inv-header{overflow:hidden;}
+    .inv-header h1{float:left;margin-top:8px;}
+    .search-file{float:right;width:400px;}
+    .search-file input{margin:0;float:left;width:calc(100% - 75px);}
+    .search-file button{float:left;height:39px;line-height:20px;width:70px;margin-left:5px;}
+
+    .slideup{position:fixed;top:70px;left:0;bottom:0;width:100%;z-index:9;display:block;background:rgba(47, 44, 44, 0.84);overflow-y:scroll;padding-bottom:45px;display:none;}
+    .slideup .container{width:90%;padding-top:25px;}
+    .slideup-body{background:#fff;padding:0px;box-sizing:border-box;border-radius:10px;margin:0 auto 20px auto;width:50%;}
+    .slideup-title{margin-bottom:0px;overflow:hidden;display:flex;align-items:center;padding:5px 10px;}
+    .slideup-title p{width:90%;float:left;}
+    .slideup-title a{width:10%;float:right;background:red;color:#fff;text-align:center;padding:5px;box-sizing:border-box;border-radius:15px;display:grid;}
+    .slideup .slideup-options{padding:10px;width:100%;float:left;box-sizing:border-box;}
+    .slideup .slideup-options a{color:#fff;padding:5px 13px;box-sizing:border-box;border-radius:15px;font-size:12px;}
+    .slideup .slideup-content{padding:10px;box-sizing:border-box;}
+    .slideup .slideup-content h3{font-size:18px;margin-bottom:10px;color:#09690a;}
+    .slideup .slideup-content p{font-size:14px;line-height:22px;color:#043e1e;}
+    .slideup .slideup-footer{padding:10px;box-sizing:border-box;border-top:2px solid #ddd;text-align:center;}
+</style>
+<div class="wrapper">
+  <div class="invoice">
+    <div class="inv-header">
+      <h1 style="font-size:20px;">Application Forms</h1>
+      <div class="search-file">
+        <input type="search" id="search" placeholder="Search forms">
+        <button class="btn">Search</button>
+      </div>
+    </div>
+    <div class="inv-body main-menu" style="border:0;border-radius:0 0 10px 10px;">
+      <ul class="forms">
+                                    <li onclick="openForm(&#39;67&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">PMNRF FORM</p>
+                            <p class="description" data-description="പ്രധാന മന്ത്രിയുടെ ദുരിതാശ്വാസ നിധിയിൽ നിന്നും ധന സഹായം ലാഭക്കുന്നതിനുള്ള അപേക്ഷ ഫോം " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പ്രധാന മന്ത്രിയുടെ ദുരിതാശ്വാസ നിധി�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;66&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">CMDRF FORM</p>
+                            <p class="description" data-description="CMDRF Application form" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">CMDRF Application form</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;65&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">SSLC SAY APPLICATION</p>
+                            <p class="description" data-description="SSLC പരീക്ഷയിൽ ഉന്നത വിദ്യാഭ്യാസത്തിന് അർഹത നേടാത്തവർക്ക് പരീക്ഷ വീണ്ടും എഴുതാനുള്ള അപേക്ഷ ഫോം " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">SSLC പരീക്ഷയിൽ ഉന്നത വിദ്യാഭ്യാസത്തിന്</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;64&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">STUDY KIT FORM</p>
+                            <p class="description" data-description="മോട്ടോർ തൊഴിലാളി ക്ഷേമനിധി അംഗങ്ങളുടെ മക്കൾക്ക് പഠന കിറ്റിന് വേണ്ടിയുള്ള ഫോറം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">മോട്ടോർ തൊഴിലാളി ക്ഷേമനിധി അംഗങ്ങളു�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;63&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">NORKA PENSION LIFE CERTIF</p>
+                            <p class="description" data-description="പ്രവാസി ക്ഷേമനിധി പെൻഷൻ ഗുണഭോക്താക്കൾ സമർപ്പിക്കേണ്ട ലൈഫ് സർട്ടിഫിക്കറ്റ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പ്രവാസി ക്ഷേമനിധി പെൻഷൻ ഗുണഭോക്താക്�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;62&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">NORKA PENSION LIFE CERTIF</p>
+                            <p class="description" data-description="പ്രവാസി ക്ഷേമനിധി പെൻഷൻ ഗുണഭോക്താക്കൾ സമർപ്പിക്കേണ്ട ലൈഫ് സർട്ടിഫിക്കറ്റ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പ്രവാസി ക്ഷേമനിധി പെൻഷൻ ഗുണഭോക്താക്�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;61&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">AGE CERTIFICATE FOR PERSO</p>
+                            <p class="description" data-description="പ്രായം തെളിയിക്കുന്നതിന് മറ്റ് രേഖകൾ ഇല്ലാത്ത വ്യക്തികൾക്ക് ചില അപേക്ഷകളുടെ കൂടെ പ്രായം തെളിയിക്കുന്ന രേഖയായി സമർപ്പിക്കാൻ പറ്റുന്ന മെഡിക്കൽ സർട്ടിഫിക്കറ്റ് ഫോം, രജിസ്‌ട്രേഡ് മെഡിക്കൽ പ്രാക്ടീഷണർ അറ്റസ്റ്റ് ചെയ്യേണ്ടതാണ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പ്രായം തെളിയിക്കുന്നതിന് മറ്റ് രേഖക�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;60&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">STHREE SURAKSHA AGE CERTI</p>
+                            <p class="description" data-description="സ്ത്രീസുരക്ഷാ പദ്ധതിയിൽ ജനന തിയ്യതി തെളിയിക്കുന്ന രേഖയായി ഡോക്ടർ നൽകുന്ന സർട്ടിഫിക്കറ്റിനോടൊപ്പം സമർപ്പിക്കേണ്ട സത്യവാങ്മൂലം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">സ്ത്രീസുരക്ഷാ പദ്ധതിയിൽ ജനന തിയ്യതി </p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;59&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">NON-REMARRIAGE CERTIFICAT</p>
+                            <p class="description" data-description="വിധവ പെൻഷൻ, 50 വയസ് കഴിഞ്ഞ അവിവാഹിത പെൻഷൻ എന്നിവ വാങ്ങി വരുന്ന 60 വയസ് പൂർത്തിയാകാത്തവർ പഞ്ചായത്തിൽ/മുനിസിപ്പാലിറ്റിയിൽ സമർപ്പിക്കേണ്ട സർട്ടിഫിക്കറ്റ് " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">വിധവ പെൻഷൻ, 50 വയസ് കഴിഞ്ഞ അവിവാഹിത പെൻ�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;58&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">PET SHIP REGISTRATION FOR</p>
+                            <p class="description" data-description="പെറ്റ് ഷോപ്പുകൾക്ക്  മൃഗസംരക്ഷണ വകുപ്പ് നൽകുന്ന രെജിസ്ട്രേഷൻ സർട്ടിഫിക്കറ്റിന്/ലൈസൻസിന്   വേണ്ടിയുള്ള അപേക്ഷ ഫോം " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പെറ്റ് ഷോപ്പുകൾക്ക്  മൃഗസംരക്ഷണ വകുപ</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;57&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">DOG BREEDER REGISTRATION </p>
+                            <p class="description" data-description="ഡോഗ് ബ്രീഡർമാർക്ക് മൃഗസംരക്ഷണ വകുപ്പ് നൽകുന്ന രെജിസ്ട്രേഷൻ സർട്ടിഫിക്കറ്റിന്  വേണ്ടിയുള്ള അപേക്ഷ ഫോം " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">ഡോഗ് ബ്രീഡർമാർക്ക് മൃഗസംരക്ഷണ വകുപ്�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;56&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">AADHAAR GAZETTED FORM</p>
+                            <p class="description" data-description="ആധാർ എൻറോൾമെന്റിൽ അഡ്രസ്സ് പ്രൂഫ് ആയി ഉപയോഗിക്കാവുന്ന സ്റ്റാൻഡേർഡ് ഫോർമാറ്റ് എഡിറ്റ് ചെയ്യാവുന്ന ഫയൽ" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">ആധാർ എൻറോൾമെന്റിൽ അഡ്രസ്സ് പ്രൂഫ് ആയ</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;53&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">MANDAHASAM MEDICAL CERTIF</p>
+                            <p class="description" data-description="മന്ദഹാസം പദ്ധതിക്ക് വേണ്ടിയുള്ള മെഡിക്കൽ സർട്ടിഫിക്കറ്റ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">മന്ദഹാസം പദ്ധതിക്ക് വേണ്ടിയുള്ള മെഡ�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;52&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">BHINNASHESHI SMARTPHONE S</p>
+                            <p class="description" data-description="സംസാര - ശ്രവണ പരിമിതർക്ക് പഞ്ചായത്ത്/മുനിസിപ്പാലിറ്റി/കോര്‍പ്പറേഷന്‍ സെക്രട്ടറി നൽകേണ്ട 8 വര്‍ഷത്തിനുള്ളില്‍ സ്മാര്‍ട്ട്‌ ഫോണ്‍ അപേക്ഷിക്കുന്ന വ്യക്തിക്ക് നല്‍കിയിട്ടില്ല എന്ന് തെളിയിക്കുന്ന സാക്ഷ്യ പത്രം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">സംസാര - ശ്രവണ പരിമിതർക്ക് പഞ്ചായത്ത്/�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;51&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">BHINNASHESHI SMARTPHONE S</p>
+                            <p class="description" data-description="കാഴ്ച പരിമിതർക്ക് പഞ്ചായത്ത്/മുനിസിപ്പാലിറ്റി/കോര്‍പ്പറേഷന്‍ സെക്രട്ടറി നൽകേണ്ട 8 വര്‍ഷത്തിനുള്ളില്‍ സ്മാര്‍ട്ട്‌ ഫോണ്‍ അപേക്ഷിക്കുന്ന വ്യക്തിക്ക് നല്‍കിയിട്ടില്ല എന്ന് തെളിയിക്കുന്ന സാക്ഷ്യ പത്രം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">കാഴ്ച പരിമിതർക്ക് പഞ്ചായത്ത്/മുനിസി�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;50&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">MANGALYA SAMUNNATHI</p>
+                            <p class="description" data-description="മംഗല്യ സമുന്നത സ്കീമിലേക്ക് അപേക്ഷ സമർപ്പിക്കാനുള്ള അപേക്ഷ ഫോറം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">മംഗല്യ സമുന്നത സ്കീമിലേക്ക് അപേക്ഷ സ</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;49&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">SNEHAPOORVAM SCHOLARSHIP</p>
+                            <p class="description" data-description="മാതാപിതാക്കൾ രണ്ടുപേരും അല്ലെങ്കിൽ ഒരാൾ മരണപ്പെട്ട് സാമ്പത്തിക പരാധീനത അനുഭവിക്കുന്ന കുടുംബങ്ങളിലെ കുട്ടികൾക്ക് സ്വഭവനങ്ങളിൽ/ബന്ധുഭവനങ്ങളിൽ താമസിച്ച് പഠിക്കുന്നതിന് പ്രതിമാസം ധനസഹായം നൽകുന്ന പദ്ധതിയായ സ്നേഹപൂർവ്വം സ്‌കോളർഷിപ്പിനുള്ള അപേക്ഷാ ഫോറം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">മാതാപിതാക്കൾ രണ്ടുപേരും അല്ലെങ്കിൽ �</p>
+                        </div>
+                    </div>               
+                </li>
+                                                                    <li onclick="openForm(&#39;47&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">KSRTC CANCER PATIENT MEDI</p>
+                            <p class="description" data-description="ക്യാൻസർ രോഗികൾക്ക് KSRTC ബസ്സിൽ യാത്ര ചെയ്യുന്നതിനുള്ള ഫ്രീ പാസ്സിന് അപേക്ഷിക്കാൻ ആവശ്യമായ മെഡിക്കൽ സർട്ടിഫിക്കറ്റ് " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">ക്യാൻസർ രോഗികൾക്ക് KSRTC ബസ്സിൽ യാത്ര ചെ</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;45&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">BPL MERIT SCHOLARSHIP FOR</p>
+                            <p class="description" data-description="പ്ലസ് വൺ വിദ്യാർത്ഥികൾക്കുള്ള ബിപിഎൽ മെറിറ്റ് സ്കോളർഷിപ്പ് അപേക്ഷ ഫോറം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പ്ലസ് വൺ വിദ്യാർത്ഥികൾക്കുള്ള ബിപിഎ�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;44&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">MEDICAL FITNESS FOR FOOD </p>
+                            <p class="description" data-description="ഫുഡ് സേഫ്റ്റി രജിസ്ട്രേഷന് ആവശ്യമായ മെഡിക്കൽ സർട്ടിഫിക്കറ്റ് " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">ഫുഡ് സേഫ്റ്റി രജിസ്ട്രേഷന് ആവശ്യമായ </p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;43&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">FOOD HOLDERS MEDICAL CERT</p>
+                            <p class="description" data-description="ഭക്ഷണം നിർമിക്കുകയും കൈകാര്യം ചെയ്യുകയും ചെയ്യുന്ന തൊഴിലാളികൾക്ക് വേണ്ടിയുള്ള മെഡിക്കൽ സർട്ടിഫിക്കറ്റ്. മുനിസിപ്പൽ ലൈസൻസിനും മറ്റും ഇത് ആവശ്യമാണ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">ഭക്ഷണം നിർമിക്കുകയും കൈകാര്യം ചെയ്യ�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;42&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">SAMUNNATHI E YATHRA</p>
+                            <p class="description" data-description="സംസ്ഥാനത്തെ മുന്നോക്ക സമുദായങ്ങളിലെ സാമ്പത്തികമായി പിന്നോക്കം നിൽക്കുന്ന സ്ത്രീകൾക്ക് തൊഴിൽ ആവശ്യത്തിനായി ഇലക്ട്രിക് ഓട്ടോ വാങ്ങുന്നതിനുള്ള മൂലധന സബ്‌സിഡി ലഭിക്കുന്നത്തിനുള്ള അപേക്ഷ ഫോറം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">സംസ്ഥാനത്തെ മുന്നോക്ക സമുദായങ്ങളില�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;41&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">BHAVANA SAMUNNATHI FORM</p>
+                            <p class="description" data-description="മുന്നാക്ക സമുദായ ക്ഷേമ കോർപ്പറേഷന്റെ ഭവന പുനരുദ്ധാരണ പദ്ധതിയായ ഭവന സമുന്നതിയിലേക്ക് അപേക്ഷിക്കുന്നതിനുള്ള ഫോം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">മുന്നാക്ക സമുദായ ക്ഷേമ കോർപ്പറേഷന്റ�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;40&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">MARRIAGE DECLARATION FROM</p>
+                            <p class="description" data-description="വീടുകളിലും മറ്റും വച്ച് നടക്കുന്ന വിവാഹ ചടങ്ങുകൾ രജിസ്റ്റർ ചെയ്യുമ്പോൾ സപ്പോർട്ടിങ് ഡോക്യുമെന്റ് ആയി ആവശ്യമായി വരുന്ന ഫോം 2 മാതൃക" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">വീടുകളിലും മറ്റും വച്ച് നടക്കുന്ന വി</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;39&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">MICHA BHOOMI APPLICATION</p>
+                            <p class="description" data-description="മിച്ചഭൂമി ലഭിക്കുന്നതിനുള്ള അപേക്ഷ ഫോറം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">മിച്ചഭൂമി ലഭിക്കുന്നതിനുള്ള അപേക്ഷ �</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;38&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">CANCER AND TB MEDICAL CER</p>
+                            <p class="description" data-description="കാൻസർ/ക്ഷയ രോഗികൾക്കുള്ള മെഡിക്കൽ സർട്ടിഫിക്കറ്റ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">കാൻസർ/ക്ഷയ രോഗികൾക്കുള്ള മെഡിക്കൽ സർ</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;37&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">CANCER TREATMENT ASSISTAN</p>
+                            <p class="description" data-description="ക്യാൻസർ രോഗികൾക്കുള്ള ചികിത്സാ സഹായത്തിനുള്ള അപേക്ഷാ ഫോറം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">ക്യാൻസർ രോഗികൾക്കുള്ള ചികിത്സാ സഹായ�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;36&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">MARGA DHEEPAM SCHOLARSHIP</p>
+                            <p class="description" data-description="  ഒന്നാം ക്ലാസ് മുതൽ എട്ടാം ക്ലാസ് വരെയുള്ള ന്യൂനപക്ഷ വിഭാഗങ്ങളിലെ വിദ്യാർത്ഥികൾക്ക് മാര്‍ഗദീപം സ്കോളര്‍ഷിപ്പ്‌ ലഭിക്കാന്‍ സ്കൂളുകളില്‍ നല്‍കേണ്ട അപേക്ഷാ ഫോറം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">  ഒന്നാം ക്ലാസ് മുതൽ എട്ടാം ക്ലാസ് വരെ</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;35&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">PRAVASI RESIDENT CERTIFIC</p>
+                            <p class="description" data-description="പ്രവാസി തിരിച്ച വന്നതിന് ശേഷം നാട്ടിൽ സ്ഥിര താമസം ആണെന്ന് തെളിയിക്കുന്ന സർട്ടിഫിക്കറ്റ് " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പ്രവാസി തിരിച്ച വന്നതിന് ശേഷം നാട്ടി</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;34&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">PMNRPF FORM</p>
+                            <p class="description" data-description="പ്രധാനമന്ത്രിയുടെ ദുരിതാശ്വാസ നിധിയിൽ നിന്നും ചികിത്സ സഹായം ലഭിക്കുന്നതിന് എം.പി മുൻപാകെ സമർപ്പിക്കേണ്ട അപേക്ഷ ഫോം " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പ്രധാനമന്ത്രിയുടെ ദുരിതാശ്വാസ നിധി�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;33&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">LEGAL HEIR CERTIFICATE AP</p>
+                            <p class="description" data-description="പിന്തുടർച്ചാവകാശ സർട്ടിഫിക്കറ്റ് ലഭിക്കുന്നതിന് വില്ലേജ് ഓഫീസിൽ നൽകേണ്ട അപേക്ഷ " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പിന്തുടർച്ചാവകാശ സർട്ടിഫിക്കറ്റ് ല�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;32&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">NON POSSESSION OF LAND</p>
+                            <p class="description" data-description="സർക്കാർ പദ്ധതിയിൽ നിന്നും ഭാവന നിർമാണ സഹായം ലഭിക്കുമ്പോൾ സ്വന്തമായി കൈവശ ഭൂമി ഇല്ല എന്ന സർട്ടിഫിക്കറ്റിന് വേണ്ടി വില്ലേജ് ഓഫിസിൽ സമർപ്പിക്കേണ്ട അപേക്ഷ " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">സർക്കാർ പദ്ധതിയിൽ നിന്നും ഭാവന നിർമാ</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;31&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">PADANA MURI APPLICATION</p>
+                            <p class="description" data-description="പട്ടികജാതി വിഭാഗം വിദ്യാർത്ഥികൾക്ക് സംസ്ഥാന സർക്കാർ നിർമിച്ചു നൽകുന്ന പഠനമുറികൾക്ക് വേണ്ടിയുള്ള അപേക്ഷ ഫോറം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പട്ടികജാതി വിഭാഗം വിദ്യാർത്ഥികൾക്ക�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;30&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">MEDICAL CERTIFICATE FOR C</p>
+                            <p class="description" data-description="കണ്ടക്ടർ ലൈസൻസിനുള്ള അപേക്ഷയുടെ കൂടെ സമർപ്പിക്കേണ്ട മെഡിക്കൽ സർട്ടിഫിക്കറ്റ് ഫോർമാറ്റ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">കണ്ടക്ടർ ലൈസൻസിനുള്ള അപേക്ഷയുടെ കൂട�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;29&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">LIFE CERTIFICATE</p>
+                            <p class="description" data-description="ഒരു വ്യക്തി ജീവിച്ചിരിപ്പുണ്ട് എന്ന് സാക്ഷ്യപ്പെടുത്തുന്നതിനുള്ള സർട്ടിഫിക്കറ്റ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">ഒരു വ്യക്തി ജീവിച്ചിരിപ്പുണ്ട് എന്ന�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;27&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">SAMOOHYA SURAKHSA KSHEMAN</p>
+                            <p class="description" data-description="സാമൂഹ്യ സുരക്ഷാ പെൻഷൻ മസ്റ്ററിങ് ഓൺലൈൻ ചെയ്യുന്നത് പരാജയപ്പെട്ടാൽ നൽകേണ്ട മാനുവൽ സർട്ടിഫിക്കറ്റ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">സാമൂഹ്യ സുരക്ഷാ പെൻഷൻ മസ്റ്ററിങ് ഓൺല</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;26&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">MUSTERING FAILED CERTIFIC</p>
+                            <p class="description" data-description="പെൻഷൻ ഗുണഭോക്താവിന്റെ മസ്റ്ററിങ് ഫൈൽഡ് ആകുകയും സർട്ടിഫിക്കറ്റ് ലഭിക്കാതെ വരികയും ചെയുന്ന സാഹചര്യത്തിൽ നൽകേണ്ട സർട്ടിഫിക്കറ്റ് " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പെൻഷൻ ഗുണഭോക്താവിന്റെ മസ്റ്ററിങ് ഫൈ�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;25&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">RC RENEWAL AFFIDAVIT</p>
+                            <p class="description" data-description="15 വർഷം കഴിഞ്ഞ വാഹനങ്ങളുടെ ആർ.സി പുതുക്കുന്നതിനുള്ള സത്യവാങ്മൂലം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">15 വർഷം കഴിഞ്ഞ വാഹനങ്ങളുടെ ആർ.സി പുതുക�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;24&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">AYYANKALI SCHOLARSHIP</p>
+                            <p class="description" data-description="പട്ടികജാതി വികസന വകുപ്പ് നടപ്പിലാക്കുന്ന അയ്യങ്കാളി മെമ്മോറിയൽ ടാലൻ്റ് സെർച്ച് ആൻ്റ് ഡെവലപ്പ്മെന്റ് സ്കീമിലേക്ക് അപേക്ഷ ക്ഷണിച്ചു. 2025-26 വർഷം സർക്കാർ/എയ്‌ഡഡ് സ്‌കൂളുകളിൽ അഞ്ച്, എട്ട് ക്ലാസ്സുകളിൽ പഠിക്കുന്നവരും നാല്, ഏഴ് ക്ലാസ്സുകളിൽ എല്ലാ വിഷയങ്ങളിലും എ ഗ്രേഡ് ലഭിച്ചവരുമായ പട്ടികജാതി വിദ്യാർത്ഥികൾക്ക് അപേക്ഷിക്കാം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പട്ടികജാതി വികസന വകുപ്പ് നടപ്പിലാക്�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;23&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">IBMICHI BAVA SCHEME</p>
+                            <p class="description" data-description="ന്യൂനപക്ഷ മതവിഭാഗങ്ങളായ മുസ്ലിം, ക്രിസ്ത്യൻ, ബുദ്ധ, ജൈന, സിഖ്, പാഴ്സി എന്നിവയിൽ പെട്ട വിധവ/വിവാഹ ബന്ധം വേർപെടുത്തിയ/ഉപേക്ഷിക്കപ്പെട്ട സ്ത്രീകൾക്ക് ന്യൂനപക്ഷ ക്ഷേമ വകുപ്പ് നൽകുന്ന  ഇമ്പിച്ചി ബാവ ഭവന പുനരുദ്ധാരണ പദ്ധതിയുടെ അപേക്ഷ ഫോം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">ന്യൂനപക്ഷ മതവിഭാഗങ്ങളായ മുസ്ലിം, ക്ര</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;22&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">ASWASA KIRANAM LIFE CERTI</p>
+                            <p class="description" data-description="കേരള സാമൂഹ്യ സുരക്ഷാ മിഷൻ നടപ്പിലാക്കിവരുന്ന ആശ്വാസകിരണം പദ്ധതിയുടെ ധനസഹായം ലഭിച്ചുവരുന്ന ഗുണഭോക്താക്കൾക്ക് തുടർധനസഹായം ലഭിക്കുന്നതിനായി ഗുണഭോക്താക്കള്‍ (പരിചാരകർ) സമർപ്പിക്കേണ്ട ലൈഫ് സര്‍ട്ടിഫിക്കറ്റ് " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">കേരള സാമൂഹ്യ സുരക്ഷാ മിഷൻ നടപ്പിലാക്</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;21&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">UIDAI STANDARD FORM</p>
+                            <p class="description" data-description="ആധാർ കാർഡിൽ അഡ്രസ്സ് ചേർക്കുന്നതിനോ, അഡ്രസ്സ് തിരുത്തുന്നതിനോ ഉള്ള രേഖയായി ഉപയോഗിക്കാവുന്ന UIDAI നൽകിയിട്ടുള്ള ഫോം " style="margin-top:5px;font-size:13px;font-weight:400;color:#000">ആധാർ കാർഡിൽ അഡ്രസ്സ് ചേർക്കുന്നതിനോ,</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;20&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">EWS CERTIFICATE</p>
+                            <p class="description" data-description="സാമ്പത്തികമായി പിന്നോക്കം നിൽക്കുന്ന മുന്നോക്ക സമുദായങ്ങളിൽ പെട്ടവർക്ക്  നൽകുന്ന സർട്ടിഫിക്കറ്റ് ആണ് ഇത്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">സാമ്പത്തികമായി പിന്നോക്കം നിൽക്കുന�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;19&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">PLUS ONE DATA COLLECTION </p>
+                            <p class="description" data-description="പ്ലസ് വൺ പ്രവേശനത്തിന് വേണ്ടിയുള്ള ഡാറ്റ കളക്ഷൻ ഫോം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പ്ലസ് വൺ പ്രവേശനത്തിന് വേണ്ടിയുള്ള ഡ</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;18&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">PSC CORRECTION FORM</p>
+                            <p class="description" data-description="PSC പ്രൊഫൈലിൽ വന്നിട്ടുള്ള തെറ്റുകൾ തിരുത്തുന്നതിന് PSC ഓഫിസിൽ സമർപ്പിക്കേണ്ട അപേക്ഷ ഫോം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">PSC പ്രൊഫൈലിൽ വന്നിട്ടുള്ള തെറ്റുകൾ തി</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;17&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">LATE BIRTH AND DEATH REG </p>
+                            <p class="description" data-description="താമസിച്ചുള്ള ജനന-മരണ രജിസ്ട്രേഷനുകൾ സാധൂകരിക്കുന്നതിനായി ഗസറ്റഡ് ഓഫീസർ അറ്റസ്റ്റ് ചെയ്ത് സമർപ്പിക്കേണ്ട സത്യവാങ്മൂലം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">താമസിച്ചുള്ള ജനന-മരണ രജിസ്ട്രേഷനുകൾ </p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;16&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">MARRIAGE DECLARATION FROM</p>
+                            <p class="description" data-description="വീടുകളിലും മറ്റും വച്ച് നടക്കുന്ന വിവാഹ ചടങ്ങുകൾ രജിസ്റ്റർ ചെയ്യുമ്പോൾ സപ്പോർട്ടിങ് ഡോക്യുമെന്റ് ആയി ആവശ്യമായി വരുന്ന ഫോം 2 മാതൃക" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">വീടുകളിലും മറ്റും വച്ച് നടക്കുന്ന വി</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;15&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">SSLC DUPLICATE CERTIFICAT</p>
+                            <p class="description" data-description="SSLC സർട്ടിഫിക്കറ്റ് നഷ്ടപ്പെടുന്ന പക്ഷം ഡ്യൂപ്ലിക്കേറ്റിന് അപേക്ഷിക്കാനുള്ള അപേക്ഷ ഫോറം. SSLC പഠിച്ച് പരീക്ഷ എഴുതിയ സ്കൂളിലെ പ്രധാന അധ്യാപകന്റെ സാക്ഷ്യപത്രം കൂടി ഇതിൽ ലഭ്യമാണ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">SSLC സർട്ടിഫിക്കറ്റ് നഷ്ടപ്പെടുന്ന പക്</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;14&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">EXTRACT OF ADMISSION REGI</p>
+                            <p class="description" data-description="സ്‌കൂൾ അഡ്മിഷൻ എക്സ്ട്രാക്ട് പ്രിന്റ് ചെയ്ത് ലഭിക്കുന്നതിനുള്ള ഫോർമാറ്റ്. ഇത് മുദ്രപത്രത്തിൽ പ്രിന്റ് ചെയ്ത് ഉപയോഗിക്കേണ്ടതാണ്." style="margin-top:5px;font-size:13px;font-weight:400;color:#000">സ്‌കൂൾ അഡ്മിഷൻ എക്സ്ട്രാക്ട് പ്രിന്�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;13&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">AGE CERTIFICATE FOR PERSO</p>
+                            <p class="description" data-description="പ്രായം തെളിയിക്കുന്നതിന് മറ്റ് രേഖകൾ ഇല്ലാത്ത വ്യക്തികൾക്ക് ചില അപേക്ഷകളുടെ കൂടെ പ്രായം തെളിയിക്കുന്ന രേഖയായി സമർപ്പിക്കാൻ പറ്റുന്ന മെഡിക്കൽ സർട്ടിഫിക്കറ്റ് ഫോം, രജിസ്‌ട്രേഡ് മെഡിക്കൽ പ്രാക്ടീഷണർ അറ്റസ്റ്റ് ചെയ്യേണ്ടതാണ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പ്രായം തെളിയിക്കുന്നതിന് മറ്റ് രേഖക�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;12&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">PCC DECLARATION FOR JOB</p>
+                            <p class="description" data-description="ജോലി ആവശ്യവുമായി ബന്ധപ്പെട്ട് പോലീസ് ക്ലിയറൻസ് സർട്ടിഫിക്കറ്റ് ലഭിക്കുന്നതിന് സമർപ്പിക്കേണ്ട അപേക്ഷ" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">ജോലി ആവശ്യവുമായി ബന്ധപ്പെട്ട് പോലീസ�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;11&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">MEDICAL FITNESS CERTIFICA</p>
+                            <p class="description" data-description="വിവിധ ആവശ്യങ്ങൾക്കായുള്ള മെഡിക്കൽ ഫിറ്റ്നസ് സർട്ടിഫിക്കറ്റ് ഫോം. ഈ ഫോം ഒരു യോഗ്യതയുള്ള മെഡിക്കൽ പ്രാക്ടീഷണർ തന്നെ അറ്റസ്റ്റ് ചെയ്യേണ്ടതാണ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">വിവിധ ആവശ്യങ്ങൾക്കായുള്ള മെഡിക്കൽ ഫ�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;10&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">PRAVASI PENSION AFFIDAVIT</p>
+                            <p class="description" data-description="പ്രവ്സി ക്ഷേമനിധി പെൻഷന് അപേക്ഷിക്കുമ്പോൾ നോമിനി അല്ലെങ്കിൽ അവകാശി നൽകേണ്ട സത്യവാങ്മൂലം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പ്രവ്സി ക്ഷേമനിധി പെൻഷന് അപേക്ഷിക്ക�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;9&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">PASSPORT MARRIAGE AFFIDAV</p>
+                            <p class="description" data-description="കല്യാണ ശേഷം ഭാര്യയുടെ പാസ്സ്പോർട്ടിലെ പേരിന്റെ കൂടെ ഭർത്താവിന്റെ പേര് സർ നെയിം ആയി ചേർക്കുന്നതിനുള്ള സത്യവാങ്മൂലം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">കല്യാണ ശേഷം ഭാര്യയുടെ പാസ്സ്പോർട്ടി�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;8&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">PAN ANNEXURE A</p>
+                            <p class="description" data-description="പാൻകാർഡുമായി ബന്ധപ്പെട്ട സേവനങ്ങൾക്ക് തിരിച്ചറിയൽ രേഖയായി ഉപയോഗിക്കാവുന്ന ഫോം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">പാൻകാർഡുമായി ബന്ധപ്പെട്ട സേവനങ്ങൾക�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;7&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">MEDICAL CERTIFICATE FORMA</p>
+                            <p class="description" data-description="ചികിത്സാ ധനസഹായത്തിന് വേണ്ടി ഹാജരാക്കേണ്ട മെഡിക്കൽ സർട്ടിഫിക്കറ്റ് ഫോർമാറ്റ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">ചികിത്സാ ധനസഹായത്തിന് വേണ്ടി ഹാജരാക�</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;6&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">LOCATION SKETCH APPLICATI</p>
+                            <p class="description" data-description="വില്ലജ് ഓഫിസിൽ നിന്നും ലൊക്കേഷൻ സ്കെച്ച് ലഭിക്കുന്നതിനുള്ള അപേക്ഷ ഫോം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">വില്ലജ് ഓഫിസിൽ നിന്നും ലൊക്കേഷൻ സ്കെ</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;5&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">NON CREAMY LAYER AFFIDAVI</p>
+                            <p class="description" data-description="നോൺ ക്രീമിലെയർ  സർട്ടിഫിക്കറ്റിന് വേണ്ടി സമർപ്പിക്കേണ്ട സത്യവാങ്മൂലം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">നോൺ ക്രീമിലെയർ  സർട്ടിഫിക്കറ്റിന് വേ</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;4&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/docx.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">One and the Same</p>
+                            <p class="description" data-description="ഗസറ്റ് ഓഫീസർ അറ്റസ്റ്റ് ചെയ്ത് നൽകേണ്ട വൺ ആൻഡ് സെയിം സർട്ടിഫിക്കറ്റ് ഫോർമാറ്റ്" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">ഗസറ്റ് ഓഫീസർ അറ്റസ്റ്റ് ചെയ്ത് നൽകേണ</p>
+                        </div>
+                    </div>               
+                </li>
+                                                <li onclick="openForm(&#39;2&#39;)">
+                    <div class="li-content">
+                                                <div class="img">
+                            <img src="./ACE App - Web Admin_files/pdf.png" alt="">
+                        </div>
+                        <div class="content">
+                            <p style="color:#000;font-weight:800" class="title">INCOME AFFIDAVIT</p>
+                            <p class="description" data-description="വരുമാന സർട്ടിഫിക്കറ്റിന് വേണ്ടി വില്ലേജ് ഓഫീസർക്ക് മുൻപാകെ ഹാജരാക്കേണ്ട സത്യവാങ്മൂലം" style="margin-top:5px;font-size:13px;font-weight:400;color:#000">വരുമാന സർട്ടിഫിക്കറ്റിന് വേണ്ടി വില�</p>
+                        </div>
+                    </div>               
+                </li>
+                                              </ul>
+    </div>
+  </div>
+</div>
+
+
+<div class="slideup" id="poster-slide" style="display: none;">
+    <div class="container">
+        <div class="slideup-body animate__animated animate__bounceInUp">
+            <div class="slideup-title">
+                <p>PRAVASI RESIDENT CERTIFICATE</p>
+                <a href="javascript:void()" class="poster-close" onclick="return slideDown(&#39;poster-slide&#39;)"><i class="fa fa-times"></i></a>
+            </div>
+            <div class="slideup-image" style="border:2px solid #fff;boxsizing:border-box;"><iframe src="./ACE App - Web Admin_files/gview.html" style="width:100%; height:500px;" frameborder="0"></iframe></div>
+            <div class="slideup-options" style="border-bottom:1px solid #ccc;float:none;text-align:center;">
+                <a style="float:none;background:#077c07;position:relative;z-index:5;" href="javascript:void()" class="poster-download" id="download-poster" onclick="downloadForm(&quot;PRAVASI_RESIDENT_CERTIFICATE.pdf&quot;)">
+                    <i class="fa fa-arrow-circle-down" style="line-height:17px;font-size:15px;margin-right:3px;"></i> Download Form
+                </a>
+            </div>
+            <div class="slideup-content" style="border-top:1px solid #ccc;overflow:hidden">
+                <p>പ്രവാസി തിരിച്ച വന്നതിന് ശേഷം നാട്ടിൽ സ്ഥിര താമസം ആണെന്ന് തെളിയിക്കുന്ന സർട്ടിഫിക്കറ്റ് </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    const openForm = id =>{
+        showLoader()
+        if( id === '' ){
+            Swal.fire('Error','Invalid form ID', 'error')
+            hideLoader()
+            return
+        }
+        $.ajax({
+            type : 'post',
+            data : 'posterid=' + id + '&action=getdata',
+            url : 'https://akshayaapp.com/getformdata',
+            dataType :'json',
+            success : function (res){
+                hideLoader()
+                if( res.status === 'success' ){
+                    $('.slideup-title p').html(res.title)
+                    $('#download-poster').attr('onclick', 'downloadForm("' + res.filename + '")')
+                    $('.slideup-content p').html(res.description)
+                    fileExtension = res.filename.split('.').pop().toLowerCase()
+                    // fileUrl = 'https://akshayaapp.com/uploads/forms/' + res.filename
+                    fileUrl = 'https://akshayaapp.com/uploads/forms/' + res.filename;
+                    switch(fileExtension) {
+                        case 'pdf':
+                        case 'doc':
+                        case 'docx':
+                        case 'xls':
+                        case 'xlsx':
+                            previewHtml = `<iframe src="https://docs.google.com/gview?url=${fileUrl}&embedded=true" style="width:100%; height:500px;" frameborder="0"></iframe>`;
+                            break;
+                        case 'jpg':
+                        case 'jpeg':
+                        case 'png':
+                        case 'gif':
+                            previewHtml = `<img src="${fileUrl}" width="100%" alt="Image Preview" />`;
+                            break;
+                        default:
+                            previewHtml = `<p>Preview not available for this file type.</p>`;
+                            break;
+                    }
+                    $('.slideup-image').html(previewHtml)
+                    slideUp('poster-slide')
+                }
+            },
+            error : function (e) {
+                hideLoader()
+                Swal.fire('Error','Unable to connect server.', 'error')
+            }
+        })
+    }   
+    
+
+    const downloadForm = (filename = '') => {
+        if( filename === '' ){
+            Swal.fire('Error','Invalid form ID', 'error')
+            return
+        }
+        window.open('https://akshayaapp.com/downloadwebforms/' + filename, '_blank');
+    }
+
+    const slideUp = id =>{
+        $('#' + id).css('display', 'block')
+    }
+    const slideDown = id =>{
+        $('#' + id).css('display', 'none')
+    }
+</script>
+
+<script>
+  $('#search').on('keyup', function() {
+    var value = $(this).val().toLowerCase();
+    $('.forms li').filter(function() {
+      var title = $(this).find('.title').text().toLowerCase();
+      var description = $(this).find('.description').data('description').toLowerCase();
+      $(this).toggle(title.includes(value) || description.includes(value));
+    // alert(title)
+    });
+  });
+</script>
+
+
+
+</body></html>

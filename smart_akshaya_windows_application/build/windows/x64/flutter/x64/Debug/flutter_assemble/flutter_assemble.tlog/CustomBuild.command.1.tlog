@@ -1,0 +1,28 @@
+^C:\CLIENT_PROJECTS\SMART_AKSHAYA\SMART_AKSHAYA_WINDOWS_APPLICATION\BUILD\WINDOWS\X64\CMAKEFILES\CD370666EE1278DF4D581B74535F73EF\FLUTTER_WINDOWS.DLL.RULE
+setlocal
+"C:\Program Files\Microsoft Visual Studio\18\Insiders\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E env FLUTTER_ROOT=C:\flutter PROJECT_DIR=C:\client_projects\smart_akshaya\smart_akshaya_windows_application FLUTTER_ROOT=C:\flutter FLUTTER_EPHEMERAL_DIR=C:\client_projects\smart_akshaya\smart_akshaya_windows_application\windows\flutter\ephemeral PROJECT_DIR=C:\client_projects\smart_akshaya\smart_akshaya_windows_application FLUTTER_TARGET=C:\client_projects\smart_akshaya\smart_akshaya_windows_application\lib\main.dart DART_DEFINES=RkxVVFRFUl9WRVJTSU9OPTMuNDEuOQ==,RkxVVFRFUl9DSEFOTkVMPXN0YWJsZQ==,RkxVVFRFUl9HSVRfVVJMPWh0dHBzOi8vZ2l0aHViLmNvbS9mbHV0dGVyL2ZsdXR0ZXIuZ2l0,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049MDBiMGM5MWYwNg==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049NDJkM2Q3NWE1Ng==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My4xMS41 DART_OBFUSCATION=false TRACK_WIDGET_CREATION=true TREE_SHAKE_ICONS=false PACKAGE_CONFIG=C:\client_projects\smart_akshaya\smart_akshaya_windows_application\.dart_tool\package_config.json C:/flutter/packages/flutter_tools/bin/tool_backend.bat windows-x64 Debug
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\CLIENT_PROJECTS\SMART_AKSHAYA\SMART_AKSHAYA_WINDOWS_APPLICATION\BUILD\WINDOWS\X64\CMAKEFILES\47C232632B93EFFE7976D4786C3DA90C\FLUTTER_ASSEMBLE.RULE
+setlocal
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\CLIENT_PROJECTS\SMART_AKSHAYA\SMART_AKSHAYA_WINDOWS_APPLICATION\WINDOWS\FLUTTER\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\Microsoft Visual Studio\18\Insiders\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/client_projects/smart_akshaya/smart_akshaya_windows_application/windows -BC:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64 --check-stamp-file C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/flutter/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

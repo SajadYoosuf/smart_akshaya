@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/pdfium-download"
+		},
+		{
+			"file" : "C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/745ef9a6f70df50ce594977834f5db33/pdfium-download.rule"
+		},
+		{
+			"file" : "C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/33892ed3c799a71cbc2268f7cb5fc0c4/pdfium-download-complete.rule"
+		},
+		{
+			"file" : "C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/806ad0a17fd178097068bfa697ac6431/pdfium-download-build.rule"
+		},
+		{
+			"file" : "C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/806ad0a17fd178097068bfa697ac6431/pdfium-download-configure.rule"
+		},
+		{
+			"file" : "C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/806ad0a17fd178097068bfa697ac6431/pdfium-download-download.rule"
+		},
+		{
+			"file" : "C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/806ad0a17fd178097068bfa697ac6431/pdfium-download-install.rule"
+		},
+		{
+			"file" : "C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/806ad0a17fd178097068bfa697ac6431/pdfium-download-mkdir.rule"
+		},
+		{
+			"file" : "C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/806ad0a17fd178097068bfa697ac6431/pdfium-download-patch.rule"
+		},
+		{
+			"file" : "C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/806ad0a17fd178097068bfa697ac6431/pdfium-download-test.rule"
+		},
+		{
+			"file" : "C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/806ad0a17fd178097068bfa697ac6431/pdfium-download-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"pdfium-download"
+		],
+		"name" : "pdfium-download"
+	}
+}
