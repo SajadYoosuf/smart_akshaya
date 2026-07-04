@@ -67,7 +67,7 @@ export async function getAccessToken() {
 
   try {
     // 1. Fetch credentials JSON from the public directory
-    const credsResponse =   JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+    const credsResponse =   JSON.parse(import.meta.env.VITE_GOOGLE_SERVICE_ACCOUNT);
     if (!credsResponse.ok) {
       throw new Error("Could not load Google service account credentials. Make sure public/google_sheets_credentials.json is present.");
     }
