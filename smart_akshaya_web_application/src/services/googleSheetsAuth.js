@@ -66,12 +66,17 @@ export async function getAccessToken() {
   }
 
   try {
-    // 1. Fetch credentials JSON from the public directory
-    const credsResponse =   JSON.parse(import.meta.env.VITE_GOOGLE_SERVICE_ACCOUNT);
-    if (!credsResponse.ok) {
-      throw new Error("Could not load Google service account credentials. Make sure public/google_sheets_credentials.json is present.");
+    let credentials;
+    if (import.meta.env.VITE_GOOGLE_SERVICE_ACCOUNT && import.meta.env.VITE_GOOGLE_SERVICE_ACCOUNT !== 'undefined') {
+      credentials = JSON.parse(import.meta.env.VITE_GOOGLE_SERVICE_ACCOUNT);
+    } else {
+      // 1. Fetch credentials JSON from the public directory
+      const credsResponse = await fetch("/google_sheets_credentials.json");
+      if (!credsResponse.ok) {
+        throw new Error("Could not load Google service account credentials. Make sure public/google_sheets_credentials.json is present.");
+      }
+      credentials = await credsResponse.json();
     }
-    const credentials = await credsResponse.json();
 
     const privateKey = credentials.private_key;
     const clientEmail = credentials.client_email;
