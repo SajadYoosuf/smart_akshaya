@@ -11,6 +11,7 @@ class GoogleSheetsConfig {
   static const String customerSheetName = 'Customer Details';
   static const String expenseSheetName = 'Expense Management';
   static const String serviceEntrySheetName = 'Service Entries';
+  static const String savedBillsSheetName = 'Saved Bills';
 
   // Cache duration to avoid unnecessary Google API calls (to prevent "unnecessary use" / exceeding quotas)
   static const Duration cacheDuration = Duration(minutes: 15);

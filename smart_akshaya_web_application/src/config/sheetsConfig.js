@@ -6,6 +6,7 @@ export const SHEETS_CONFIG = {
   customerSheetName: 'Customer Details',
   expenseSheetName: 'Expense Management',
   serviceEntrySheetName: 'Service Entries',
+  savedBillsSheetName: 'Saved Bills',
   walletSheetName: 'Wallets',
 };
 

@@ -87,12 +87,55 @@ class _SslcCalculatorScreenState extends State<SslcCalculatorScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('SSLC Percentage Calculator',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-          const SizedBox(height: 4),
-          const Text('Calculate SSLC result percentage and grade.',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-          const SizedBox(height: 24),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFA855F7), Color(0xFF7E22CE)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFA855F7).withOpacity(0.3),
+                  blurRadius: 25,
+                  offset: const Offset(0, 10),
+                )
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'SSLC Grade Calculator',
+                        style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Accurate percentage and point calculation based on Kerala SSLC grades',
+                        style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.8)),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Icon(Icons.calculate, color: Colors.white, size: 36),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
 
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,9 +145,11 @@ class _SslcCalculatorScreenState extends State<SslcCalculatorScreen> {
                 width: 340,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 4))
+                  ],
                 ),
                 padding: const EdgeInsets.all(24),
                 child: Column(
@@ -187,8 +232,11 @@ class _SslcCalculatorScreenState extends State<SslcCalculatorScreen> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 4))
+                      ],
                     ),
                     padding: const EdgeInsets.all(28),
                     child: Column(

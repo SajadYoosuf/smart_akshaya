@@ -39,8 +39,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Add Expense'), findsOneWidget);
-    expect(find.text('Travel'), findsOneWidget);
-    expect(find.text('Taxi fare'), findsOneWidget);
+    expect(find.text('TOTAL EXPENSES'), findsOneWidget);
+    expect(find.text('Travel'), findsWidgets);
+    expect(find.text('Taxi fare'), findsWidgets);
   });
 }

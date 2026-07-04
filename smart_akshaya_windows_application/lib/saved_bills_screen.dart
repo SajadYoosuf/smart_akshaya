@@ -32,44 +32,70 @@ class _SavedBillsScreenState extends State<SavedBillsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(
-                          Icons.layers_rounded,
-                          color: Color(0xFF3B82F6),
-                          size: 28,
-                        ),
-                        SizedBox(width: 12),
-                        Text(
-                          'Saved Bills',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0EA5E9),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Pending bill drafts saved to database — pick up right where you left off',
-                      style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
-                    ),
-                  ],
+            // Hero Banner
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              ],
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF4F46E5).withOpacity(0.3),
+                    blurRadius: 25,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Saved Bills',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Pending & completed bills tracking',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.receipt_long_rounded,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 32),
 
             // Stats Cards
-            Row(
+            Wrap(
+              spacing: 24,
+              runSpacing: 24,
               children: [
                 _buildStatCard(
                   'CUSTOMERS',
@@ -78,7 +104,6 @@ class _SavedBillsScreenState extends State<SavedBillsScreen> {
                   const Color(0xFFE0F2FE),
                   const Color(0xFF0284C7),
                 ),
-                const SizedBox(width: 24),
                 _buildStatCard(
                   'TOTAL ITEMS',
                   provider.totalItems.toString(),
@@ -86,7 +111,6 @@ class _SavedBillsScreenState extends State<SavedBillsScreen> {
                   const Color(0xFFE0F2FE),
                   const Color(0xFF0284C7),
                 ),
-                const SizedBox(width: 24),
                 _buildStatCard(
                   'OLDEST SAVE',
                   provider.oldestSaveText,
@@ -98,81 +122,129 @@ class _SavedBillsScreenState extends State<SavedBillsScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Search Bar & Filter Info
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  width: 350,
-                  height: 44,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.search_rounded,
-                        color: Color(0xFF94A3B8),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          onChanged: provider.setSearchQuery,
-                          decoration: const InputDecoration(
-                            hintText: 'Search by name, mobile or ID...',
-                            hintStyle: TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 14,
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.only(bottom: 12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Text(
-                    '${provider.bills.length} customer${provider.bills.length == 1 ? '' : 's'}',
-                    style: const TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
+            // Filter Info (Search handled inside table header below)
 
-            // List
+            // Table Container
             Expanded(
-              child: provider.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : provider.bills.isEmpty
-                      ? const Center(
-                          child: Text('No saved bills found.', style: TextStyle(color: Color(0xFF64748B))))
-                      : ListView.builder(
-                          itemCount: provider.bills.length,
-                          itemBuilder: (context, index) {
-                            final bill = provider.bills[index];
-                            return _buildBillCard(bill);
-                          },
-                        ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F172A).withOpacity(0.03),
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Table Header / Actions
+                    Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Saved Bills Tracking',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Container(
+                                width: 300,
+                                height: 40,
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 18),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: TextField(
+                                        onChanged: provider.setSearchQuery,
+                                        decoration: const InputDecoration(
+                                          hintText: 'Search by customer, mobile...',
+                                          hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                                          border: InputBorder.none,
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  '${provider.bills.length} bills',
+                                  style: const TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                    // Table Column Headers
+                    Container(
+                      color: const Color(0xFFF8FAFC),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      child: Row(
+                        children: const [
+                          Expanded(flex: 3, child: Text('CUSTOMER', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5))),
+                          Expanded(flex: 2, child: Text('SERVICES', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5))),
+                          Expanded(flex: 2, child: Text('DATE & TIME', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5))),
+                          Expanded(flex: 1, child: Center(child: Text('QTY', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5)))),
+                          Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: Text('TOTAL', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5)))),
+                          Expanded(flex: 1, child: Align(alignment: Alignment.centerRight, child: Text('ACTION', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5)))),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                    // List
+                    Expanded(
+                      child: provider.isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : provider.bills.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No saved bills found.',
+                                style: TextStyle(color: Color(0xFF64748B)),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: provider.bills.length,
+                              itemBuilder: (context, index) {
+                                final bill = provider.bills[index];
+                                return _buildBillCard(bill);
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -187,56 +259,57 @@ class _SavedBillsScreenState extends State<SavedBillsScreen> {
     Color iconBgColor,
     Color iconColor,
   ) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0F172A).withOpacity(0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+    return Container(
+      width: 280,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: iconBgColor,
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: iconBgColor,
-                borderRadius: BorderRadius.circular(12),
+            child: Icon(icon, color: iconColor, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
               ),
-              child: Icon(icon, color: iconColor, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Color(0xFF0F172A),
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -254,189 +327,181 @@ class _SavedBillsScreenState extends State<SavedBillsScreen> {
     String createdStr = 'Created ${bill.date}, ${bill.time}';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
       ),
       child: Row(
         children: [
-          // Avatar
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: Color(0xFF3B82F6),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              initial,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+          // Customer
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF3B82F6),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bill.customerName.isEmpty
+                            ? (bill.mobile.isEmpty ? 'Unknown Customer' : bill.mobile)
+                            : bill.customerName,
+                        style: const TextStyle(
+                          color: Color(0xFF1E293B),
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.phone_rounded, size: 12, color: Color(0xFF64748B)),
+                          const SizedBox(width: 4),
+                          Text(
+                            bill.mobile.isEmpty ? '-' : bill.mobile,
+                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 20),
-          // Details
+          // Services
           Expanded(
+            flex: 2,
+            child: Row(
+              children: [
+                const Icon(Icons.description_rounded, size: 14, color: Color(0xFF64748B)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    bill.services.isEmpty ? 'No services' : bill.services,
+                    style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Date & Time
+          Expanded(
+            flex: 2,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  bill.customerName.isEmpty
-                      ? (bill.mobile.isEmpty ? 'Unknown Customer' : bill.mobile)
-                      : bill.customerName,
-                  style: const TextStyle(
-                    color: Color(0xFF0F172A),
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.phone_rounded,
-                      size: 14,
-                      color: Color(0xFF94A3B8),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      bill.mobile.isEmpty ? '-' : bill.mobile,
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 12,
-                      ),
-                    ),
-
-                    const SizedBox(width: 12),
-                    const Icon(
-                      Icons.description_rounded,
-                      size: 14,
-                      color: Color(0xFF94A3B8),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      bill.services.isEmpty ? 'No services' : bill.services,
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 12,
-                      ),
-                    ),
-
-                    const SizedBox(width: 12),
-                    const Icon(
-                      Icons.calendar_today_rounded,
-                      size: 14,
-                      color: Color(0xFF94A3B8),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      createdStr,
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
+                Text(bill.date, style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14)),
+                Text(bill.time, style: const TextStyle(color: Color(0xFF64748B), fontSize: 13)),
               ],
             ),
           ),
-          // Right Pills
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE0F2FE),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.list_rounded,
-                  size: 14,
-                  color: Color(0xFF0284C7),
+          // Quantity
+          Expanded(
+            flex: 1,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  '${bill.quantity} item${bill.quantity == 1 ? '' : 's'}',
+                child: Text(
+                  '${bill.quantity}',
                   style: const TextStyle(
-                    color: Color(0xFF0284C7),
-                    fontSize: 12,
+                    color: Color(0xFF475569),
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3E8FF),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '₹${bill.totalAmount.toStringAsFixed(2)}',
-              style: const TextStyle(
-                color: Color(0xFF9333EA),
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          PopupMenuButton<String>(
-            icon: const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: Color(0xFF94A3B8),
+          // Total Amount
+          Expanded(
+            flex: 1,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '₹${bill.totalAmount.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-            onSelected: (String result) {
-              if (result == 'reprint') {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Reprinting PDF bill... (Implementation coming soon)')),
-                );
-              } else if (result == 'bill') {
-                context.read<NewEntryProvider>().loadFromSavedBill(bill);
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MainNavigationScreen(initialIndex: 1)),
-                );
-              }
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'reprint',
-                child: Row(
-                  children: [
-                    Icon(Icons.print_rounded, size: 18, color: Color(0xFF64748B)),
-                    SizedBox(width: 8),
-                    Text('Reprint'),
-                  ],
+          ),
+          // Action (Settle/Bill)
+          Expanded(
+            flex: 1,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: PopupMenuButton<String>(
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  color: Color(0xFF94A3B8),
                 ),
+                onSelected: (String result) {
+                  if (result == 'reprint') {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Reprinting PDF bill...')),
+                    );
+                  } else if (result == 'bill') {
+                    context.read<NewEntryProvider>().loadFromSavedBill(bill);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MainNavigationScreen(initialIndex: 1),
+                      ),
+                    );
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'reprint',
+                    child: Row(
+                      children: [
+                        Icon(Icons.print_rounded, size: 18, color: Color(0xFF64748B)),
+                        SizedBox(width: 8),
+                        Text('Reprint'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'bill',
+                    child: Row(
+                      children: [
+                        Icon(Icons.receipt_long_rounded, size: 18, color: Color(0xFF64748B)),
+                        SizedBox(width: 8),
+                        Text('Bill'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const PopupMenuItem<String>(
-                value: 'bill',
-                child: Row(
-                  children: [
-                    Icon(Icons.receipt_long_rounded, size: 18, color: Color(0xFF64748B)),
-                    SizedBox(width: 8),
-                    Text('Bill'),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),

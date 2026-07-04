@@ -1,5 +1,1 @@
-enum EntryStatus {
-  saved,
-  completed,
-  billed,
-}
+enum EntryStatus { pending, completed, billed }

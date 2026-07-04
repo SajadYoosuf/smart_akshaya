@@ -300,10 +300,35 @@ export default function PscPhotoCreator({ onViewChange }) {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)', animation: 'fadeIn 0.2s ease', padding: '24px' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)', animation: 'fadeIn 0.2s ease', padding: '40px 24px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
       
+      {/* Hero Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, #14B8A6 0%, #0F766E 100%)',
+        borderRadius: '24px',
+        padding: '32px 40px',
+        color: 'white',
+        boxShadow: '0 10px 25px rgba(20, 184, 166, 0.3)',
+        marginBottom: '32px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div>
+          <div style={{ fontSize: '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>
+            PSC Photo Creator
+          </div>
+          <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '16px', marginTop: '8px' }}>
+            Kerala PSC standard photo & signature tools
+          </div>
+        </div>
+        <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '20px' }}>
+          <Sparkles size={36} color="white" />
+        </div>
+      </div>
+
       {/* Dynamic Tab Selector */}
-      <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '24px' }}>
         <div style={{ display: 'inline-flex', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', padding: '4px', borderRadius: '8px' }}>
           <button 
             onClick={() => setActiveTab(TAB_PHOTO)}
@@ -444,15 +469,15 @@ export default function PscPhotoCreator({ onViewChange }) {
 
           {/* RIGHT SIDE: Photo creation form */}
           <div 
+            className="glow-card"
             style={{
-              backgroundColor: 'var(--bg-surface)',
-              borderRadius: '16px',
-              border: '1.5px solid var(--border)',
+              backgroundColor: '#FFFFFF',
+              borderRadius: '20px',
+              border: '1px solid #E2E8F0',
               padding: '24px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              boxShadow: 'var(--shadow-lg)'
             }}
           >
             <div>
@@ -518,11 +543,10 @@ export default function PscPhotoCreator({ onViewChange }) {
                     Name of Applicant
                   </label>
                   <input 
-                    className="form-input" 
                     placeholder="Enter full name" 
                     value={photoName} 
                     onChange={(e) => setPhotoName(e.target.value)} 
-                    style={{ height: '38px', fontSize: '13px' }}
+                    style={{ boxSizing: 'border-box', padding: '12px 16px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', fontWeight: '500', color: '#1E293B', width: '100%', outline: 'none' }}
                   />
                 </div>
 
@@ -531,11 +555,10 @@ export default function PscPhotoCreator({ onViewChange }) {
                     Photo Taken Date
                   </label>
                   <input 
-                    className="form-input" 
                     placeholder="DD-MM-YYYY" 
                     value={photoDate} 
                     onChange={(e) => setPhotoDate(e.target.value)} 
-                    style={{ height: '38px', fontSize: '13px' }}
+                    style={{ boxSizing: 'border-box', padding: '12px 16px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', fontWeight: '500', color: '#1E293B', width: '100%', outline: 'none' }}
                   />
                 </div>
               </div>

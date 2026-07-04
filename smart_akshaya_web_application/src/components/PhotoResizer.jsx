@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Download, RefreshCw, ZoomIn, Move, RotateCw, X, Check, ArrowLeft, Image as ImageIcon, Sliders, ChevronRight, HelpCircle, Link as LinkIcon, RotateCcw } from 'lucide-react';
+import { Upload, Download, RefreshCw, ZoomIn, Move, RotateCw, X, Check, ArrowLeft, Image as ImageIcon, Sliders, ChevronRight, HelpCircle, Link as LinkIcon, RotateCcw, Crop } from 'lucide-react';
 
 export default function PhotoResizer({ onEditorStateChange }) {
   const [activeTab, setActiveTab] = useState('photo'); // 'photo' or 'signature'
@@ -395,57 +395,47 @@ export default function PhotoResizer({ onEditorStateChange }) {
   const isSizeOk = estimatedSize >= parseFloat(minSize) && estimatedSize <= parseFloat(maxSize);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+    <div className="resizer-page">
 
       {/* ─── SCREEN 1: UPLOAD STATE ─────────────────────────────────────── */}
       {!sourceImage && (
-        <div style={{ flex: 1, padding: '40px 24px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+        <div className="resizer-upload-screen">
 
-          {/* Header & Back Link */}
+          {/* Hero Banner */}
+          <div className="resizer-hero">
+            <div className="resizer-hero-text">
+              <div className="resizer-hero-title">
+                Crop & Resize
+              </div>
+              <div className="resizer-hero-subtitle">
+                High-precision photo and signature editing tool
+              </div>
+            </div>
+            <div className="resizer-hero-icon">
+              <Crop size={36} color="white" />
+            </div>
+          </div>
 
-
-          {/* Two-Column Layout */}
+          {/* Two-Column Layout — stacks on mobile via CSS */}
           <div className="resizer-upload-grid">
 
             {/* Left Card: Upload Zone */}
-            <div
-              style={{
-                backgroundColor: 'var(--bg-surface)',
-                borderRadius: '16px',
-                border: '1.5px solid var(--border)',
-                padding: '32px',
-                boxShadow: 'var(--shadow-xl)'
-              }}
-            >
-              <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '8px' }}>
+            <div className="resizer-upload-card glow-card">
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1E293B', marginBottom: '8px' }}>
                 Upload your photo or signature
               </h2>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-                High-precision cropping starts with a clear source. Select or drag your file below.
+              <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '24px' }}>
+                Select or drag your file below to begin.
               </p>
 
               {/* Dashed dropzone container */}
               <div
+                className={`resizer-dropzone${dragActive ? ' resizer-dropzone--active' : ''}`}
                 onDragEnter={handleDrag}
                 onDragOver={handleDrag}
                 onDragLeave={handleDrag}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current.click()}
-                style={{
-                  width: '100%',
-                  height: '240px',
-                  border: `2px dashed ${dragActive ? 'var(--primary)' : 'var(--border)'}`,
-                  borderRadius: '12px',
-                  backgroundColor: dragActive ? 'var(--primary-glow)' : 'var(--bg-base)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  gap: '16px',
-                  transition: 'all 0.2s ease',
-                  marginBottom: '24px'
-                }}
               >
                 <div
                   style={{
@@ -472,7 +462,7 @@ export default function PhotoResizer({ onEditorStateChange }) {
               </div>
 
               {/* Upload Action Row */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="resizer-upload-actions">
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--bg-base)', border: '1px solid var(--border)', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)' }}>
                     📄 JPG
@@ -483,21 +473,9 @@ export default function PhotoResizer({ onEditorStateChange }) {
                 </div>
 
                 <button
+                  type="button"
+                  className="resizer-proceed-btn"
                   onClick={() => fileInputRef.current.click()}
-                  style={{
-                    backgroundColor: 'var(--primary)',
-                    color: '#ffffff',
-                    padding: '12px 24px',
-                    borderRadius: '8px',
-                    fontWeight: '700',
-                    fontSize: '14px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: 'var(--shadow-glow)'
-                  }}
                 >
                   Proceed to Crop
                   <span>→</span>
@@ -507,30 +485,11 @@ export default function PhotoResizer({ onEditorStateChange }) {
             </div>
 
             {/* Right Side Cards */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="resizer-instructions-col">
 
               {/* Card 1: Checklist Instructions */}
-              <div
-                style={{
-                  backgroundColor: 'var(--bg-surface)',
-                  borderRadius: '16px',
-                  border: '1.5px solid var(--border)',
-                  overflow: 'hidden',
-                  boxShadow: 'var(--shadow-md)'
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: '#047857',
-                    color: '#ffffff',
-                    padding: '16px 20px',
-                    fontWeight: '700',
-                    fontSize: '15px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
+              <div className="resizer-instructions-card">
+                <div className="resizer-instructions-header">
                   <HelpCircle size={16} />
                   Crop and resize {activeTab === 'photo' ? 'Photo' : 'Signature'}
                 </div>
@@ -575,72 +534,35 @@ export default function PhotoResizer({ onEditorStateChange }) {
       {sourceImage && (
         <div className="resizer-editor-grid">
 
-          {/* LEFT AREA: Canvas, title, grid */}
-          {/* LEFT AREA: Canvas, title, grid */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              padding: '24px',
-              position: 'relative',
-              background: 'radial-gradient(circle, var(--bg-surface) 0%, var(--bg-base) 100%)',
-              height: '100%'
-            }}
-          >
+          {/* Canvas area */}
+          <div className="resizer-editor-canvas">
 
             {/* Top Workspace Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', zIndex: 10 }}>
+            <div className="resizer-editor-header">
               <button
+                type="button"
+                className="resizer-back-btn"
                 onClick={() => {
                   setSourceImage(null);
                   setOriginalImgElement(null);
                 }}
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--bg-surface)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer'
-                }}
               >
                 <ArrowLeft size={16} />
               </button>
-              <span style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '14px' }}>
+              <span className="resizer-editor-filename">
                 Edit: {fileName}
               </span>
             </div>
 
             {/* Resolution and DPI Pill Info */}
-            <div
-              style={{
-                alignSelf: 'center',
-                backgroundColor: 'var(--bg-surface)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border)',
-                padding: '10px 24px',
-                borderRadius: '9999px',
-                fontSize: '13px',
-                fontWeight: '700',
-                boxShadow: 'var(--shadow-md)',
-                display: 'flex',
-                gap: '12px',
-                zIndex: 10,
-                marginTop: '16px',
-                marginBottom: '16px'
-              }}
-            >
+            <div className="resizer-resolution-pill">
               <span>Resolution: {originalResolution}</span>
               <span style={{ color: 'var(--border)' }}>|</span>
               <span>DPI: 300</span>
             </div>
 
             {/* Centered Canvas Wrapper */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+            <div className="resizer-canvas-wrap">
               {/* Centered Canvas Container with Mouse Zoom & Move */}
               <div
                 ref={canvasContainerRef}
@@ -663,19 +585,10 @@ export default function PhotoResizer({ onEditorStateChange }) {
 
           </div>
 
-          {/* RIGHT SIDEBAR: Controls panel */}
-          <div
-            style={{
-              backgroundColor: 'var(--bg-surface)',
-              borderLeft: '1px solid var(--border)',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              height: '100%'
-            }}
-          >
+          {/* Controls panel */}
+          <div className="resizer-editor-panel">
             {/* Top controls section */}
-            <div style={{ padding: '24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="resizer-panel-scroll">
 
               {/* Sidebar Header progress */}
               <div>
@@ -794,13 +707,13 @@ export default function PhotoResizer({ onEditorStateChange }) {
                       onChange={(e) => setWidth(e.target.value)}
                       style={{
                         width: '100%',
-                        padding: '10px 14px',
-                        backgroundColor: 'var(--bg-base)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '8px',
-                        fontSize: '13px',
+                        padding: '12px 16px',
+                        backgroundColor: '#F8FAFC',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: '12px',
+                        fontSize: '14px',
                         fontWeight: '700',
-                        color: 'var(--text-primary)'
+                        color: '#1E293B'
                       }}
                     />
                   </div>
@@ -815,13 +728,13 @@ export default function PhotoResizer({ onEditorStateChange }) {
                       onChange={(e) => setHeight(e.target.value)}
                       style={{
                         width: '100%',
-                        padding: '10px 14px',
-                        backgroundColor: 'var(--bg-base)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '8px',
-                        fontSize: '13px',
+                        padding: '12px 16px',
+                        backgroundColor: '#F8FAFC',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: '12px',
+                        fontSize: '14px',
                         fontWeight: '700',
-                        color: 'var(--text-primary)'
+                        color: '#1E293B'
                       }}
                     />
                   </div>
@@ -833,14 +746,14 @@ export default function PhotoResizer({ onEditorStateChange }) {
                       onChange={(e) => setUnit(e.target.value)}
                       style={{
                         width: '100%',
-                        padding: '10px 10px',
-                        backgroundColor: 'var(--bg-base)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '8px',
-                        fontSize: '13px',
+                        padding: '12px 16px',
+                        backgroundColor: '#F8FAFC',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: '12px',
+                        fontSize: '14px',
                         fontWeight: '700',
-                        color: 'var(--text-primary)',
-                        height: '38px'
+                        color: '#1E293B',
+                        height: '45px'
                       }}
                     >
                       <option value="px">px</option>
@@ -909,7 +822,7 @@ export default function PhotoResizer({ onEditorStateChange }) {
             </div>
 
             {/* Bottom Actions */}
-            <div style={{ padding: '24px', borderTop: '1px solid var(--border)', display: 'flex', gap: '12px' }}>
+            <div className="resizer-panel-actions">
               <button
                 onClick={handleSaveImage}
                 disabled={!compressionResult}
@@ -971,25 +884,11 @@ export default function PhotoResizer({ onEditorStateChange }) {
       />
 
       {/* FOOTER */}
-      <footer
-        style={{
-          backgroundColor: 'var(--bg-base)',
-          borderTop: '1px solid var(--border)',
-          padding: '16px 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontSize: '12px',
-          color: 'var(--text-muted)'
-        }}
-      >
-        <span><strong>CropMaster Pro</strong> — Precise editing for professionals.</span>
-        <span>© 2026 CropMaster Pro. All rights reserved.</span>
-      </footer>
+
 
       {/* Toast Alert Feedback Overlay */}
       {toastMsg && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             bottom: '24px',

@@ -32,6 +32,7 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
 
   bool _isEditing = false;
   int? _editingRowIndex; // spreadsheet cell matching ID
+  String? _editingServiceId;
 
   bool _isLoading = false;
   bool _isSaving = false;
@@ -59,55 +60,7 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchNameFromLink() async {
-    String url = _websiteController.text.trim();
-    if (url.isEmpty) {
-      url = _nameController.text.trim();
-      if (url.startsWith('http')) {
-        _websiteController.text = url;
-      }
-    }
-    if (url.isEmpty || !url.startsWith('http')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid URL in the Website field'),
-          backgroundColor: Colors.orangeAccent,
-        ),
-      );
-      return;
-    }
 
-    try {
-      final uri = Uri.parse(url);
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
-      if (response.statusCode == 200) {
-        var document = html_parser.parse(response.body);
-        String title = document.querySelector('title')?.text ?? '';
-        if (title.isNotEmpty) {
-          setState(() {
-            _nameController.text = title.trim();
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Service name fetched from webpage!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          throw Exception('No title tag found');
-        }
-      } else {
-        throw Exception('Status code ${response.statusCode}');
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to fetch name: $e'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    } finally {}
-  }
 
   Future<void> _deleteService(ServiceItem service) async {
     setState(() => _isLoading = true);
@@ -137,6 +90,7 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
     setState(() {
       _isEditing = true;
       _editingRowIndex = service.rowIndex;
+      _editingServiceId = service.id;
       _nameController.text = service.serviceName;
       _websiteController.text = service.website;
       _deptFeeController.text = service.departmentFee;
@@ -153,6 +107,7 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
     setState(() {
       _isEditing = false;
       _editingRowIndex = null;
+      _editingServiceId = null;
       _nameController.clear();
       _websiteController.clear();
       _deptFeeController.clear();
@@ -182,6 +137,7 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
 
       final updatedService = ServiceItem(
         rowIndex: _isEditing ? _editingRowIndex! : 0,
+        id: _isEditing ? _editingServiceId ?? '' : '',
         serviceName: name,
         website: _websiteController.text.trim(),
         departmentFee: _deptFeeController.text.trim().isEmpty
@@ -244,7 +200,7 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Container(
-                width: 600,
+                width: 400,
                 padding: const EdgeInsets.all(24),
                 child: SingleChildScrollView(
                   child: Column(
@@ -272,27 +228,10 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
                         ],
                       ),
                       const Divider(height: 24),
-                      _buildLabel('Service name'),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              'Enter name',
-                              _nameController,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.download_rounded,
-                              color: Color(0xFF00695C),
-                            ),
-                            onPressed: () async {
-                              await _fetchNameFromLink();
-                            },
-                            tooltip: 'Fetch Name from Webpage Link',
-                          ),
-                        ],
+                      _buildLabel('Service Name'),
+                      _buildTextField(
+                        'Enter name',
+                        _nameController,
                       ),
                       const SizedBox(height: 16),
                       _buildLabel('Webpage Link'),
@@ -338,18 +277,18 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
                           child: DropdownButton<String>(
                             value: _selectedWallet,
                             isExpanded: true,
-                            items:
-                                <String>[
-                                  'CASH',
-                                  'EDISTRICT',
-                                  'GATEWAY',
-                                  'SBI',
-                                ].map((String val) {
-                                  return DropdownMenuItem<String>(
-                                    value: val,
-                                    child: Text(val),
-                                  );
-                                }).toList(),
+                            items: (() {
+                              final list = ['CASH', 'EDISTRICT', 'GATEWAY', 'SBI'];
+                              if (!list.contains(_selectedWallet)) {
+                                list.add(_selectedWallet);
+                              }
+                              return list.map((String val) {
+                                return DropdownMenuItem<String>(
+                                  value: val,
+                                  child: Text(val),
+                                );
+                              }).toList();
+                            })(),
                             onChanged: (String? newVal) {
                               if (newVal != null) {
                                 setDialogState(() => _selectedWallet = newVal);
@@ -434,10 +373,12 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'services_fab',
         onPressed: () {
           _resetForm();
           _showServiceFormDialog(isEdit: false);
         },
+        mouseCursor: SystemMouseCursors.click,
         backgroundColor: const Color(0xFF00695C),
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
@@ -711,6 +652,7 @@ class _MasterServicesScreenState extends State<MasterServicesScreen> {
   ) {
     return InkWell(
       onTap: onTap,
+      mouseCursor: SystemMouseCursors.click,
       borderRadius: BorderRadius.circular(6),
       child: Container(
         padding: const EdgeInsets.all(6),

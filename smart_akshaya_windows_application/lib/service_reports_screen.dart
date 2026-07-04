@@ -69,23 +69,29 @@ class _ServiceReportsScreenState extends State<ServiceReportsScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () => _selectDate(context, true),
-                    child: _buildFilterField(
-                      'FROM DATE', 
-                      provider.fromDate != null ? DateFormat('dd/MM/yyyy').format(provider.fromDate!) : 'Select Date', 
-                      Icons.calendar_month_rounded,
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => _selectDate(context, true),
+                      child: _buildFilterField(
+                        'FROM DATE', 
+                        provider.fromDate != null ? DateFormat('dd/MM/yyyy').format(provider.fromDate!) : 'Select Date', 
+                        Icons.calendar_month_rounded,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () => _selectDate(context, false),
-                    child: _buildFilterField(
-                      'TO DATE', 
-                      provider.toDate != null ? DateFormat('dd/MM/yyyy').format(provider.toDate!) : 'Select Date', 
-                      Icons.calendar_month_rounded,
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => _selectDate(context, false),
+                      child: _buildFilterField(
+                        'TO DATE', 
+                        provider.toDate != null ? DateFormat('dd/MM/yyyy').format(provider.toDate!) : 'Select Date', 
+                        Icons.calendar_month_rounded,
+                      ),
                     ),
                   ),
                 ),

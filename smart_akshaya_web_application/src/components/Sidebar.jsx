@@ -1,47 +1,14 @@
-import React, { useState } from 'react';
-import DashboardRounded from '@mui/icons-material/DashboardRounded';
-import GridViewRounded from '@mui/icons-material/GridViewRounded';
-import BookmarkRounded from '@mui/icons-material/BookmarkRounded';
-import AccountBalanceWalletRounded from '@mui/icons-material/AccountBalanceWalletRounded';
-import CalculateRounded from '@mui/icons-material/CalculateRounded';
-import FolderOpenRounded from '@mui/icons-material/FolderOpenRounded';
-import BuildOutlined from '@mui/icons-material/BuildOutlined';
-import BarChartRounded from '@mui/icons-material/BarChartRounded';
-import PaymentsOutlined from '@mui/icons-material/PaymentsOutlined';
-import LogoutRounded from '@mui/icons-material/LogoutRounded';
-import KeyboardArrowDownRounded from '@mui/icons-material/KeyboardArrowDownRounded';
-import KeyboardArrowRightRounded from '@mui/icons-material/KeyboardArrowRightRounded';
-import CameraAltRounded from '@mui/icons-material/CameraAltRounded';
-import CropRounded from '@mui/icons-material/CropRounded';
-import PersonRounded from '@mui/icons-material/PersonRounded';
+import React from 'react';
+import { LayoutDashboard, LayoutGrid, Bookmark, Wallet, FolderOpen, Settings, BarChart2, Receipt, Users, LogOut, UserCircle, FileText, X } from 'lucide-react';
 
 // Helper: extract 1-2 initials from a name
 function getInitials(name) {
   if (!name) return 'U';
   const parts = name.trim().split(/\s+/);
-  return parts
-    .slice(0, 2)
-    .map((p) => p[0] || '')
-    .join('')
-    .toUpperCase();
+  return parts.slice(0, 2).map((p) => p[0] || '').join('').toUpperCase();
 }
 
-// Thin wrapper so MUI SvgIcon renders at a consistent size like Lucide
-function MuiIcon({ Icon, size = 20, color, style = {} }) {
-  return (
-    <Icon
-      style={{
-        fontSize: size,
-        color: color || 'inherit',
-        display: 'block',
-        flexShrink: 0,
-        ...style,
-      }}
-    />
-  );
-}
-
-export default function Sidebar({ currentView, onViewChange, userSession, onLogout }) {
+export default function Sidebar({ currentView, onViewChange, userSession, onLogout, onClose }) {
   const isActive = (view) => currentView === view;
   const isAdmin = true;
 
@@ -58,28 +25,6 @@ export default function Sidebar({ currentView, onViewChange, userSession, onLogo
     color: active ? '#ffffff' : 'rgba(255,255,255,0.6)',
     cursor: 'pointer',
     fontSize: '14px',
-    fontWeight: active ? '600' : '500',
-    textAlign: 'left',
-    transition: 'background-color 0.15s, color 0.15s',
-    fontFamily: 'inherit',
-  });
-
-  const expandableHeader = (anyChildActive, expanded) => ({
-    ...navItem(anyChildActive && !expanded),
-    justifyContent: 'space-between',
-  });
-
-  const subNavItem = (active) => ({
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    padding: '9px 16px 9px 48px',
-    borderRadius: '8px',
-    border: 'none',
-    backgroundColor: active ? '#10B981' : 'transparent',
-    color: active ? '#ffffff' : 'rgba(255,255,255,0.6)',
-    cursor: 'pointer',
-    fontSize: '13px',
     fontWeight: active ? '600' : '500',
     textAlign: 'left',
     transition: 'background-color 0.15s, color 0.15s',
@@ -114,48 +59,13 @@ export default function Sidebar({ currentView, onViewChange, userSession, onLogo
     const active = isActive(view);
     return (
       <button
+        className="sidebar-nav-item"
         style={navItem(active)}
         onClick={() => onViewChange(view)}
         onMouseEnter={onHover}
         onMouseLeave={(e) => onLeave(e, active)}
       >
-        <MuiIcon Icon={Icon} size={20} />
-        {label}
-      </button>
-    );
-  };
-
-  const ExpandableItem = ({ title, Icon, isExpanded, onToggle, anyChildActive, children }) => (
-    <div>
-      <button
-        style={expandableHeader(anyChildActive, isExpanded)}
-        onClick={onToggle}
-        onMouseEnter={onHover}
-        onMouseLeave={(e) => onLeave(e, anyChildActive && !isExpanded)}
-      >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <MuiIcon Icon={Icon} size={20} />
-          {title}
-        </span>
-        <MuiIcon
-          Icon={isExpanded ? KeyboardArrowDownRounded : KeyboardArrowRightRounded}
-          size={18}
-          color="rgba(255,255,255,0.4)"
-        />
-      </button>
-      {isExpanded && children}
-    </div>
-  );
-
-  const SubNavItem = ({ view, label }) => {
-    const active = isActive(view);
-    return (
-      <button
-        style={subNavItem(active)}
-        onClick={() => onViewChange(view)}
-        onMouseEnter={onHover}
-        onMouseLeave={(e) => onLeave(e, active)}
-      >
+        <Icon size={20} />
         {label}
       </button>
     );
@@ -171,7 +81,7 @@ export default function Sidebar({ currentView, onViewChange, userSession, onLogo
       style={{
         width: '260px',
         height: '100vh',
-        background: '#0F172A',
+        background: 'linear-gradient(180deg, #0F172A 0%, #1E293B 100%)',
         display: 'flex',
         flexDirection: 'column',
         flexShrink: 0,
@@ -179,70 +89,84 @@ export default function Sidebar({ currentView, onViewChange, userSession, onLogo
       }}
     >
       {/* ── Brand Header ── */}
-      <div style={{ padding: '24px 20px 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img
-            src="/akshaya_logo.png"
-            alt="Akshaya Logo"
+      <div className="sidebar-brand">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+          <div
             style={{
               width: '44px',
               height: '44px',
-              borderRadius: '8px',
-              objectFit: 'cover',
+              borderRadius: '50%',
+              backgroundColor: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
               flexShrink: 0,
+              border: '2px solid rgba(255,255,255,0.2)',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
             }}
-          />
+          >
+            <img
+              src="/akshaya_logo.png"
+              alt="Akshaya Logo"
+              style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+            />
+          </div>
           <div style={{ overflow: 'hidden' }}>
-            <div style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', letterSpacing: '0.3px', lineHeight: 1.2 }}>
+            <div style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff', letterSpacing: '0.5px', lineHeight: 1.2 }}>
               Smart Akshaya
             </div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               Akashaya Pookiparamb
             </div>
           </div>
         </div>
+        {onClose && (
+          <button
+            type="button"
+            className="sidebar-close-btn"
+            onClick={onClose}
+            aria-label="Close menu"
+          >
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       {/* ── Nav ── */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '24px' }}>
+      <div className="sidebar-nav-scroll">
         <nav style={{ padding: '0 16px' }}>
 
           {/* MAIN */}
           <span style={sectionLabel}>MAIN</span>
-          {isAdmin && <NavItem view="dashboard" Icon={DashboardRounded} label="Dashboard" />}
-          <NavItem view="document-finder" Icon={FolderOpenRounded} label="Application Forms" />
+          {isAdmin && <NavItem view="dashboard" Icon={LayoutDashboard} label="Dashboard" />}
+          <NavItem view="document-finder" Icon={FolderOpen} label="Application Forms" />
 
           {/* SERVICES */}
           <span style={sectionLabel}>SERVICES</span>
-          <NavItem view="new-entry" Icon={GridViewRounded} label="Service Entry" />
-          <NavItem view="saved-bills" Icon={BookmarkRounded} label="Saved Bills" />
-          {isAdmin && <NavItem view="service-management" Icon={BuildOutlined} label="Service Management" />}
+          <NavItem view="new-entry" Icon={LayoutGrid} label="Service Entry" />
+          <NavItem view="saved-bills" Icon={Bookmark} label="Saved Bills" />
+          <NavItem view="resume-studio" Icon={FileText} label="Resume Studio" />
+          {isAdmin && <NavItem view="service-management" Icon={Settings} label="Service Management" />}
 
           {/* WALLETS */}
           <span style={sectionLabel}>WALLETS</span>
-          <NavItem view="wallet" Icon={AccountBalanceWalletRounded} label="Wallets Balance" />
+          <NavItem view="wallet" Icon={Wallet} label="Wallets Balance" />
 
           {/* FINANCE */}
           <span style={sectionLabel}>FINANCE</span>
-          <NavItem view="service-reports" Icon={BarChartRounded} label="Service Reports" />
-          <NavItem view="expenses" Icon={PaymentsOutlined} label="Expenses" />
+          <NavItem view="service-reports" Icon={BarChart2} label="Service Reports" />
+          <NavItem view="expenses" Icon={Receipt} label="Expenses" />
 
           {/* SYSTEM */}
           <span style={sectionLabel}>SYSTEM</span>
-          <NavItem view="staff-management" Icon={PersonRounded} label="Staff Management" />
+          <NavItem view="staff-management" Icon={Users} label="Staff Management" />
+          <NavItem view="customer-details" Icon={UserCircle} label="Customer Details" />
         </nav>
       </div>
 
       {/* ── Bottom User Profile ── */}
-      <div
-        style={{
-          borderTop: '1px solid rgba(255,255,255,0.05)',
-          padding: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-        }}
-      >
+      <div className="sidebar-user-footer">
         {/* Initials Avatar */}
         <div
           style={{
@@ -265,19 +189,10 @@ export default function Sidebar({ currentView, onViewChange, userSession, onLogo
 
         {/* Name + Role */}
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          <div
-            style={{
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#ffffff',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
+          <div style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {displayName}
           </div>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '1px' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>
             {roleLabel}
           </div>
         </div>
@@ -290,8 +205,8 @@ export default function Sidebar({ currentView, onViewChange, userSession, onLogo
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            padding: '6px',
-            borderRadius: '6px',
+            padding: '8px',
+            borderRadius: '8px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -302,7 +217,7 @@ export default function Sidebar({ currentView, onViewChange, userSession, onLogo
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.12)')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
-          <MuiIcon Icon={LogoutRounded} size={20} color="#ef4444" />
+          <LogOut size={20} color="#ef4444" />
         </button>
       </div>
     </aside>

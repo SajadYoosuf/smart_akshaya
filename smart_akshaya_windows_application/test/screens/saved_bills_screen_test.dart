@@ -22,7 +22,7 @@ void main() {
         gpayUpi: 50.0,
         cash: 70.0,
         balance: 0.0,
-        status: EntryStatus.saved,
+        status: EntryStatus.pending,
       ),
     ]);
 

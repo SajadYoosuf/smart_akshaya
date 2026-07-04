@@ -1,93 +1,78 @@
 import React, { useState, useEffect } from 'react';
-import EditNoteRounded from '@mui/icons-material/EditNoteRounded';
-import CheckCircleOutlineRounded from '@mui/icons-material/CheckCircleOutlineRounded';
-import PaymentsOutlined from '@mui/icons-material/PaymentsOutlined';
-import AccountBalanceWalletOutlined from '@mui/icons-material/AccountBalanceWalletOutlined';
-import CropRounded from '@mui/icons-material/CropRounded';
-import CameraAltRounded from '@mui/icons-material/CameraAltRounded';
-import PersonRounded from '@mui/icons-material/PersonRounded';
-import PercentRounded from '@mui/icons-material/PercentRounded';
-import CalculateRounded from '@mui/icons-material/CalculateRounded';
-import KeyboardArrowDownRounded from '@mui/icons-material/KeyboardArrowDownRounded';
-import PrintRounded from '@mui/icons-material/PrintRounded';
+import { Edit3, CheckCircle, Banknote, Wallet, Crop, Camera, User, Percent, Calculator, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { getRows } from '../services/googleSheetsService';
 
-// ─── Quick‑launch tile definitions (matching Windows app exactly) ─────────────
+// ─── Quick‑launch tile definitions ─────────────
 const TILES = [
   {
     id: 'crop',
     label: 'Crop & Resize',
     sublabel: 'Photo & Sign',
-    Icon: CropRounded,
-    bg: '#e91e8c',
+    Icon: Crop,
+    bg: 'linear-gradient(135deg, #EC4899 0%, #BE185D 100%)', // Pink
     view: 'resizer',
   },
   {
     id: 'passport',
     label: 'Passport Size',
     sublabel: 'Photo Creator',
-    Icon: CameraAltRounded,
-    bg: '#f4736b',
+    Icon: Camera,
+    bg: 'linear-gradient(135deg, #F43F5E 0%, #BE123C 100%)', // Rose
     view: 'passport',
   },
   {
     id: 'psc',
     label: 'PSC',
     sublabel: 'Photo Creator',
-    Icon: PersonRounded,
-    bg: '#4dd0c4',
+    Icon: User,
+    bg: 'linear-gradient(135deg, #14B8A6 0%, #0F766E 100%)', // Teal
     view: 'psc-photo',
   },
   {
     id: 'sslc',
     label: 'SSLC Percentage',
     sublabel: 'Calculation',
-    Icon: PercentRounded,
-    bg: '#ce93d8',
+    Icon: Percent,
+    bg: 'linear-gradient(135deg, #A855F7 0%, #7E22CE 100%)', // Purple
     view: 'sslc-calc',
   },
   {
     id: 'calculator',
     label: 'Calculator',
     sublabel: 'Standard Tool',
-    Icon: CalculateRounded,
-    bg: '#f59e0b',
+    Icon: Calculator,
+    bg: 'linear-gradient(135deg, #F59E0B 0%, #B45309 100%)', // Amber
     view: 'calculator',
+  },
+  {
+    id: 'resume',
+    label: 'Resume Studio',
+    sublabel: 'Premium Builder',
+    Icon: FileText,
+    bg: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', // Blue
+    view: 'resume-studio',
   },
 ];
 
-// ─── MUI icon wrapper ─────────────────────────────────────────────────────────
-function MuiIcon({ Icon, size = 24, color, style = {} }) {
-  return (
-    <Icon style={{ fontSize: size, color: color || 'inherit', display: 'block', ...style }} />
-  );
-}
-
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({ label, value, Icon, iconBg, iconColor, loading, onClick, isExpanded }) {
+  const isClickable = !!onClick;
   return (
     <div
       onClick={onClick}
+      className="dashboard-stat-card glass-panel glow-card"
       style={{
-        background: '#ffffff',
-        border: isExpanded ? '1px solid #10B981' : '1px solid #E2E8F0',
-        borderRadius: '16px',
-        padding: '20px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        cursor: onClick ? 'pointer' : 'default',
+        cursor: isClickable ? 'pointer' : 'default',
         userSelect: 'none',
-        transition: 'border-color 0.2s',
-        flex: '1 1 0',
-        minWidth: '160px',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
       <div
         style={{
-          width: '48px',
-          height: '48px',
-          borderRadius: '12px',
+          width: '56px',
+          height: '56px',
+          borderRadius: '16px',
           backgroundColor: iconBg,
           display: 'flex',
           alignItems: 'center',
@@ -95,38 +80,26 @@ function StatCard({ label, value, Icon, iconBg, iconColor, loading, onClick, isE
           flexShrink: 0,
         }}
       >
-        <MuiIcon Icon={Icon} size={24} color={iconColor} />
+        <Icon size={28} color={iconColor} />
       </div>
-      <div style={{ overflow: 'hidden' }}>
-        <div
-          style={{
-            fontSize: '12px',
-            color: '#64748B',
-            fontWeight: '500',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
+      <div style={{ overflow: 'hidden', flex: 1, paddingRight: isClickable ? '24px' : '0' }}>
+        <div style={{ fontSize: '12px', color: '#64748B', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', lineHeight: '1.2', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {label}
         </div>
-        <div
-          style={{
-            fontSize: '22px',
-            fontWeight: '700',
-            color: '#1E293B',
-            letterSpacing: '-0.5px',
-            lineHeight: 1.2,
-          }}
-        >
+        <div style={{ fontSize: 'clamp(18px, 1.8vw, 24px)', fontWeight: '800', color: '#1E293B', letterSpacing: '-0.5px', marginTop: '4px', wordBreak: 'break-word', lineHeight: '1.1' }}>
           {loading ? '...' : value}
         </div>
       </div>
+      {isClickable && (
+        <div style={{ position: 'absolute', top: '16px', right: '16px', color: '#94A3B8' }}>
+          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Quick Launch Tile (horizontal, matching Windows) ─────────────────────────
+// ─── Quick Launch Tile ─────────────────────────
 function QuickTile({ tile, onClick }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -134,67 +107,34 @@ function QuickTile({ tile, onClick }) {
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      className="dashboard-quick-tile"
       style={{
         background: tile.bg,
-        border: 'none',
-        borderRadius: '14px',
-        padding: '16px',
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: '14px',
-        cursor: 'pointer',
-        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-        boxShadow: hovered ? `0 8px 24px ${tile.bg}55` : `0 3px 10px ${tile.bg}33`,
-        transform: hovered ? 'translateY(-3px)' : 'none',
-        minHeight: '72px',
-        textAlign: 'left',
-        fontFamily: 'inherit',
+        boxShadow: hovered ? '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        transform: hovered ? 'translateY(-4px)' : 'none',
       }}
     >
-      {/* Icon circle */}
       <div
         style={{
-          width: '44px',
-          height: '44px',
-          borderRadius: '50%',
-          backgroundColor: 'rgba(255,255,255,0.25)',
+          width: '52px',
+          height: '52px',
+          borderRadius: '16px',
+          backgroundColor: 'rgba(255,255,255,0.2)',
+          backdropFilter: 'blur(10px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
         }}
       >
-        <MuiIcon Icon={tile.Icon} size={22} color="#ffffff" />
+        <tile.Icon size={24} color="#ffffff" strokeWidth={2.5} />
       </div>
 
-      {/* Text */}
       <div style={{ overflow: 'hidden' }}>
-        <div
-          style={{
-            fontSize: '11px',
-            color: 'rgba(255,255,255,0.85)',
-            letterSpacing: '0.3px',
-            lineHeight: 1.3,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
+        <div style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {tile.label}
         </div>
-        <div
-          style={{
-            fontSize: '14px',
-            fontWeight: '700',
-            color: '#ffffff',
-            lineHeight: 1.3,
-            marginTop: '2px',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
+        <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: '500', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {tile.sublabel}
         </div>
       </div>
@@ -274,51 +214,55 @@ export default function DashboardOverview({ onViewChange, userSession }) {
     }
   };
 
-  const fmt = (n) =>
-    `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+  const fmt = (n) => `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease' }}>
+    <div className="dashboard-page">
+      
+      {/* Hero Header Section */}
+      <div className="dashboard-hero">
+        <div>
+          <div className="dashboard-hero-date">
+            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </div>
+          <div className="dashboard-hero-title">
+            Welcome back, {userSession?.name?.split(' ')[0] || 'User'}!
+          </div>
+        </div>
+      </div>
 
       {/* ── 4 Stat Cards ── */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '20px',
-          flexWrap: 'wrap',
-          marginBottom: '24px',
-        }}
-      >
+      <div className="dashboard-stats-row">
         <StatCard
-          label="Today entry"
+          label="Today's Entries"
           value={stats.todayEntry}
-          Icon={EditNoteRounded}
-          iconBg="#ECFDF5"
-          iconColor="#10B981"
+          Icon={Edit3}
+          iconBg="#F0FDF4"
+          iconColor="#16A34A"
           loading={loadingStats}
         />
         <StatCard
-          label="Today completed"
+          label="Completed Today"
           value={stats.todayCompleted}
-          Icon={CheckCircleOutlineRounded}
-          iconBg="#ECFDF5"
-          iconColor="#10B981"
-          loading={loadingStats}
-        />
-        <StatCard
-          label="Total service charge"
-          value={fmt(stats.totalServiceCharge)}
-          Icon={PaymentsOutlined}
+          Icon={CheckCircle}
           iconBg="#EFF6FF"
-          iconColor="#3B82F6"
+          iconColor="#2563EB"
           loading={loadingStats}
         />
         <StatCard
-          label="Total wallet charge"
-          value={fmt(stats.totalWalletCharge)}
-          Icon={AccountBalanceWalletOutlined}
+          label="Total Cash Collection"
+          value={fmt(stats.totalServiceCharge)}
+          Icon={Banknote}
           iconBg="#FEF2F2"
-          iconColor="#EF4444"
+          iconColor="#DC2626"
+          loading={loadingStats}
+        />
+        <StatCard
+          label="Net Wallet Balance"
+          value={fmt(stats.totalWalletCharge)}
+          Icon={Wallet}
+          iconBg="#FDF4FF"
+          iconColor="#C026D3"
           loading={loadingStats}
           onClick={() => setShowBreakdown((v) => !v)}
           isExpanded={showBreakdown}
@@ -327,45 +271,14 @@ export default function DashboardOverview({ onViewChange, userSession }) {
 
       {/* ── Wallet Breakdown ── */}
       {showBreakdown && walletBreakdown.length > 0 && (
-        <div
-          style={{
-            background: '#ffffff',
-            border: '1px solid #E2E8F0',
-            borderRadius: '12px',
-            padding: '20px',
-            marginBottom: '24px',
-            animation: 'fadeIn 0.2s ease',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '14px',
-            }}
-          >
-            <h4
-              style={{
-                fontSize: '12px',
-                fontWeight: '800',
-                color: '#1E293B',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                margin: 0,
-              }}
-            >
-              Wallet Balances Breakdown
+        <div className="dashboard-breakdown glass-panel">
+          <div className="dashboard-breakdown-header">
+            <h4 style={{ fontSize: '16px', fontWeight: '800', color: '#1E293B', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Wallet size={20} color="var(--primary)" /> Wallet Balances Breakdown
             </h4>
-            <span style={{ fontSize: '11px', color: '#94A3B8' }}>Click card again to hide</span>
+            <button onClick={() => setShowBreakdown(false)} className="btn btn-outline" style={{ height: '36px', fontSize: '13px' }}>Close</button>
           </div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-              gap: '10px',
-            }}
-          >
+          <div className="dashboard-wallet-grid">
             {walletBreakdown.map((w, i) => (
               <div
                 key={i}
@@ -373,14 +286,15 @@ export default function DashboardOverview({ onViewChange, userSession }) {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  padding: '10px 14px',
-                  backgroundColor: '#F8FAFC',
+                  padding: '16px 20px',
+                  backgroundColor: 'white',
                   border: '1px solid #E2E8F0',
-                  borderRadius: '8px',
+                  borderRadius: '12px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                 }}
               >
-                <span style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>{w.name}</span>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: w.balance < 0 ? '#EF4444' : '#10B981' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700', color: '#475569' }}>{w.name}</span>
+                <span style={{ fontSize: '16px', fontWeight: '800', color: w.balance < 0 ? '#EF4444' : '#10B981' }}>
                   {fmt(w.balance)}
                 </span>
               </div>
@@ -390,24 +304,11 @@ export default function DashboardOverview({ onViewChange, userSession }) {
       )}
 
       {/* ── Quick Launch Tools ── */}
-      <div>
-        <div
-          style={{
-            fontSize: '16px',
-            fontWeight: '700',
-            color: '#1E293B',
-            marginBottom: '14px',
-          }}
-        >
+      <div className="dashboard-tools glass-panel">
+        <h3 className="dashboard-tools-title">
           Quick Launch Tools
-        </div>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-            gap: '16px',
-          }}
-        >
+        </h3>
+        <div className="dashboard-tiles-grid">
           {TILES.map((tile) => (
             <QuickTile
               key={tile.id}

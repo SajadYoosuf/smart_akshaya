@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_akshaya/models/entry_status.dart';
 import 'package:smart_akshaya/models/saved_bill.dart';
-import '../services/google_sheets_service.dart';
 import '../services/auth_service.dart';
 import '../config/google_sheets_config.dart';
 
@@ -367,7 +366,7 @@ class NewEntryProvider extends ChangeNotifier {
 
   Future<void> saveEntry(
     BuildContext context, {
-    EntryStatus status = EntryStatus.saved,
+    EntryStatus status = EntryStatus.pending,
     VoidCallback? onSuccess,
   }) async {
     if (addedServices.isEmpty) {
@@ -384,20 +383,20 @@ class NewEntryProvider extends ChangeNotifier {
     final enteredMobile = mobileController.text.trim();
     final enteredName = nameController.text.trim();
 
+    if (balance < 0 && (enteredMobile.isEmpty || enteredName.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter both Mobile Number and Name for credit entries (negative balance).'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (enteredMobile.isEmpty && enteredName.isEmpty) {
-      if (balance < 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter Mobile Number and Name for credit entries (negative balance).'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      } else {
-        // Walk-in Customer auto-assignment
-        mobileController.text = '9999999999';
-        nameController.text = 'Walk-in Customer';
-      }
+      // Walk-in Customer auto-assignment
+      mobileController.text = '9999999999';
+      nameController.text = 'Walk-in Customer';
     }
 
     try {
@@ -480,17 +479,40 @@ class NewEntryProvider extends ChangeNotifier {
       ];
 
       // Save to Google Sheets
+      // Pending entries go to Saved Bills, Completed entries go to Service Entries
+      String targetSheetName = status == EntryStatus.pending 
+        ? GoogleSheetsConfig.savedBillsSheetName 
+        : GoogleSheetsConfig.serviceEntrySheetName;
+
       if (editingRowIndex != null) {
-        await sheetsService.updateRow(
-          spreadsheetId,
-          GoogleSheetsConfig.serviceEntrySheetName,
-          editingRowIndex!,
-          entryRow,
-        );
+        // If we're editing an existing row from Saved Bills and changing status to Completed
+        if (status == EntryStatus.completed) {
+          // Update the Saved Bills sheet to mark as Completed
+          await sheetsService.updateRow(
+            spreadsheetId,
+            GoogleSheetsConfig.savedBillsSheetName,
+            editingRowIndex!,
+            entryRow.toList()..last = status.name, // Update status to Completed in place
+          );
+          // Then append to Service Entries as completed
+          await sheetsService.appendRow(
+            spreadsheetId,
+            GoogleSheetsConfig.serviceEntrySheetName,
+            entryRow,
+          );
+        } else {
+          // Normal update case
+          await sheetsService.updateRow(
+            spreadsheetId,
+            targetSheetName,
+            editingRowIndex!,
+            entryRow,
+          );
+        }
       } else {
         await sheetsService.appendRow(
           spreadsheetId,
-          GoogleSheetsConfig.serviceEntrySheetName,
+          targetSheetName,
           entryRow,
         );
       }
@@ -509,6 +531,9 @@ class NewEntryProvider extends ChangeNotifier {
           customerRow,
         );
       }
+
+      // Update wallet balances in Google Sheets
+      await _updateWalletBalances(addedServices, gpayUpi, cash);
 
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
@@ -547,5 +572,71 @@ class NewEntryProvider extends ChangeNotifier {
     editingServiceIndex = null;
     editingRowIndex = null;
     notifyListeners();
+  }
+
+  Future<void> _updateWalletBalances(List<ServiceItem> items, double gpayAmt, double cashAmt) async {
+    try {
+      final sheetsService = AuthService().sheetsService;
+      final spreadsheetId = await AuthService().getSpreadsheetId();
+      final rows = await sheetsService.getRows(spreadsheetId, 'Wallets');
+      if (rows.length <= 1) return;
+      
+      final headers = rows[0].map((e) => e.toString().trim().toLowerCase()).toList();
+      final nameIdx = headers.indexOf('wallet name');
+      final balanceIdx = headers.indexOf('current balance');
+      if (nameIdx == -1 || balanceIdx == -1) return;
+
+      final deltas = <String, double>{};
+      
+      for (var item in items) {
+        final wName = item.walletName;
+        final fee = item.walletCharge * item.quantity;
+        if (fee > 0) {
+          deltas[wName] = (deltas[wName] ?? 0.0) - fee;
+        }
+      }
+      
+      if (gpayAmt > 0) {
+        deltas['UPI'] = (deltas['UPI'] ?? 0.0) + gpayAmt;
+      }
+      if (cashAmt > 0) {
+        deltas['Cash'] = (deltas['Cash'] ?? 0.0) + cashAmt;
+      }
+
+      final now = DateTime.now();
+      // Use format dd MMM yyyy, hh:mm a
+      final updatedStr = '${now.day.toString().padLeft(2, '0')} ${_getMonthName(now.month)} ${now.year}, ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+      for (int i = 1; i < rows.length; i++) {
+        final row = rows[i];
+        if (row.length > nameIdx) {
+          final wName = row[nameIdx].toString().trim();
+          if (deltas.containsKey(wName)) {
+            double currentVal = 0.0;
+            if (row.length > balanceIdx) {
+              currentVal = double.tryParse(row[balanceIdx].toString()) ?? 0.0;
+            }
+            final newVal = currentVal + deltas[wName]!;
+            await sheetsService.updateRowColumns(
+              spreadsheetId,
+              'Wallets',
+              i + 1,
+              {
+                'current balance': newVal,
+                'last updated': updatedStr,
+              },
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print('Error updating wallet balances: $e');
+    }
+  }
+
+  String _getMonthName(int month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    if (month >= 1 && month <= 12) return months[month - 1];
+    return 'Jan';
   }
 }

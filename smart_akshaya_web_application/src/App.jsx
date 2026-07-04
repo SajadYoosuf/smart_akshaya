@@ -11,11 +11,17 @@ import QuickDocumentFinder from './components/QuickDocumentFinder';
 import PscPhotoCreator from './components/PscPhotoCreator';
 import SslcCalculator from './components/SslcCalculator';
 import NewEntryScreen from './components/NewEntryScreen';
+import SavedBillsScreen from './components/SavedBillsScreen';
+import ServiceReportsScreen from './components/ServiceReportsScreen';
 import ServiceManagement from './components/ServiceManagement';
 import StaffManagement from './components/StaffManagement';
+import CustomerDetails from './components/CustomerDetails';
+import ExpensesScreen from './components/ExpensesScreen';
+import ResumeBuilderWrapper from './components/ResumeBuilderWrapper';
 import { getCurrentSession, logoutSession } from './services/googleSheetsAuth';
 import MenuRounded from '@mui/icons-material/MenuRounded';
 import SyncRounded from '@mui/icons-material/SyncRounded';
+import { Search, X } from 'lucide-react';
 
 // ── Page title map (matches Windows app pageTitles list) ──────────────────────
 const PAGE_TITLES = {
@@ -34,85 +40,101 @@ const PAGE_TITLES = {
   settings: 'Sheet Config',
   'service-management': 'Service Management',
   'staff-management': 'Staff Management',
+  'customer-details': 'Customer Details',
   nameslip: 'Nameslip',
+  'resume-studio': 'Resume Studio',
 };
 
 // ── Top Bar Component (matches Windows 70px white header) ─────────────────────
-function TopBar({ currentView, onRefresh, isRefreshing, onMenuClick, showMenu }) {
+function TopBar({ currentView, onRefresh, isRefreshing, onMenuClick, showMenu, searchQuery, setSearchQuery }) {
   const title = PAGE_TITLES[currentView] || 'Smart Akshaya';
   return (
-    <header
-      style={{
-        height: '70px',
-        minHeight: '70px',
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid #E2E8F0',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 24px',
-        gap: '16px',
-        flexShrink: 0,
-        zIndex: 10,
-      }}
-    >
-      {/* Mobile menu button */}
-      {showMenu && (
+    <header className="app-topbar">
+      <div className="app-topbar-left">
+        {showMenu && (
+          <button
+            onClick={onMenuClick}
+            className="mobile-menu-btn"
+            type="button"
+            aria-label="Open menu"
+          >
+            <MenuRounded style={{ fontSize: 20 }} />
+          </button>
+        )}
+      </div>
+
+      <div className="app-topbar-center">
+        <span className="app-topbar-title">{title}</span>
+      </div>
+
+      <div className="app-topbar-right">
+        {currentView === 'document-finder' && (
+          <div className="app-topbar-search">
+            <Search
+              size={16}
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#64748B',
+              }}
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search forms…"
+              style={{
+                width: '100%',
+                height: '36px',
+                paddingLeft: '36px',
+                paddingRight: searchQuery ? '32px' : '12px',
+                borderRadius: '6px',
+                border: '1px solid #CBD5E1',
+                fontSize: '13px',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748B',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        )}
+
         <button
-          onClick={onMenuClick}
-          className="mobile-menu-btn"
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '8px',
-            borderRadius: '8px',
-            color: '#1E293B',
-            display: 'flex',
-            alignItems: 'center',
-          }}
+          type="button"
+          onClick={onRefresh}
+          title="Reload live data from server"
+          className="app-topbar-refresh"
         >
-          <MenuRounded style={{ fontSize: 20 }} />
+          <SyncRounded
+            style={{
+              fontSize: 18,
+              transition: 'transform 0.5s',
+              animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
+            }}
+          />
         </button>
-      )}
-
-      {/* Page Title */}
-      <span
-        style={{
-          fontSize: '18px',
-          fontWeight: '600',
-          color: '#1E293B',
-          flex: 1,
-        }}
-      >
-        {title}
-      </span>
-
-      {/* Sync / Refresh button */}
-      <button
-        onClick={onRefresh}
-        title="Reload live data from server"
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          padding: '8px',
-          borderRadius: '8px',
-          color: '#64748B',
-          display: 'flex',
-          alignItems: 'center',
-          transition: 'background-color 0.15s',
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F1F5F9')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-      >
-        <SyncRounded
-          style={{
-            fontSize: 18,
-            transition: 'transform 0.5s',
-            animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
-          }}
-        />
-      </button>
+      </div>
     </header>
   );
 }
@@ -132,6 +154,8 @@ export default function App() {
   const [isEditingPhoto, setIsEditingPhoto] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editBillData, setEditBillData] = useState(null);
 
   // Check login session on mount
   useEffect(() => {
@@ -160,10 +184,24 @@ export default function App() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Small delay to show the animation even if nothing reloads
     await new Promise((r) => setTimeout(r, 800));
     setIsRefreshing(false);
   };
+
+  const hideSidebar = (currentView === 'resizer' && isEditingPhoto) || currentView === 'resume-studio';
+  const hideTopBar = hideSidebar;
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    if (isSidebarOpen && !hideSidebar) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isLoggedIn, isSidebarOpen, hideSidebar]);
 
   // Render active view
   const renderView = () => {
@@ -173,12 +211,15 @@ export default function App() {
 
       // ── Services ──
       case 'new-entry':
-        return <NewEntryScreen userSession={userSession} />;
+        return <NewEntryScreen userSession={userSession} editBillData={editBillData} setEditBillData={setEditBillData} />;
       case 'saved-bills':
         return (
-          <div style={{ padding: '40px 0', textAlign: 'center', color: '#94A3B8' }}>
-            Saved Bills screen — coming soon.
-          </div>
+          <SavedBillsScreen
+            onSettleBill={(bill) => {
+              setEditBillData(bill);
+              setCurrentView('new-entry');
+            }}
+          />
         );
 
       // ── Wallet ──
@@ -191,7 +232,7 @@ export default function App() {
 
       // ── Document Finder ──
       case 'document-finder':
-        return <QuickDocumentFinder />;
+        return <QuickDocumentFinder search={searchQuery} setSearch={setSearchQuery} />;
 
       // ── Graphics Tools ──
       case 'psc-photo':
@@ -203,6 +244,8 @@ export default function App() {
 
       case 'sslc-calc':
         return <SslcCalculator onViewChange={setCurrentView} />;
+      case 'resume-studio':
+        return <ResumeBuilderWrapper onViewChange={setCurrentView} />;
 
       // ── Placeholders ──
       case 'nameslip':
@@ -215,17 +258,9 @@ export default function App() {
           </div>
         );
       case 'service-reports':
-        return (
-          <div style={{ padding: '40px 0', textAlign: 'center', color: '#94A3B8' }}>
-            Service Reports — coming soon.
-          </div>
-        );
+        return <ServiceReportsScreen />;
       case 'expenses':
-        return (
-          <div style={{ padding: '40px 0', textAlign: 'center', color: '#94A3B8' }}>
-            Expenses — coming soon.
-          </div>
-        );
+        return <ExpensesScreen />;
 
       // ── Admin ──
       case 'settings':
@@ -237,6 +272,9 @@ export default function App() {
       case 'staff-management':
         return <StaffManagement />;
 
+      case 'customer-details':
+        return <CustomerDetails />;
+
       default:
         return <DashboardOverview onViewChange={setCurrentView} userSession={userSession} />;
     }
@@ -245,10 +283,6 @@ export default function App() {
   if (!isLoggedIn) {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
-
-  const hideSidebar = currentView === 'resizer' && isEditingPhoto;
-  // These views render their own full-screen layout (no top bar)
-  const hideTopBar = currentView === 'resizer' && isEditingPhoto;
 
   return (
     <div className="app-container">
@@ -269,24 +303,17 @@ export default function App() {
           currentView={currentView}
           onViewChange={(view) => {
             setCurrentView(view);
+            setSearchQuery('');
             setIsSidebarOpen(false);
           }}
           userSession={userSession}
           onLogout={handleLogout}
+          onClose={() => setIsSidebarOpen(false)}
         />
       </div>
 
       {/* Main Content Shell */}
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100vh',
-          overflow: 'hidden',
-          minWidth: 0,
-        }}
-      >
+      <div className="app-main-shell">
         {/* Top Bar */}
         {!hideTopBar && (
           <TopBar
@@ -294,7 +321,9 @@ export default function App() {
             onRefresh={handleRefresh}
             isRefreshing={isRefreshing}
             onMenuClick={() => setIsSidebarOpen(true)}
-            showMenu={isSidebarOpen === false}
+            showMenu={!hideSidebar && !isSidebarOpen}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
           />
         )}
 

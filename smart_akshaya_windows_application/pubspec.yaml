@@ -45,5 +45,4 @@ flutter:
     - assets/credentials/
     - .env
     - assets/forms/
-    - assets/forms_data.json
     - assets/images/

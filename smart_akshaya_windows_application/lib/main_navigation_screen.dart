@@ -19,8 +19,8 @@ import 'providers/saved_bills_provider.dart';
 // New screens added in redesign
 import 'wallet_screen.dart';
 import 'calculator_screen.dart';
-import 'quick_document_finder_screen.dart';
 import 'sslc_calculator_screen.dart';
+import 'customer_details_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final String? userRole;
@@ -76,7 +76,7 @@ class MainNavigationScreenState extends State<MainNavigationScreen> {
     'Saved Bills', // 8
     'Wallets Balance', // 9
     'Calculator', // 10
-    'Quick Document Finder', // 11
+    'Customer Details', // 11
     'SSLC Calculator', // 12
   ];
 
@@ -114,7 +114,7 @@ class MainNavigationScreenState extends State<MainNavigationScreen> {
                           const SavedBillsScreen(), // 8
                           const WalletScreen(), // 9
                           const CalculatorScreen(), // 10
-                          const QuickDocumentFinderScreen(), // 11
+                          const CustomerDetailsScreen(), // 11
                           const SslcCalculatorScreen(), // 12
                         ],
                       ),
@@ -130,120 +130,144 @@ class MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Widget _buildSidebar() {
-    return Material(
-      color: const Color(0xFF0F172A),
-      child: Container(
-        width: 260,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+    return Container(
+      width: 260,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withOpacity(0.2), width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
                     child: Image.asset(
                       'assets/images/akshaya_logo.png',
                       width: 44,
                       height: 44,
-                      fit: BoxFit.fill,
+                      fit: BoxFit.cover,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Smart Akshaya',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.3,
-                          ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Smart Akshaya',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
                         ),
-                        Text(
-                          'Akashaya Pookiparamb',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
-                            fontSize: 11,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Akashaya Pookiparamb',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 11,
                         ),
-                      ],
-                    ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
+                ),
+              ],
+            ),
+          ),
+
+          // Scrollable Navigation Area
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSidebarSectionTitle('MAIN'),
+                  if (_role == 'admin')
+                    _buildNavItem('Dashboard', Icons.dashboard_rounded, 0),
+                  _buildNavItem(
+                    'Application Forms',
+                    Icons.folder_open_rounded,
+                    4,
+                  ),
+
+                  if (_role == 'admin' || _role == 'staff') ...[
+                    _buildSidebarSectionTitle('SERVICES'),
+                    _buildNavItem(
+                      'Service Entry',
+                      Icons.grid_view_rounded,
+                      1,
+                    ),
+                    _buildNavItem('Saved Bills', Icons.bookmark_rounded, 8),
+                    if (_role == 'admin')
+                      _buildNavItem(
+                        'Service Management',
+                        Icons.settings_applications_rounded,
+                        6,
+                      ),
+
+                    // ── WALLETS Section ──
+                    _buildSidebarSectionTitle('WALLETS'),
+                    _buildNavItem(
+                      'Wallets Balance',
+                      Icons.account_balance_wallet_rounded,
+                      9,
+                    ),
+                  ],
+
+                  _buildSidebarSectionTitle('FINANCE'),
+                  _buildNavItem(
+                    'Service Reports',
+                    Icons.bar_chart_rounded,
+                    2,
+                  ),
+                  _buildNavItem('Expenses', Icons.payments_outlined, 5),
+
+                  if (_role == 'admin') ...[
+                    _buildSidebarSectionTitle('SYSTEM'),
+                    _buildNavItem(
+                      'Staff Management',
+                      Icons.people_rounded,
+                      7,
+                    ),
+                    _buildNavItem(
+                      'Customer Details',
+                      Icons.person_search_rounded,
+                      11,
+                    ),
+                  ],
                 ],
               ),
             ),
+          ),
 
-            // Scrollable Navigation Area
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSidebarSectionTitle('MAIN'),
-                    if (_role == 'admin')
-                      _buildNavItem('Dashboard', Icons.dashboard_rounded, 0),
-                    _buildNavItem(
-                      'Application Forms',
-                      Icons.folder_open_rounded,
-                      4,
-                    ),
-
-                    if (_role == 'admin' || _role == 'staff') ...[
-                      _buildSidebarSectionTitle('SERVICES'),
-                      _buildNavItem(
-                        'Service Entry',
-                        Icons.grid_view_rounded,
-                        1,
-                      ),
-                      _buildNavItem('Saved Bills', Icons.bookmark_rounded, 8),
-                      if (_role == 'admin')
-                        _buildNavItem(
-                          'Service Management',
-                          Icons.settings_applications_rounded,
-                          6,
-                        ),
-
-                      // ── WALLETS Section ──
-                      _buildSidebarSectionTitle('WALLETS'),
-                      _buildNavItem(
-                        'Wallets Balance',
-                        Icons.account_balance_wallet_rounded,
-                        9,
-                      ),
-                    ],
-
-                    _buildSidebarSectionTitle('FINANCE'),
-                    _buildNavItem(
-                      'Service Reports',
-                      Icons.bar_chart_rounded,
-                      2,
-                    ),
-                    _buildNavItem('Expenses', Icons.payments_outlined, 5),
-
-                    if (_role == 'admin') ...[
-                      _buildSidebarSectionTitle('SYSTEM'),
-                      _buildNavItem(
-                        'Staff Management',
-                        Icons.people_rounded,
-                        7,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-
-            // Apply for Service Button
-            _buildUserProfile(),
-          ],
-        ),
+          // Apply for Service Button
+          _buildUserProfile(),
+        ],
       ),
     );
   }
@@ -422,9 +446,7 @@ class MainNavigationScreenState extends State<MainNavigationScreen> {
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
-      ),
+      color: Colors.black26,
       child: Row(
         children: [
           Container(
@@ -441,6 +463,7 @@ class MainNavigationScreenState extends State<MainNavigationScreen> {
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
+                  letterSpacing: 0.5,
                 ),
               ),
             ),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:googleapis/sheets/v4.dart' as sheets;
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis_auth/auth_io.dart';
@@ -14,6 +15,8 @@ abstract class GoogleSheetsServiceBase {
   Future<void> updateRow(String spreadsheetId, String sheetName, int rowIndex, List<dynamic> row);
   Future<void> updateRowColumns(String spreadsheetId, String sheetName, int rowIndex, Map<String, dynamic> columnUpdates);
   Future<void> clearRow(String spreadsheetId, String sheetName, int rowIndex, int numColumns);
+  Future<List<Map<String, dynamic>>> fetchDriveFiles(String folderId);
+  Future<Uint8List> downloadDriveFile(String fileId);
 }
 
 class GoogleSheetsService implements GoogleSheetsServiceBase {
@@ -65,14 +68,14 @@ class GoogleSheetsService implements GoogleSheetsServiceBase {
     return _driveApi!;
   }
 
-  /// Fetches PDF files from the given Drive Folder ID
+  @override
   Future<List<Map<String, dynamic>>> fetchDriveFiles(String folderId) async {
     if (folderId.isEmpty) return [];
     try {
-      final query = "'$folderId' in parents and mimeType='application/pdf' and trashed=false";
+      final query = "'$folderId' in parents and trashed=false";
       final response = await driveApi.files.list(
         q: query,
-        $fields: 'files(id, name, webViewLink, thumbnailLink)',
+        $fields: 'files(id, name, mimeType, webViewLink, thumbnailLink)',
         pageSize: 100,
         orderBy: 'name',
       );
@@ -81,12 +84,32 @@ class GoogleSheetsService implements GoogleSheetsServiceBase {
       return files.map((f) => {
         'id': f.id ?? '',
         'title': f.name ?? 'Untitled Form',
+        'mime_type': f.mimeType ?? '',
         'drive_link': f.webViewLink ?? '',
         'thumbnail_link': f.thumbnailLink ?? '',
       }).toList();
     } catch (e) {
       print('Error fetching drive files: $e');
       return [];
+    }
+  }
+
+  @override
+  Future<Uint8List> downloadDriveFile(String fileId) async {
+    try {
+      final response = await driveApi.files.get(
+        fileId,
+        downloadOptions: drive.DownloadOptions.fullMedia,
+      ) as drive.Media;
+
+      final List<int> bytes = [];
+      await for (final chunk in response.stream) {
+        bytes.addAll(chunk);
+      }
+      return Uint8List.fromList(bytes);
+    } catch (e) {
+      print('Error downloading drive file: $e');
+      rethrow;
     }
   }
 

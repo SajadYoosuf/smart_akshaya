@@ -1,0 +1,94 @@
+/*
+ * Resume live preview — Canva-style artboard isolation
+ *
+ * How professional editors work:
+ * 1. Fixed-size artboard (794×1123 px for A4 @ 96dpi)
+ * 2. Layout computed at 100% on the artboard (flex, %, padding)
+ * 3. Zoom applied only via transform:scale on a wrapper (never CSS zoom on the page)
+ * 4. Parent app styles must not leak into the artboard (isolation + scoped resets)
+ */
+
+/* Viewport sizes the scroll area; artboard scale shrinks/grows visually */
+.rb-preview-viewport {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.rb-preview-artboard-scale {
+  transform-origin: top left;
+}
+
+/* Isolated document island — overrides Smart Akshaya global resets */
+.resume-preview-island {
+  isolation: isolate;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #1f2937;
+  text-align: left;
+  -webkit-font-smoothing: antialiased;
+}
+
+.resume-preview-island *,
+.resume-preview-island *::before,
+.resume-preview-island *::after {
+  box-sizing: border-box;
+}
+
+/* Undo app-wide h1–h6 Outfit styles inside the artboard */
+.resume-preview-island h1,
+.resume-preview-island h2,
+.resume-preview-island h3,
+.resume-preview-island h4,
+.resume-preview-island h5,
+.resume-preview-island h6 {
+  font-family: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
+
+.resume-preview-island img {
+  max-width: 100%;
+  height: auto;
+}
+
+.resume-preview-island .a4-sheet-preview {
+  width: 794px;
+  min-height: 1123px;
+  display: block;
+}
+
+/* Custom gray shades used by templates (not in default Tailwind palette) */
+.resume-preview-island .text-gray-550 { color: #6b7280; }
+.resume-preview-island .text-gray-605 { color: #5f6773; }
+.resume-preview-island .text-gray-650 { color: #57606a; }
+
+/* Resume preview theme — in @layer components so Tailwind layout utilities still apply */
+@layer components {
+  .resume-preview-island .a4-sheet-preview,
+  .resume-preview-island .pdf-export-body {
+    color: var(--textColor);
+    background-color: var(--backgroundColor);
+  }
+
+  .resume-preview-island .a4-sheet-preview .text-gray-900,
+  .resume-preview-island .pdf-export-body .text-gray-900 { color: var(--textColor); }
+  .resume-preview-island .a4-sheet-preview .text-gray-800,
+  .resume-preview-island .pdf-export-body .text-gray-800 { color: var(--textColor); opacity: 0.95; }
+  .resume-preview-island .a4-sheet-preview .text-gray-700,
+  .resume-preview-island .pdf-export-body .text-gray-700 { color: var(--textColor); opacity: 0.9; }
+  .resume-preview-island .a4-sheet-preview .text-gray-600,
+  .resume-preview-island .pdf-export-body .text-gray-600 { color: var(--textColor); opacity: 0.85; }
+  .resume-preview-island .a4-sheet-preview .text-gray-500,
+  .resume-preview-island .pdf-export-body .text-gray-500 { color: var(--textColor); opacity: 0.75; }
+  .resume-preview-island .a4-sheet-preview .text-gray-400,
+  .resume-preview-island .pdf-export-body .text-gray-400 { color: var(--textColor); opacity: 0.6; }
+}
+
+/* Accent colors — unlayered so they beat gray overrides above */
+.resume-preview-island .text-\[var\(--primary\)\] { color: var(--primary); }
+.resume-preview-island .text-\[var\(--secondary\)\] { color: var(--secondary); }
+.resume-preview-island .border-\[var\(--primary\)\] { border-color: var(--primary); }
+.resume-preview-island .bg-\[var\(--primary\)\] { background-color: var(--primary); }
+.resume-preview-island .bg-\[var\(--secondary\)\] { background-color: var(--secondary); }
+.resume-preview-island .bg-\[var\(--backgroundColor\)\] { background-color: var(--backgroundColor); }

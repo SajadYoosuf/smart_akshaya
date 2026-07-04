@@ -531,6 +531,29 @@ class FakeGoogleSheetsService implements GoogleSheetsServiceBase {
       'Description',
     ]);
   }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchDriveFiles(String folderId) async {
+    return [
+      {
+        'id': '1',
+        'title': 'Form_A.pdf',
+        'mime_type': 'application/pdf',
+        'drive_link': 'https://drive.google.com/file/d/1/view',
+      },
+      {
+        'id': '2',
+        'title': 'Form_B.pdf',
+        'mime_type': 'application/pdf',
+        'drive_link': 'https://drive.google.com/file/d/2/view',
+      },
+    ];
+  }
+
+  @override
+  Future<Uint8List> downloadDriveFile(String fileId) async {
+    return Uint8List(0);
+  }
 }
 
 class FakeAuthService implements AuthServiceBase {
@@ -543,6 +566,9 @@ class FakeAuthService implements AuthServiceBase {
 
   @override
   Future<void> ensureSheetsServiceInitialized() async {}
+
+  @override
+  Future<String> getDriveFolderId() async => 'test-folder-id';
 }
 
 class TestAssetBundle extends CachingAssetBundle {

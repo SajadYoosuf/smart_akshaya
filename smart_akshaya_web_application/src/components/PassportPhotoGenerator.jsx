@@ -204,9 +204,31 @@ export default function PassportPhotoGenerator({ onViewChange }) {
   };
 
   return (
-    <div className="passport-container">
-
-
+    <div style={{ animation: 'fadeIn 0.3s ease', padding: '40px 24px', maxWidth: '1200px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      {/* Hero Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, #F43F5E 0%, #BE123C 100%)',
+        borderRadius: '24px',
+        padding: '32px 40px',
+        color: 'white',
+        boxShadow: '0 10px 25px rgba(244, 63, 94, 0.3)',
+        marginBottom: '32px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div>
+          <div style={{ fontSize: '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>
+            Passport Photo Creator
+          </div>
+          <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '16px', marginTop: '8px' }}>
+            Generate and print multi-photo sheets
+          </div>
+        </div>
+        <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '20px' }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
+        </div>
+      </div>
 
       {/* Main Workspace Layout */}
       <div className="passport-main-grid">
@@ -287,11 +309,12 @@ export default function PassportPhotoGenerator({ onViewChange }) {
 
           {/* Card 1: Source & Background Remover Combined */}
           <div
+            className="glow-card"
             style={{
-              border: '1px solid var(--border)',
-              borderRadius: '12px',
-              padding: '12px 14px',
-              backgroundColor: 'var(--bg-base)'
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '20px',
+              padding: '24px'
             }}
           >
             <h4 style={{ fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.5px' }}>
@@ -424,13 +447,15 @@ export default function PassportPhotoGenerator({ onViewChange }) {
 
           {/* Card 2: Print Parameters */}
           <div
+            className="glow-card"
             style={{
-              border: '1px solid var(--border)',
-              borderRadius: '12px',
-              padding: '12px 14px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '20px',
+              padding: '24px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '12px'
+              gap: '16px'
             }}
           >
             <h4 style={{ fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
@@ -566,13 +591,15 @@ export default function PassportPhotoGenerator({ onViewChange }) {
 
           {/* Card 3: Fine Tuning Adjustments */}
           <div
+            className="glow-card"
             style={{
-              border: '1px solid var(--border)',
-              borderRadius: '12px',
-              padding: '12px 14px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '20px',
+              padding: '24px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '10px'
+              gap: '16px'
             }}
           >
             <h4 style={{ fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>

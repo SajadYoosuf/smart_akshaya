@@ -12,6 +12,7 @@ import '../models/staff_member.dart';
 abstract class AuthServiceBase {
   Future<String> getSpreadsheetId();
   Future<void> ensureSheetsServiceInitialized();
+  Future<String> getDriveFolderId();
 }
 
 class AuthService implements AuthServiceBase {
@@ -81,8 +82,13 @@ class AuthService implements AuthServiceBase {
 
   /// Retrieves the current Google Drive Folder ID
   Future<String> getDriveFolderId() async {
+    await _initEnv();
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyDriveFolderId) ?? '';
+    final localId = prefs.getString(_keyDriveFolderId);
+    if (localId != null && localId.isNotEmpty) {
+      return localId;
+    }
+    return dotenv.env['DRIVE_FOLDER_ID'] ?? '1K8ZEvuWoR3lFeoMQP0JL69r5SBl4sUol';
   }
 
   /// Logs in the user by validating credentials directly from Google Sheets.

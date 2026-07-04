@@ -10,6 +10,9 @@ import {
   X,
   CheckCircle,
   AlertCircle,
+  DollarSign,
+  TrendingUp,
+  CreditCard
 } from 'lucide-react';
 import { getRows, appendRow, appendRows, updateRowColumns } from '../services/googleSheetsService';
 
@@ -37,48 +40,9 @@ const nowStr = () => {
   return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-// ── Modal wrapper ────────────────────────────────────────────────────────────
-function Modal({ title, onClose, children }) {
-  return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="glass-panel"
-        style={{ padding: '28px', minWidth: '380px', maxWidth: '480px', width: '90%' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)' }}>{title}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-            <X size={18} />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
 // ── Input helper ─────────────────────────────────────────────────────────────
-function Field({ label, type = 'text', value, onChange, placeholder }) {
-  return (
-    <div className="form-group">
-      <label className="form-label">{label}</label>
-      <input
-        className="form-input"
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-      />
-    </div>
-  );
-}
+const labelStyle = { fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px', display: 'block' };
+const inputStyle = { width: '100%', height: '48px', padding: '0 16px', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '15px', boxSizing: 'border-box' };
 
 export default function WalletManagement() {
   const [wallets, setWallets] = useState([]);
@@ -103,8 +67,6 @@ export default function WalletManagement() {
   const [addNote, setAddNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
-
-  const [txHistory, setTxHistory] = useState([]);
 
   useEffect(() => { fetchWallets(); }, []);
 
@@ -146,7 +108,8 @@ export default function WalletManagement() {
     }
   };
 
-  const handleAddWallet = async () => {
+  const handleAddWallet = async (e) => {
+    e.preventDefault();
     if (!newName.trim()) return;
     setSaving(true);
     try {
@@ -161,7 +124,8 @@ export default function WalletManagement() {
     finally { setSaving(false); }
   };
 
-  const handleAddFunds = async () => {
+  const handleAddFunds = async (e) => {
+    e.preventDefault();
     if (!addFundsModal || !addAmt) return;
     setSaving(true);
     try {
@@ -175,7 +139,8 @@ export default function WalletManagement() {
     finally { setSaving(false); }
   };
 
-  const handleTransfer = async () => {
+  const handleTransfer = async (e) => {
+    e.preventDefault();
     if (!txFrom || !txTo || !txAmt || txFrom === txTo) return;
     setSaving(true);
     try {
@@ -196,193 +161,297 @@ export default function WalletManagement() {
     w.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const totalBalance = wallets.reduce((sum, w) => sum + w.current, 0);
+
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease' }}>
-      {/* Toast */}
+    <div className="admin-page">
+      
+      {/* Hero Header Section */}
+      <div className="admin-hero admin-hero--wallet">
+        <div className="admin-hero-main">
+          <div className="admin-hero-label">NET WALLET BALANCE</div>
+          <div className="admin-hero-amount">
+            <span className="admin-hero-currency">₹</span>
+            {totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        </div>
+        
+        <div className="admin-hero-meta-card">
+          <Wallet size={32} opacity={0.9} />
+          <div>
+            <div className="admin-hero-meta-value">{wallets.length}</div>
+            <div className="admin-hero-meta-label">ACTIVE WALLETS</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Message Banners */}
       {toast && (
-        <div style={{
-          position: 'fixed', top: '20px', right: '20px', backgroundColor: '#10b981',
-          color: '#fff', padding: '12px 20px', borderRadius: '10px', zIndex: 2000,
-          fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px',
-          boxShadow: '0 4px 20px rgba(16,185,129,0.4)',
-        }}>
-          <CheckCircle size={16} /> {toast}
+        <div className="admin-banner admin-banner--success">
+          <CheckCircle size={18} />
+          <span>{toast}</span>
+        </div>
+      )}
+      {error && (
+        <div className="admin-banner admin-banner--error">
+          <AlertCircle size={18} />
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Header */}
-      <div className="tool-header">
-        <h2 className="tool-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Wallet size={26} style={{ color: 'var(--secondary)' }} />
-          Wallet Management
+      {/* Toolbar */}
+      <div className="admin-toolbar">
+        <h2 className="admin-toolbar-title">
+          Wallet Balances
+          <button type="button" onClick={fetchWallets} className="admin-toolbar-refresh" title="Reload Data">
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
         </h2>
-        <p className="tool-description">
-          Welcome, <strong>{localStorage.getItem('smart_akshaya_session') ? JSON.parse(localStorage.getItem('smart_akshaya_session')).name : 'Admin'}</strong> — Manage your wallets, balances, and fund transfers.
-        </p>
-      </div>
-
-      {/* Action bar */}
-      <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Search */}
-          <div style={{ position: 'relative', flex: '1', minWidth: '180px' }}>
-            <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input
-              className="form-input"
+        
+        <div className="admin-toolbar-actions">
+          <div className="admin-search">
+            <Search size={18} className="admin-search-icon" />
+            <input 
+              type="text"
+              placeholder="Search wallets..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by wallet name..."
-              style={{ paddingLeft: '36px' }}
+              onChange={e => setSearch(e.target.value)}
+              className="admin-search-input"
             />
           </div>
-          <button className="btn btn-primary" style={{ gap: '6px' }} onClick={() => setAddModal(true)}>
-            <Plus size={15} /> Add Wallet
+          
+          <button type="button" onClick={() => setTransferModal(true)} className="admin-tool-btn admin-tool-btn--green">
+            <ArrowRightLeft size={16} /> Transfer
           </button>
-          <button className="btn btn-secondary" style={{ gap: '6px' }} onClick={() => setTransferModal(true)}>
-            <ArrowRightLeft size={15} /> Transfer
-          </button>
-          <button className="btn btn-outline" style={{ gap: '6px' }} onClick={() => setHistoryModal(true)}>
-            <History size={15} /> History
-          </button>
-          <button className="btn btn-outline" style={{ gap: '6px', color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}>
-            <Trash2 size={15} /> Delete
-          </button>
-          <button className="btn btn-outline" style={{ gap: '6px' }} onClick={fetchWallets} disabled={loading}>
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          
+          <button type="button" onClick={() => setHistoryModal(true)} className="admin-tool-btn">
+            <History size={16} /> History
           </button>
         </div>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '14px 18px', color: '#f87171', fontSize: '13px', marginBottom: '20px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <AlertCircle size={16} /> {error}
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['#', 'Wallet Name', 'Opening Balance', 'Current Balance', 'Last Updated', 'Status', 'Actions'].map((col) => (
-                  <th key={col} style={{ padding: '14px 16px', textAlign: 'left', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.7px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                  <RefreshCw size={20} className="animate-spin" style={{ display: 'inline' }} /> &nbsp;Loading…
-                </td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                  No wallets found. Add one above.
-                </td></tr>
-              ) : filtered.map((w, idx) => (
-                <tr key={w.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.1s' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
-                  <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{idx + 1}</td>
-                  <td style={{ padding: '14px 16px', fontWeight: '600', color: 'var(--text-primary)' }}>{w.name}</td>
-                  <td style={{ padding: '14px 16px', color: w.opening < 0 ? '#f87171' : 'var(--text-secondary)' }}>{fmt(w.opening)}</td>
-                  <td style={{ padding: '14px 16px', fontWeight: '700', color: w.current < 0 ? '#f87171' : 'var(--primary)' }}>{fmt(w.current)}</td>
-                  <td style={{ padding: '14px 16px', color: 'var(--text-muted)', fontSize: '12px' }}>{w.updated}</td>
-                  <td style={{ padding: '14px 16px' }}>
-                    <span style={{ 
-                      padding: '3px 10px', 
-                      borderRadius: 'var(--radius-full)', 
-                      fontSize: '11px', 
-                      fontWeight: '600', 
-                      backgroundColor: w.status?.toLowerCase().includes('needs update') ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)', 
-                      color: w.status?.toLowerCase().includes('needs update') ? '#ef4444' : 'var(--primary)' 
-                    }}>
-                      {w.status?.toLowerCase().includes('needs update') ? (
-                        <AlertCircle size={11} style={{ display: 'inline', marginRight: '4px' }} />
-                      ) : (
-                        <CheckCircle size={11} style={{ display: 'inline', marginRight: '4px' }} />
-                      )}
-                      {w.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '14px 16px' }}>
-                    <button
-                      className="btn btn-outline"
-                      style={{ padding: '5px 14px', fontSize: '12px', gap: '5px' }}
-                      onClick={() => { setAddFundsModal(w); setAddAmt(''); setAddNote(''); }}
-                    >
-                      <Plus size={12} /> Add
-                    </button>
-                  </td>
+      {/* Modern Data Table */}
+      <div className="admin-data-card">
+        {loading ? (
+          <div className="admin-loading">
+            <div style={{ width: '32px', height: '32px', border: '3px solid #E2E8F0', borderTopColor: '#10B981', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <span>Loading wallets...</span>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: '80px 20px', textAlign: 'center', color: '#94A3B8' }}>
+            <Wallet size={64} style={{ opacity: 0.3, marginBottom: '16px' }} />
+            <div style={{ fontSize: '18px', fontWeight: '600', color: '#64748B' }}>No wallets found</div>
+            <div style={{ fontSize: '14px', marginTop: '4px' }}>Click the + button to create a new wallet.</div>
+          </div>
+        ) : (
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px' }}>WALLET NAME</th>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textAlign: 'right' }}>OPENING BALANCE</th>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textAlign: 'right' }}>CURRENT BALANCE</th>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px' }}>LAST UPDATED</th>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px' }}>STATUS</th>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textAlign: 'right' }}>ACTIONS</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map((w) => (
+                  <tr key={w.id} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background-color 0.15s' }} className="expense-row">
+                    <td style={{ padding: '16px 24px', fontSize: '14px', color: '#1E293B', fontWeight: '700' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B' }}>
+                          <CreditCard size={16} />
+                        </div>
+                        {w.name}
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 24px', fontSize: '14px', fontWeight: '500', color: w.opening < 0 ? '#EF4444' : '#64748B', textAlign: 'right' }}>
+                      {fmt(w.opening)}
+                    </td>
+                    <td style={{ padding: '16px 24px', fontSize: '16px', fontWeight: '800', color: w.current < 0 ? '#EF4444' : '#059669', textAlign: 'right' }}>
+                      {fmt(w.current)}
+                    </td>
+                    <td style={{ padding: '16px 24px', fontSize: '13px', color: '#64748B' }}>
+                      {w.updated}
+                    </td>
+                    <td style={{ padding: '16px 24px' }}>
+                      <span style={{ 
+                        padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px',
+                        backgroundColor: w.status?.toLowerCase().includes('needs update') ? '#FEF2F2' : '#ECFDF5', 
+                        color: w.status?.toLowerCase().includes('needs update') ? '#EF4444' : '#10B981' 
+                      }}>
+                        {w.status?.toLowerCase().includes('needs update') ? <AlertCircle size={12} /> : <CheckCircle size={12} />}
+                        {w.status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                      <button 
+                        onClick={() => { setAddFundsModal(w); setAddAmt(''); setAddNote(''); }}
+                        style={{ background: '#ECFDF5', border: 'none', cursor: 'pointer', color: '#10B981', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', transition: 'background 0.2s', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <Plus size={14} /> Add
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* ── Add Wallet Modal ── */}
+      {/* Floating Action Button (FAB) */}
+      <button
+        type="button"
+        onClick={() => setAddModal(true)}
+        className="admin-fab admin-fab--green"
+      >
+        <Plus size={32} />
+      </button>
+
+      {/* MODALS */}
+      
+      {/* 1. Add Wallet Modal */}
       {addModal && (
-        <Modal title="Add New Wallet" onClose={() => setAddModal(false)}>
-          <Field label="Wallet Name *" value={newName} onChange={setNewName} placeholder="e.g. BANK, Cash, CSC…" />
-          <Field label="Opening Balance" type="number" value={newOpening} onChange={setNewOpening} placeholder="0.00" />
-          <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleAddWallet} disabled={saving || !newName.trim()}>
-            {saving ? 'Saving…' : 'Create Wallet'}
-          </button>
-        </Modal>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px', animation: 'fadeIn 0.2s ease-out' }}>
+          <div style={{ background: 'white', borderRadius: '24px', width: '100%', maxWidth: '420px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <div style={{ padding: '24px 32px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Wallet size={20} color="#10B981" /> Add New Wallet
+              </h3>
+              <button onClick={() => setAddModal(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleAddWallet} style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={labelStyle}>Wallet Name *</label>
+                <input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. BANK, Cash, CSC…" style={inputStyle} required />
+              </div>
+              <div>
+                <label style={labelStyle}>Opening Balance (₹)</label>
+                <input type="number" step="0.01" value={newOpening} onChange={e => setNewOpening(e.target.value)} placeholder="0.00" style={inputStyle} />
+              </div>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button type="button" onClick={() => setAddModal(false)} style={{ flex: 1, height: '48px', background: '#F1F5F9', color: '#475569', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={saving || !newName.trim()} style={{ flex: 2, height: '48px', background: '#10B981', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
+                  {saving ? 'Creating...' : 'Create Wallet'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
-      {/* ── Transfer Modal ── */}
+      {/* 2. Transfer Funds Modal */}
       {transferModal && (
-        <Modal title="Transfer Funds" onClose={() => setTransferModal(false)}>
-          <div className="form-group">
-            <label className="form-label">From Wallet *</label>
-            <select className="form-input" value={txFrom} onChange={(e) => setTxFrom(e.target.value)}>
-              <option value="">— Select —</option>
-              {wallets.map((w) => <option key={w.id} value={w.name}>{w.name} ({fmt(w.current)})</option>)}
-            </select>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px', animation: 'fadeIn 0.2s ease-out' }}>
+          <div style={{ background: 'white', borderRadius: '24px', width: '100%', maxWidth: '420px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <div style={{ padding: '24px 32px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ArrowRightLeft size={20} color="#10B981" /> Transfer Funds
+              </h3>
+              <button onClick={() => setTransferModal(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleTransfer} style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={labelStyle}>From Wallet *</label>
+                <select value={txFrom} onChange={e => setTxFrom(e.target.value)} style={inputStyle} required>
+                  <option value="">— Select —</option>
+                  {wallets.map(w => <option key={w.id} value={w.name}>{w.name} ({fmt(w.current)})</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>To Wallet *</label>
+                <select value={txTo} onChange={e => setTxTo(e.target.value)} style={inputStyle} required>
+                  <option value="">— Select —</option>
+                  {wallets.filter(w => w.name !== txFrom).map(w => <option key={w.id} value={w.name}>{w.name} ({fmt(w.current)})</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Amount (₹) *</label>
+                <input type="number" step="0.01" value={txAmt} onChange={e => setTxAmt(e.target.value)} placeholder="0.00" style={inputStyle} required />
+              </div>
+              <div>
+                <label style={labelStyle}>Note (Optional)</label>
+                <input type="text" value={txNote} onChange={e => setTxNote(e.target.value)} placeholder="Optional note" style={inputStyle} />
+              </div>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button type="button" onClick={() => setTransferModal(false)} style={{ flex: 1, height: '48px', background: '#F1F5F9', color: '#475569', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={saving || !txFrom || !txTo || !txAmt || txFrom === txTo} style={{ flex: 2, height: '48px', background: '#10B981', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
+                  {saving ? 'Transferring...' : 'Confirm Transfer'}
+                </button>
+              </div>
+            </form>
           </div>
-          <div className="form-group">
-            <label className="form-label">To Wallet *</label>
-            <select className="form-input" value={txTo} onChange={(e) => setTxTo(e.target.value)}>
-              <option value="">— Select —</option>
-              {wallets.filter((w) => w.name !== txFrom).map((w) => <option key={w.id} value={w.name}>{w.name} ({fmt(w.current)})</option>)}
-            </select>
-          </div>
-          <Field label="Amount *" type="number" value={txAmt} onChange={setTxAmt} placeholder="0.00" />
-          <Field label="Note" value={txNote} onChange={setTxNote} placeholder="Optional note" />
-          <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleTransfer}
-            disabled={saving || !txFrom || !txTo || !txAmt || txFrom === txTo}>
-            {saving ? 'Transferring…' : 'Confirm Transfer'}
-          </button>
-        </Modal>
+        </div>
       )}
 
-      {/* ── Add Funds Modal ── */}
+      {/* 3. Add Funds Modal */}
       {addFundsModal && (
-        <Modal title={`Add Funds — ${addFundsModal.name}`} onClose={() => setAddFundsModal(null)}>
-          <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '12px 16px', marginBottom: '16px', fontSize: '13px' }}>
-            Current Balance: <strong style={{ color: addFundsModal.current < 0 ? '#f87171' : 'var(--primary)' }}>{fmt(addFundsModal.current)}</strong>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px', animation: 'fadeIn 0.2s ease-out' }}>
+          <div style={{ background: 'white', borderRadius: '24px', width: '100%', maxWidth: '420px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <div style={{ padding: '24px 32px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <TrendingUp size={20} color="#10B981" /> Adjust Balance
+              </h3>
+              <button onClick={() => setAddFundsModal(null)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleAddFunds} style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              <div style={{ backgroundColor: '#F8FAFC', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '14px', color: '#64748B', fontWeight: '600' }}>{addFundsModal.name} Balance</span>
+                <span style={{ fontSize: '18px', fontWeight: '800', color: addFundsModal.current < 0 ? '#EF4444' : '#10B981' }}>{fmt(addFundsModal.current)}</span>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Amount (Use - to debit) *</label>
+                <div style={{ position: 'relative' }}>
+                  <DollarSign size={18} style={{ position: 'absolute', left: '16px', top: '15px', color: '#94A3B8' }} />
+                  <input type="number" step="0.01" value={addAmt} onChange={e => setAddAmt(e.target.value)} placeholder="+500 or -200" style={{...inputStyle, paddingLeft: '44px'}} required />
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Note (Optional)</label>
+                <input type="text" value={addNote} onChange={e => setAddNote(e.target.value)} placeholder="Reason for adjustment" style={inputStyle} />
+              </div>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button type="button" onClick={() => setAddFundsModal(null)} style={{ flex: 1, height: '48px', background: '#F1F5F9', color: '#475569', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={saving || !addAmt} style={{ flex: 2, height: '48px', background: '#10B981', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
+                  {saving ? 'Updating...' : 'Update Balance'}
+                </button>
+              </div>
+            </form>
           </div>
-          <Field label="Amount (use negative to debit)" type="number" value={addAmt} onChange={setAddAmt} placeholder="+500 or -200" />
-          <Field label="Note" value={addNote} onChange={setAddNote} placeholder="Reason for adjustment" />
-          <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleAddFunds} disabled={saving || !addAmt}>
-            {saving ? 'Updating…' : 'Update Balance'}
-          </button>
-        </Modal>
+        </div>
       )}
 
-      {/* ── History Modal ── */}
+      {/* 4. History Modal */}
       {historyModal && (
-        <Modal title="Wallet Transaction History" onClose={() => setHistoryModal(false)}>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-            Full transaction log will appear here once wallet history tracking is set up in Google Sheets ("Wallet History" tab).
-          </p>
-        </Modal>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px', animation: 'fadeIn 0.2s ease-out' }}>
+          <div style={{ background: 'white', borderRadius: '24px', width: '100%', maxWidth: '500px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <div style={{ padding: '24px 32px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <History size={20} color="#64748B" /> Transaction History
+              </h3>
+              <button onClick={() => setHistoryModal(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+              <History size={48} style={{ color: '#E2E8F0', marginBottom: '16px' }} />
+              <p style={{ color: '#64748B', fontSize: '14px', lineHeight: '1.5' }}>
+                Full transaction log will appear here once wallet history tracking is fully configured in Google Sheets ("Wallet History" tab).
+              </p>
+            </div>
+          </div>
+        </div>
       )}
+
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .expense-row:hover { background-color: #F8FAFC !important; }
+      `}</style>
     </div>
   );
 }

@@ -48,7 +48,7 @@ void main() {
     await tester.tap(find.text('Add Service'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Service name'), findsOneWidget);
+    expect(find.text('Service Name'), findsOneWidget);
     expect(find.text('Save service'), findsOneWidget);
   });
 }

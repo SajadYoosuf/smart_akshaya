@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:smart_akshaya/utils/form_dialog_utils.dart';
+import 'package:smart_akshaya/services/auth_service.dart';
 
 class QuickDocumentFinder extends StatefulWidget {
   const QuickDocumentFinder({super.key});
@@ -23,11 +22,18 @@ class _QuickDocumentFinderState extends State<QuickDocumentFinder> {
 
   Future<void> _loadFormsData() async {
     try {
-      final jsonString = await rootBundle.loadString('assets/forms_data.json');
-      final List<dynamic> jsonData = json.decode(jsonString);
-
+      final authService = AuthService();
+      await authService.ensureSheetsServiceInitialized();
+      final folderId = await authService.getDriveFolderId();
+      if (folderId.isEmpty) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+      final files = await authService.sheetsService.fetchDriveFiles(folderId);
       setState(() {
-        _forms = jsonData.map((e) => Map<String, dynamic>.from(e)).toList();
+        _forms = files;
         _isLoading = false;
       });
     } catch (e) {

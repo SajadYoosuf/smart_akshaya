@@ -4,11 +4,9 @@ import 'package:smart_akshaya/application_forms_screen.dart';
 import '../test_helpers/test_helpers.dart';
 
 void main() {
-  testWidgets('ApplicationFormsScreen loads forms from injected asset bundle', (WidgetTester tester) async {
-    final assetBundle = TestAssetBundle({
-      'assets/forms_data.json':
-          '[{"title":"Form A","subtitle":"Subtitle A","path":"/a"},{"title":"Form B","subtitle":"Subtitle B","path":"/b"}]',
-    });
+  testWidgets('ApplicationFormsScreen loads forms from Google Drive folder', (WidgetTester tester) async {
+    final fakeSheetsService = FakeGoogleSheetsService();
+    final fakeAuthService = FakeAuthService('test-spreadsheet-id');
 
     tester.binding.window.devicePixelRatioTestValue = 1.0;
     tester.binding.window.physicalSizeTestValue = const Size(1200, 1200);
@@ -19,14 +17,20 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(body: ApplicationFormsScreen(assetBundle: assetBundle)),
+        home: Scaffold(
+          body: ApplicationFormsScreen(
+            sheetsService: fakeSheetsService,
+            authService: fakeAuthService,
+            folderId: 'test-folder',
+          ),
+        ),
       ),
     );
 
     await tester.pumpAndSettle();
 
     expect(find.text('Application Forms'), findsOneWidget);
-    expect(find.text('Form A'), findsOneWidget);
-    expect(find.text('Form B'), findsOneWidget);
+    expect(find.text('Form_A.pdf'), findsOneWidget);
+    expect(find.text('Form_B.pdf'), findsOneWidget);
   });
 }

@@ -84,5 +84,37 @@ void main() {
         expect(state, isA<DataEmpty<List<ServiceItem>>>());
       }
     });
+
+    test('ServiceItem.fromRow dynamic header parsing', () {
+      final headers = [
+        "service_name",
+        "website",
+        "department_fee",
+        "service_charge",
+        "commission",
+        "allow_edit",
+        "followup_days",
+        "default_wallet"
+      ];
+      final row = [
+        "Aadhaar online Demographic Update",
+        "https://myaadhaar.uidai.gov.in/",
+        "83",
+        "57",
+        "5",
+        "true",
+        "10",
+        "BANK"
+      ];
+      final service = ServiceItem.fromRow(row, 2, headers);
+      expect(service.serviceName, 'Aadhaar online Demographic Update');
+      expect(service.website, 'https://myaadhaar.uidai.gov.in/');
+      expect(service.departmentFee, '83');
+      expect(service.serviceCharge, '57');
+      expect(service.commission, '5');
+      expect(service.allowEdit, true);
+      expect(service.followupDays, '10');
+      expect(service.defaultWallet, 'BANK');
+    });
   });
 }

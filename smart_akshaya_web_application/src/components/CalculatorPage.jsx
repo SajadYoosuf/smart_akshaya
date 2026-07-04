@@ -144,25 +144,48 @@ export default function CalculatorPage() {
   };
 
   return (
-    <div style={{ animation: 'fadeIn 0.3s ease' }}>
-      <div className="tool-header">
-        <h2 className="tool-title">Calculator</h2>
-        <p className="tool-description">Full-featured arithmetic calculator with history.</p>
+    <div style={{ animation: 'fadeIn 0.3s ease', padding: '40px 24px', maxWidth: '1200px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      {/* Hero Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, #F59E0B 0%, #B45309 100%)',
+        borderRadius: '24px',
+        padding: '32px 40px',
+        color: 'white',
+        boxShadow: '0 10px 25px rgba(245, 158, 11, 0.3)',
+        marginBottom: '32px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div>
+          <div style={{ fontSize: '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>
+            Calculator
+          </div>
+          <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '16px', marginTop: '8px' }}>
+            Full-featured arithmetic calculator with history
+          </div>
+        </div>
+        <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '20px' }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line></svg>
+        </div>
       </div>
 
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '340px 1fr',
-          gap: '32px',
+          gridTemplateColumns: 'minmax(280px, 360px) 1fr',
+          gap: 'clamp(16px, 5vw, 32px)',
           alignItems: 'start',
           maxWidth: '900px',
+          width: '100%',
+          boxSizing: 'border-box',
+          padding: '0 16px'
         }}
       >
         {/* ── Calculator Body ── */}
         <div
-          className="glass-panel"
-          style={{ padding: '24px', userSelect: 'none' }}
+          className="glow-card"
+          style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '20px', padding: '32px', userSelect: 'none' }}
         >
           {/* Display */}
           <div
@@ -229,7 +252,7 @@ export default function CalculatorPage() {
         </div>
 
         {/* ── History Panel ── */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
+        <div className="glow-card" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '20px', padding: '32px' }}>
           <h3
             style={{
               fontSize: '13px',

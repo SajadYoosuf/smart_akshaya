@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smart_akshaya/config/google_sheets_config.dart';
-import '../services/google_sheets_service.dart';
 import '../services/auth_service.dart';
 import '../models/saved_bill.dart';
-import '../models/entry_status.dart';
 
 class SavedBillsProvider extends ChangeNotifier {
   List<SavedBill> _bills = [];
@@ -72,7 +70,7 @@ class SavedBillsProvider extends ChangeNotifier {
 
       final rows = await sheetsService.getRows(
         spreadsheetId,
-        GoogleSheetsConfig.serviceEntrySheetName,
+        GoogleSheetsConfig.savedBillsSheetName,
       );
 
       if (rows.length > 1) {
@@ -82,9 +80,8 @@ class SavedBillsProvider extends ChangeNotifier {
           if (row.isEmpty || row[0].toString().trim().isEmpty) continue;
           parsed.add(SavedBill.fromRow(row, rowIndex: i + 1));
         }
-        _bills = parsed
-            .where((b) => b.status == EntryStatus.saved)
-            .toList();
+        // Show all bills (both pending and completed) from Saved Bills sheet
+        _bills = parsed;
       } else {
         _bills = [];
       }

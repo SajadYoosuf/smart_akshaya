@@ -195,14 +195,34 @@ export default function SslcCalculator({ onViewChange }) {
     <div style={{
       maxWidth: '1200px',
       margin: '0 auto',
-      padding: '30px 20px',
-      color: 'var(--text-primary)',
+      padding: '40px 24px',
+      color: '#1E293B',
       animation: 'fadeIn 0.3s ease-out'
     }}>
-      {/* ── Top Header Bar ── */}
-
-
-      {/* ── Main Dashboard Layout ── */}
+      {/* Hero Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, #A855F7 0%, #7E22CE 100%)',
+        borderRadius: '24px',
+        padding: '32px 40px',
+        color: 'white',
+        boxShadow: '0 10px 25px rgba(168, 85, 247, 0.3)',
+        marginBottom: '32px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div>
+          <div style={{ fontSize: '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>
+            SSLC Grade Calculator
+          </div>
+          <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '16px', marginTop: '8px' }}>
+            Accurate percentage and point calculation based on Kerala SSLC grades
+          </div>
+        </div>
+        <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '20px' }}>
+          <Calculator size={36} color="white" />
+        </div>
+      </div>      {/* ── Main Dashboard Layout ── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: percentage !== null ? '1fr 400px' : '1fr',
@@ -211,13 +231,15 @@ export default function SslcCalculator({ onViewChange }) {
       }}>
 
         {/* Left Side: Input Grid & Controls */}
-        <div style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border)',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: 'var(--shadow-sm)'
-        }}>
+        <div 
+          className="glow-card"
+          style={{
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderRadius: '20px',
+            padding: '32px',
+          }}
+        >
 
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
@@ -446,18 +468,19 @@ export default function SslcCalculator({ onViewChange }) {
           }}>
 
             {/* Visual Circular Gauge / Percentage Card */}
-            <div style={{
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '16px',
-              padding: '24px',
-              boxShadow: 'var(--shadow-md)',
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '16px'
+            <div 
+              className="glow-card"
+              style={{
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                borderRadius: '20px',
+                padding: '32px',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '16px'
             }}>
               <span style={{ fontSize: '11.5px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.8px' }}>
                 Estimated Percentage
