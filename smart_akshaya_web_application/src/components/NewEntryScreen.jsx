@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { User, Grid, Receipt, Plus, Trash2, Check, Calculator, RefreshCw, DollarSign, Printer, Send, X, Calendar, MapPin, Phone, CreditCard, Banknote, CheckCircle, Clock } from 'lucide-react';
 import { getRows, appendRow, updateRow, updateRowColumns } from '../services/googleSheetsService';
 import { SHEETS_CONFIG } from '../config/sheetsConfig';
+import { generateInvoicePdf } from '../utils/pdfGenerator';
 
 export default function NewEntryScreen({ userSession, editBillData, setEditBillData }) {
   const [staffName, setStaffName] = useState('Staff User');
@@ -21,7 +22,14 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
   // Search dropdown state
   const [nameSuggestions, setNameSuggestions] = useState([]);
   const [showNameDropdown, setShowNameDropdown] = useState(false);
+  const [customerSelectedIndex, setCustomerSelectedIndex] = useState(-1);
   const nameRef = useRef(null);
+
+  // Service dropdown state
+  const [serviceSuggestions, setServiceSuggestions] = useState([]);
+  const [showServiceDropdown, setShowServiceDropdown] = useState(false);
+  const [serviceSelectedIndex, setServiceSelectedIndex] = useState(-1);
+  const serviceRef = useRef(null);
 
   // Add Service Form State
   const [selectedService, setSelectedService] = useState('');
@@ -97,7 +105,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
               departmentFee: deptFee,
               serviceCharge: sCharge,
               walletCharge: 0,
-              walletType: 'Cash',
+              walletType: '',
               quantity: qty,
               total: (deptFee + sCharge) * qty
             });
@@ -107,7 +115,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
       setBillItems(parsedItems);
       setEditBillData(null);
     }
-  }, [editBillData, services, setEditBillData]);
+  }, [editBillData, services, setEditBillData, wallets]);
 
   const loadData = async () => {
     setIsRefreshing(true);
@@ -144,15 +152,13 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
       if (walletRows.length > 1) {
         const headers = walletRows[0].map(h => h.trim().toLowerCase());
         const nameIdx = headers.indexOf('wallet name') !== -1 ? headers.indexOf('wallet name') : 0;
-        const loadedWallets = walletRows.slice(1).map(row => row[nameIdx]).filter(Boolean);
+        const loadedWallets = walletRows.slice(1).map(row => row[nameIdx]).filter(Boolean).filter(w => w.toLowerCase() !== 'cash');
         setWallets(loadedWallets);
-        if (loadedWallets.length > 0) {
-          setSelectedWallet(loadedWallets[0]);
-        }
+        setSelectedWallet('');
       } else {
-        const defaultWallets = ['Cash', 'BANK', 'Edistrict', 'CSC', 'UPI', 'UTI'];
+        const defaultWallets = ['BANK', 'Edistrict', 'CSC', 'UPI', 'UTI'];
         setWallets(defaultWallets);
-        setSelectedWallet(defaultWallets[0]);
+        setSelectedWallet('');
       }
 
       // Load Customers eagerly for name autocomplete
@@ -197,10 +203,12 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
     setMobileNumber(customer.phone);
     setShowNameDropdown(false);
     setNameSuggestions([]);
+    setCustomerSelectedIndex(-1);
   };
 
   const handleNameChange = async (value) => {
     setCustomerName(value);
+    setCustomerSelectedIndex(-1);
     if (value.trim().length === 0) {
       setNameSuggestions([]);
       setShowNameDropdown(false);
@@ -219,10 +227,27 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
       if (nameRef.current && !nameRef.current.contains(e.target)) {
         setShowNameDropdown(false);
       }
+      if (serviceRef.current && !serviceRef.current.contains(e.target)) {
+        setShowServiceDropdown(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleServiceChange = (value) => {
+    setSelectedService(value);
+    setServiceSelectedIndex(-1);
+    if (value.trim().length === 0) {
+      setServiceSuggestions([]);
+      setShowServiceDropdown(false);
+      return;
+    }
+    const lower = value.toLowerCase();
+    const filtered = services.filter(s => s.name && s.name.toLowerCase().includes(lower));
+    setServiceSuggestions(filtered);
+    setShowServiceDropdown(filtered.length > 0);
+  };
 
   const handleServiceSelect = (serviceName) => {
     setSelectedService(serviceName);
@@ -231,6 +256,40 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
       setWalletCharge(match.departmentFee.toString());
       setServiceCharge(match.serviceCharge.toString());
     }
+    setShowServiceDropdown(false);
+    setServiceSelectedIndex(-1);
+  };
+
+  const handleCustomerKeyDown = (e) => {
+    if (!showNameDropdown || nameSuggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setCustomerSelectedIndex(prev => (prev < nameSuggestions.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setCustomerSelectedIndex(prev => (prev > 0 ? prev - 1 : 0));
+    } else if (e.key === 'Enter') {
+      if (customerSelectedIndex >= 0 && customerSelectedIndex < nameSuggestions.length) {
+        e.preventDefault();
+        handleCustomerSelect(nameSuggestions[customerSelectedIndex]);
+      }
+    }
+  };
+
+  const handleServiceKeyDown = (e) => {
+    if (!showServiceDropdown || serviceSuggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setServiceSelectedIndex(prev => (prev < serviceSuggestions.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setServiceSelectedIndex(prev => (prev > 0 ? prev - 1 : 0));
+    } else if (e.key === 'Enter') {
+      if (serviceSelectedIndex >= 0 && serviceSelectedIndex < serviceSuggestions.length) {
+        e.preventDefault();
+        handleServiceSelect(serviceSuggestions[serviceSelectedIndex].name);
+      }
+    }
   };
 
   const handleAddService = () => {
@@ -238,12 +297,17 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
       alert("Please select a service first.");
       return;
     }
+    
+    if (parseFloat(walletCharge) > 0 && !selectedWallet) {
+      alert("Please select a wallet type.");
+      return;
+    }
 
     const newItem = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       serviceName: selectedService,
       walletCharge: walletCharge || '0',
-      walletType: selectedWallet || wallets[0] || 'Cash',
+      walletType: selectedWallet || '',
       serviceCharge: serviceCharge || '0',
       quantity: quantity || '1',
       total: ((parseFloat(serviceCharge) || 0) + (parseFloat(walletCharge) || 0)) * (parseInt(quantity) || 1)
@@ -529,7 +593,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
         setShowCalculator(!showCalculator);
       } else if (e.altKey && e.key.toLowerCase() === 'p') {
         e.preventDefault();
-        window.print();
+        handlePrintPdf();
       } else if (e.altKey && e.key.toLowerCase() === 'g') {
         e.preventDefault();
         gpayRef.current?.focus();
@@ -541,6 +605,23 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [billItems, customerName, mobileNumber, gpayAmount, cashAmount, selectedService, walletCharge, serviceCharge, quantity, selectedWallet, balance, totalAmount, showCalculator]);
+
+  const handlePrintPdf = async () => {
+    try {
+      const entryData = {
+        customerName,
+        mobileNumber,
+        staffName,
+        billItems,
+        totalAmount
+      };
+      const pdfUrl = await generateInvoicePdf(entryData);
+      window.open(pdfUrl, '_blank');
+    } catch (e) {
+      console.error(e);
+      alert("Failed to generate PDF. Make sure invoice_template.pdf is present in the public folder.");
+    }
+  };
 
   return (
     <div className="entry-page">
@@ -580,7 +661,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
       <div className="entry-stack">
 
         {/* Customer Details Card */}
-        <div className="entry-card glass-panel glow-card">
+        <div className="entry-card glass-panel glow-card" style={{ overflow: 'visible', zIndex: 10 }}>
           <h3 className="card-title entry-card-title">
             <User size={18} style={{ color: 'var(--primary)' }} />
             Customer Details
@@ -611,10 +692,11 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
                     <RefreshCw size={16} className="animate-spin text-slate-400" />
                   </div>
                 )}
-                <input
+                  <input
                   type="text"
                   value={customerName}
                   onChange={(e) => handleNameChange(e.target.value)}
+                  onKeyDown={handleCustomerKeyDown}
                   placeholder="Search customer..."
                   className="form-input"
                   style={{ paddingLeft: '44px' }}
@@ -626,9 +708,8 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
                       <div
                         key={i}
                         onMouseDown={() => handleCustomerSelect(c)}
-                        style={dropdownItemStyle}
-                        onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                        style={{ ...dropdownItemStyle, background: i === customerSelectedIndex ? '#F1F5F9' : 'white' }}
+                        onMouseEnter={() => setCustomerSelectedIndex(i)}
                       >
                         <div style={{ fontWeight: '600', color: '#1E293B', fontSize: '13px' }}>{c.name}</div>
                         <div style={{ fontSize: '12px', color: '#64748B' }}>📞 {c.phone}</div>
@@ -642,26 +723,49 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
         </div>
 
         {/* Add Service Card */}
-        <div className="entry-card glass-panel glow-card">
+        <div className="entry-card glass-panel glow-card" style={{ overflow: 'visible', zIndex: 9 }}>
           <h3 className="card-title entry-card-title">
             <Grid size={18} style={{ color: 'var(--primary)' }} />
             Add Service
           </h3>
 
           <div className="entry-service-form">
-            <div className="entry-service-field entry-service-field--wide">
+            <div className="entry-service-field entry-service-field--wide" ref={serviceRef}>
               <label className="form-label">SERVICES</label>
-              <input
-                type="text"
-                value={selectedService}
-                onChange={(e) => handleServiceSelect(e.target.value)}
-                placeholder="Search service..."
-                className="form-input"
-                list="services-list"
-              />
-              <datalist id="services-list">
-                {services.map((s, i) => <option key={i} value={s.name} />)}
-              </datalist>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  value={selectedService}
+                  onChange={(e) => handleServiceChange(e.target.value)}
+                  onKeyDown={handleServiceKeyDown}
+                  onFocus={(e) => {
+                    if (selectedService) handleServiceChange(selectedService);
+                    else {
+                      setServiceSuggestions(services);
+                      setShowServiceDropdown(true);
+                      setServiceSelectedIndex(-1);
+                    }
+                  }}
+                  placeholder="Search service..."
+                  className="form-input"
+                  autoComplete="off"
+                />
+                {showServiceDropdown && serviceSuggestions.length > 0 && (
+                  <div style={dropdownStyle}>
+                    {serviceSuggestions.map((s, i) => (
+                      <div
+                        key={i}
+                        onMouseDown={() => handleServiceSelect(s.name)}
+                        style={{ ...dropdownItemStyle, background: i === serviceSelectedIndex ? '#F1F5F9' : 'white' }}
+                        onMouseEnter={() => setServiceSelectedIndex(i)}
+                      >
+                        <div style={{ fontWeight: '600', color: '#1E293B', fontSize: '13px' }}>{s.name}</div>
+                        <div style={{ fontSize: '12px', color: '#64748B' }}>Srv: ₹{s.serviceCharge} | Dept: ₹{s.departmentFee}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="entry-service-field">
@@ -672,6 +776,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
             <div className="entry-service-field">
               <label className="form-label">WALLET</label>
               <select value={selectedWallet} onChange={(e) => setSelectedWallet(e.target.value)} className="form-input">
+                <option value="">Select Wallet</option>
                 {wallets.map((w, i) => <option key={i} value={w}>{w}</option>)}
               </select>
             </div>
@@ -733,6 +838,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
                       </td>
                       <td style={tdStyle}>
                         <select value={item.walletType} onChange={(e) => updateBillItem(item.id, 'walletType', e.target.value)} style={tableInputStyle}>
+                          <option value="">Select Wallet</option>
                           {wallets.map((w, i) => <option key={i} value={w}>{w}</option>)}
                         </select>
                       </td>
@@ -870,7 +976,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
           <button type="button" onClick={clearForm} className="entry-bottom-btn entry-bottom-btn--danger" title="F10">
             <Trash2 size={16} /> Clear Form <span style={{ ...shortcutBadgeStyle, borderColor: '#FECACA', color: '#EF4444', background: 'white' }}>F10</span>
           </button>
-          <button type="button" onClick={() => window.print()} className="entry-bottom-btn entry-bottom-btn--print" title="Alt+P">
+          <button type="button" onClick={handlePrintPdf} className="entry-bottom-btn entry-bottom-btn--print" title="Alt+P">
             <Printer size={16} /> Print <span style={{ ...shortcutBadgeStyle, borderColor: '#BFDBFE', color: '#3B82F6', background: 'white' }}>Alt+P</span>
           </button>
           <button type="button" onClick={() => { const formattedText = `Smart Akshaya - Total Amount: ₹${totalAmount.toFixed(2)}`; window.open(`https://wa.me/91${mobileNumber}?text=${encodeURIComponent(formattedText)}`, '_blank'); }} className="entry-bottom-btn entry-bottom-btn--share" title="Alt+W">

@@ -392,7 +392,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             final double itemWidth =
                 (width - (crossAxisCount - 1) * 16) / crossAxisCount;
-            final double childAspectRatio = itemWidth / 72.0;
+            final double childAspectRatio = itemWidth / 110.0;
 
             return GridView.builder(
               shrinkWrap: true,

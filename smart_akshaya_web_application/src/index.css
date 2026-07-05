@@ -496,20 +496,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
     overflow: visible !important;
   }
 
-  /* Allow resume studio to print when using browser print fallback */
-  .app-container:has(.resume-builder) {
+  /* Allow the app to print natively */
+  .app-container, .content-area {
     display: block !important;
     height: auto !important;
     overflow: visible !important;
     background: white !important;
   }
 
-  .app-container:has(.resume-builder) .sidebar-container {
-    display: none !important;
-  }
-
-  .app-container:not(:has(.resume-builder)),
-  .content-area:not(:has(.resume-builder)),
+  .sidebar-container,
   .sidebar,
   .left-panel,
   .btn,
