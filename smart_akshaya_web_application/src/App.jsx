@@ -22,6 +22,7 @@ import { getCurrentSession, logoutSession } from './services/googleSheetsAuth';
 import MenuRounded from '@mui/icons-material/MenuRounded';
 import SyncRounded from '@mui/icons-material/SyncRounded';
 import { Search, X } from 'lucide-react';
+import ReloadPrompt from './components/ReloadPrompt';
 
 // ── Page title map (matches Windows app pageTitles list) ──────────────────────
 const PAGE_TITLES = {
@@ -335,6 +336,7 @@ export default function App() {
           {renderView()}
         </main>
       </div>
+      <ReloadPrompt />
     </div>
   );
 }
