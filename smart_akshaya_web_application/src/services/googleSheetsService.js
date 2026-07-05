@@ -7,22 +7,38 @@ import { getSpreadsheetId } from '../config/sheetsConfig';
  * @returns {Promise<Array<Array<any>>>}
  */
 export async function getRows(sheetName) {
-  const spreadsheetId = getSpreadsheetId();
-  const token = await getAccessToken();
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}!A:Z`;
+  try {
+    console.log(`[getRows] Initiating fetch for sheet: ${sheetName}`);
+    const spreadsheetId = getSpreadsheetId();
+    console.log(`[getRows] Spreadsheet ID: ${spreadsheetId}`);
+    
+    const token = await getAccessToken();
+    console.log(`[getRows] Token acquired (length: ${token?.length})`);
 
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}!A:Z`;
+    console.log(`[getRows] Request URL: ${url}`);
 
-  if (!response.ok) {
-    throw new Error(`Error fetching sheet rows: ${response.statusText}`);
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    console.log(`[getRows] Response Status: ${response.status} ${response.statusText}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[getRows] Fetch failed! Status: ${response.status}, Error: ${errorText}`);
+      throw new Error(`Error fetching sheet rows: ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log(`[getRows] Success! Fetched ${data.values ? data.values.length : 0} rows from ${sheetName}`);
+    return data.values || [];
+  } catch (error) {
+    console.error(`[getRows] Caught exception for sheet ${sheetName}:`, error);
+    throw error;
   }
-
-  const data = await response.json();
-  return data.values || [];
 }
 
 /**

@@ -66,13 +66,16 @@ export async function getAccessToken() {
   }
 
   try {
+    console.log('[getAccessToken] Starting token acquisition process');
     let credentials;
     if (import.meta.env.VITE_GOOGLE_SERVICE_ACCOUNT && import.meta.env.VITE_GOOGLE_SERVICE_ACCOUNT !== 'undefined') {
+      console.log('[getAccessToken] Using VITE_GOOGLE_SERVICE_ACCOUNT env var');
       credentials = JSON.parse(import.meta.env.VITE_GOOGLE_SERVICE_ACCOUNT);
     } else {
-      // 1. Fetch credentials JSON from the public directory
+      console.log('[getAccessToken] Fetching /google_sheets_credentials.json');
       const credsResponse = await fetch("/google_sheets_credentials.json");
       if (!credsResponse.ok) {
+        console.error(`[getAccessToken] Creds fetch failed: ${credsResponse.status} ${credsResponse.statusText}`);
         throw new Error("Could not load Google service account credentials. Make sure public/google_sheets_credentials.json is present.");
       }
       credentials = await credsResponse.json();
@@ -80,6 +83,7 @@ export async function getAccessToken() {
 
     const privateKey = credentials.private_key;
     const clientEmail = credentials.client_email;
+    console.log(`[getAccessToken] Credentials loaded for email: ${clientEmail}`);
 
     // 2. Import Key
     const cryptoKey = await importPrivateKey(privateKey);
@@ -111,6 +115,7 @@ export async function getAccessToken() {
     const jwt = `${message}.${encodedSignature}`;
 
     // 5. POST to OAuth token endpoint
+    console.log('[getAccessToken] Requesting OAuth token from Google');
     const response = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: {
@@ -120,6 +125,8 @@ export async function getAccessToken() {
     });
 
     if (!response.ok) {
+      const errText = await response.text();
+      console.error(`[getAccessToken] OAuth error: ${response.status} ${response.statusText} - ${errText}`);
       throw new Error(`Google OAuth error: ${response.statusText}`);
     }
 
@@ -127,9 +134,10 @@ export async function getAccessToken() {
     cachedToken = tokenData.access_token;
     tokenExpiryTime = now + (tokenData.expires_in || 3600);
     
+    console.log('[getAccessToken] Token successfully acquired and cached');
     return cachedToken;
   } catch (error) {
-    console.error("Error obtaining access token:", error);
+    console.error('[getAccessToken] Caught exception:', error);
     throw error;
   }
 }
