@@ -1,3 +1,0 @@
-C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/pdfium-download.dir
-C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/ALL_BUILD.dir
-C:/client_projects/smart_akshaya/smart_akshaya_windows_application/build/windows/x64/pdfium-download/CMakeFiles/ZERO_CHECK.dir

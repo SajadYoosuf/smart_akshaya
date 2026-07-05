@@ -146,7 +146,6 @@ export default function Sidebar({ currentView, onViewChange, userSession, onLogo
           <span style={sectionLabel}>SERVICES</span>
           <NavItem view="new-entry" Icon={LayoutGrid} label="Service Entry" />
           <NavItem view="saved-bills" Icon={Bookmark} label="Saved Bills" />
-          <NavItem view="resume-studio" Icon={FileText} label="Resume Studio" />
           {isAdmin && <NavItem view="service-management" Icon={Settings} label="Service Management" />}
 
           {/* WALLETS */}

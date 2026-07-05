@@ -150,13 +150,19 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
       // Load Wallets
       const walletRows = await getRows(SHEETS_CONFIG.walletSheetName);
       if (walletRows.length > 1) {
-        const headers = walletRows[0].map(h => h.trim().toLowerCase());
+        const headers = walletRows[0].map(h => (h || '').toString().trim().toLowerCase());
         const nameIdx = headers.indexOf('wallet name') !== -1 ? headers.indexOf('wallet name') : 0;
-        const loadedWallets = walletRows.slice(1).map(row => row[nameIdx]).filter(Boolean).filter(w => w.toLowerCase() !== 'cash');
+        const balIdx = headers.indexOf('current balance');
+        const loadedWallets = walletRows.slice(1)
+          .map(row => ({
+            name: row[nameIdx],
+            balance: balIdx !== -1 ? (parseFloat(row[balIdx]) || 0) : null
+          }))
+          .filter(w => w.name && w.name.toLowerCase() !== 'cash');
         setWallets(loadedWallets);
         setSelectedWallet('');
       } else {
-        const defaultWallets = ['BANK', 'Edistrict', 'CSC', 'UPI', 'UTI'];
+        const defaultWallets = ['BANK', 'Edistrict', 'CSC', 'UPI', 'UTI'].map(name => ({ name, balance: null }));
         setWallets(defaultWallets);
         setSelectedWallet('');
       }
@@ -777,7 +783,11 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
               <label className="form-label">WALLET</label>
               <select value={selectedWallet} onChange={(e) => setSelectedWallet(e.target.value)} className="form-input">
                 <option value="">Select Wallet</option>
-                {wallets.map((w, i) => <option key={i} value={w}>{w}</option>)}
+                {wallets.map((w, i) => (
+                  <option key={i} value={w.name}>
+                    {w.name} {w.balance !== null ? `(₹${w.balance.toLocaleString('en-IN')})` : ''}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -837,9 +847,13 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
                         <input type="number" value={item.walletCharge} onChange={(e) => updateBillItem(item.id, 'walletCharge', e.target.value)} style={tableInputStyle} />
                       </td>
                       <td style={tdStyle}>
-                        <select value={item.walletType} onChange={(e) => updateBillItem(item.id, 'walletType', e.target.value)} style={tableInputStyle}>
+                        <select value={item.walletType || ''} onChange={(e) => updateBillItem(item.id, 'walletType', e.target.value)} style={tableInputStyle}>
                           <option value="">Select Wallet</option>
-                          {wallets.map((w, i) => <option key={i} value={w}>{w}</option>)}
+                          {wallets.map((w, i) => (
+                            <option key={i} value={w.name}>
+                              {w.name} {w.balance !== null ? `(₹${w.balance.toLocaleString('en-IN')})` : ''}
+                            </option>
+                          ))}
                         </select>
                       </td>
                       <td style={tdStyle}>
