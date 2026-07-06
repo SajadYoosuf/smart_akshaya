@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, LayoutGrid, Bookmark, Wallet, FolderOpen, Settings, BarChart2, Receipt, Users, LogOut, UserCircle, FileText, X } from 'lucide-react';
+import { LayoutDashboard, LayoutGrid, Bookmark, Wallet, FolderOpen, Settings, BarChart2, Receipt, Users, LogOut, UserCircle, FileText, X, TrendingUp, Shield, History, Link as LinkIcon } from 'lucide-react';
 
 // Helper: extract 1-2 initials from a name
 function getInitials(name) {
@@ -10,8 +10,13 @@ function getInitials(name) {
 
 export default function Sidebar({ currentView, onViewChange, userSession, onLogout, onClose }) {
   const isActive = (view) => currentView === view;
-  const isAdmin = true;
-
+  const role = userSession?.role || 'staff';
+  const isAdmin = role === 'admin';
+  const isAccountant = role === 'accountant';
+  
+  const canSeeStaffManagement = isAdmin;
+  const canSeeStaffPerformance = isAdmin;
+  const canSeeWallet = isAdmin || isAccountant;
   /* ── style helpers ── */
   const navItem = (active) => ({
     width: '100%',
@@ -73,7 +78,7 @@ export default function Sidebar({ currentView, onViewChange, userSession, onLogo
 
   const initials = getInitials(userSession?.name);
   const displayName = userSession?.name || 'Admin User';
-  const roleLabel = userSession?.role === 'admin' ? 'System Admin' : 'Service Operator';
+  const roleLabel = userSession?.role === 'admin' ? 'Admin' : (userSession?.role === 'accountant' ? 'Accountant' : 'Staff');
 
   return (
     <aside
@@ -139,28 +144,36 @@ export default function Sidebar({ currentView, onViewChange, userSession, onLogo
 
           {/* MAIN */}
           <span style={sectionLabel}>MAIN</span>
-          {isAdmin && <NavItem view="dashboard" Icon={LayoutDashboard} label="Dashboard" />}
+          <NavItem view="dashboard" Icon={LayoutDashboard} label="Dashboard" />
           <NavItem view="document-finder" Icon={FolderOpen} label="Application Forms" />
 
           {/* SERVICES */}
           <span style={sectionLabel}>SERVICES</span>
           <NavItem view="new-entry" Icon={LayoutGrid} label="Service Entry" />
           <NavItem view="saved-bills" Icon={Bookmark} label="Saved Bills" />
-          {isAdmin && <NavItem view="service-management" Icon={Settings} label="Service Management" />}
+          <NavItem view="service-management" Icon={Settings} label="Service Management" />
 
           {/* WALLETS */}
-          <span style={sectionLabel}>WALLETS</span>
-          <NavItem view="wallet" Icon={Wallet} label="Wallets Balance" />
+          {canSeeWallet && (
+            <>
+              <span style={sectionLabel}>WALLETS</span>
+              <NavItem view="wallet" Icon={Wallet} label="Wallets Balance" />
+            </>
+          )}
 
           {/* FINANCE */}
           <span style={sectionLabel}>FINANCE</span>
-          <NavItem view="service-reports" Icon={BarChart2} label="Service Reports" />
+          <NavItem view="service-reports" Icon={BarChart2} label="Billed Services" />
+          {isAdmin && <NavItem view="transaction-history" Icon={History} label="Transaction History" />}
           <NavItem view="expenses" Icon={Receipt} label="Expenses" />
 
           {/* SYSTEM */}
           <span style={sectionLabel}>SYSTEM</span>
-          <NavItem view="staff-management" Icon={Users} label="Staff Management" />
+          {canSeeStaffManagement && <NavItem view="staff-management" Icon={Users} label="Staff Management" />}
+          {canSeeStaffPerformance && <NavItem view="staff-performance" Icon={TrendingUp} label="Staff Performance" />}
           <NavItem view="customer-details" Icon={UserCircle} label="Customer Details" />
+          <NavItem view="external-tools" Icon={LinkIcon} label="External Tools" />
+          {isAdmin && <NavItem view="permissions" Icon={Shield} label="Feature Permissions" />}
         </nav>
       </div>
 

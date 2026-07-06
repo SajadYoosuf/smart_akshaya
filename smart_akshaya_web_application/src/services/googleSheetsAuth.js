@@ -243,7 +243,7 @@ export async function authenticateLogin(email, password) {
     const session = {
       email: matchedStaff.email,
       name: matchedStaff.name,
-      role: matchedStaff.role === "admin" ? "admin" : "staff",
+      role: ["admin", "accountant", "staff"].includes(matchedStaff.role) ? matchedStaff.role : "staff",
     };
 
     localStorage.setItem("smart_akshaya_session", JSON.stringify(session));

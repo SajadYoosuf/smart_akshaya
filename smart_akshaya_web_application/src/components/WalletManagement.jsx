@@ -4,7 +4,6 @@ import {
   Plus,
   ArrowRightLeft,
   History,
-  Trash2,
   RefreshCw,
   Search,
   X,
@@ -12,9 +11,10 @@ import {
   AlertCircle,
   DollarSign,
   TrendingUp,
-  CreditCard
+  CreditCard,
+  Clock
 } from 'lucide-react';
-import { getRows, appendRow, appendRows, updateRowColumns } from '../services/googleSheetsService';
+import { getRows, appendRow, appendRows, updateRowColumns, logWalletTransaction } from '../services/googleSheetsService';
 
 const SHEET = 'Wallets';
 
@@ -40,11 +40,47 @@ const nowStr = () => {
   return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
+const todayDateStr = () => {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+};
+
+const isSameDateText = (value, dateStr) => {
+  const text = (value || '').toString().trim();
+  return text === dateStr || text === dateStr.replace(/-/g, '/');
+};
+
+const dateTextToDateStr = (value) => {
+  const text = (value || '').toString().trim();
+  const numeric = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+  if (numeric) {
+    return `${numeric[1].padStart(2, '0')}-${numeric[2].padStart(2, '0')}-${numeric[3]}`;
+  }
+
+  const named = text.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
+  if (!named) return '';
+
+  const monthMap = {
+    jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+    jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+  };
+  const month = monthMap[named[2].toLowerCase()];
+  return month ? `${named[1].padStart(2, '0')}-${month}-${named[3]}` : '';
+};
+
+const isTransferOrOpeningUpdate = (description = '') => {
+  const text = description.toLowerCase();
+  return text.includes('transfer') || text.includes('opening balance update');
+};
+
+const isOpeningBalanceUpdate = (description = '') =>
+  description.toLowerCase().includes('opening balance update');
+
 // ── Input helper ─────────────────────────────────────────────────────────────
 const labelStyle = { fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px', display: 'block' };
 const inputStyle = { width: '100%', height: '48px', padding: '0 16px', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '15px', boxSizing: 'border-box' };
 
-export default function WalletManagement() {
+export default function WalletManagement({ userSession = null }) {
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,6 +91,7 @@ export default function WalletManagement() {
   const [transferModal, setTransferModal] = useState(false);
   const [historyModal, setHistoryModal] = useState(false);
   const [addFundsModal, setAddFundsModal] = useState(null); // wallet object
+  const [openingUpdateModal, setOpeningUpdateModal] = useState(false);
 
   // form state
   const [newName, setNewName] = useState('');
@@ -67,6 +104,13 @@ export default function WalletManagement() {
   const [addNote, setAddNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
+
+  // history state
+  const [historyData, setHistoryData] = useState([]);
+  const [historyDate, setHistoryDate] = useState(todayDateStr);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [openingUpdateNeeded, setOpeningUpdateNeeded] = useState(false);
+  const [checkingOpeningUpdate, setCheckingOpeningUpdate] = useState(false);
 
   useEffect(() => { fetchWallets(); }, []);
 
@@ -101,10 +145,55 @@ export default function WalletManagement() {
         status: r[gi('status')] || 'Updated',
       }));
       setWallets(list);
+      checkOpeningUpdateStatus(list);
     } catch (e) {
       setError(e.message || 'Failed to load wallets. Check if the Wallets sheet exists.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getTransactionRows = async () => {
+    try {
+      return await getRows('Transaction History');
+    } catch {
+      try {
+        return await getRows('Wallet Transactions');
+      } catch {
+        return [];
+      }
+    }
+  };
+
+  const checkOpeningUpdateStatus = async (walletList = wallets) => {
+    setCheckingOpeningUpdate(true);
+    try {
+      const rows = await getTransactionRows();
+      const today = todayDateStr();
+      if (!rows || rows.length <= 1) {
+        setOpeningUpdateNeeded(true);
+        return;
+      }
+
+      const headers = rows[0].map(h => (h || '').toString().trim().toLowerCase());
+      const dateIdx = headers.indexOf('date');
+      const descIdx = headers.indexOf('description');
+      const hasTodayUpdate = rows.slice(1).some(r =>
+        isSameDateText(r[dateIdx], today) && isOpeningBalanceUpdate(r[descIdx] || '')
+      );
+      const hasAnyOpeningUpdate = rows.slice(1).some(r => isOpeningBalanceUpdate(r[descIdx] || ''));
+      const walletsAlreadyTouchedToday = walletList.length > 0 && walletList.every(w =>
+        dateTextToDateStr(w.updated) === today
+      );
+      if (!hasAnyOpeningUpdate && walletsAlreadyTouchedToday) {
+        setOpeningUpdateNeeded(false);
+        return;
+      }
+      setOpeningUpdateNeeded(!hasTodayUpdate);
+    } catch {
+      setOpeningUpdateNeeded(false);
+    } finally {
+      setCheckingOpeningUpdate(false);
     }
   };
 
@@ -132,11 +221,49 @@ export default function WalletManagement() {
       const amt = parseFloat(addAmt);
       const newBalance = addFundsModal.current + amt;
       await updateRowColumns(SHEET, addFundsModal.rowIndex, { 'current balance': newBalance, 'last updated': nowStr() });
+      await logWalletTransaction(addFundsModal.name, amt > 0 ? 'IN' : 'OUT', Math.abs(amt), newBalance, addNote || 'Manual Balance Update', userSession?.name || 'System');
       showToast(`Balance updated for ${addFundsModal.name}`);
       setAddFundsModal(null); setAddAmt(''); setAddNote('');
       fetchWallets();
     } catch (e) { alert(e.message); }
     finally { setSaving(false); }
+  };
+
+  const handleOpeningBalanceUpdate = async () => {
+    setSaving(true);
+    try {
+      const stamp = nowStr();
+      for (const wallet of wallets) {
+        const name = wallet.name.trim().toLowerCase();
+        const shouldReset = name === 'cash' || name === 'upi';
+        const nextOpening = shouldReset ? 0 : wallet.current;
+        const nextCurrent = shouldReset ? 0 : wallet.current;
+        await updateRowColumns(SHEET, wallet.rowIndex, {
+          'opening balance': nextOpening,
+          'current balance': nextCurrent,
+          'last updated': stamp,
+          status: 'Updated'
+        });
+        await logWalletTransaction(
+          wallet.name,
+          'UPDATE',
+          Math.abs(nextOpening),
+          nextCurrent,
+          shouldReset
+            ? 'Opening balance update - reset daily cash/UPI balance to zero'
+            : 'Opening balance update - forwarded current balance to opening balance',
+          userSession?.name || 'System'
+        );
+      }
+      showToast('Opening balances updated for today.');
+      setOpeningUpdateModal(false);
+      setOpeningUpdateNeeded(false);
+      fetchWallets();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleTransfer = async (e) => {
@@ -148,13 +275,75 @@ export default function WalletManagement() {
       const fromW = wallets.find((w) => w.name === txFrom);
       const toW = wallets.find((w) => w.name === txTo);
       if (!fromW || !toW) return;
-      await updateRowColumns(SHEET, fromW.rowIndex, { 'current balance': fromW.current - amt, 'last updated': nowStr() });
-      await updateRowColumns(SHEET, toW.rowIndex, { 'current balance': toW.current + amt, 'last updated': nowStr() });
+      
+      const fromNew = fromW.current - amt;
+      const toNew = toW.current + amt;
+      
+      await updateRowColumns(SHEET, fromW.rowIndex, { 'current balance': fromNew, 'last updated': nowStr() });
+      await updateRowColumns(SHEET, toW.rowIndex, { 'current balance': toNew, 'last updated': nowStr() });
+      
+      await logWalletTransaction(fromW.name, 'OUT', amt, fromNew, `Transfer to ${toW.name}${txNote ? ' - ' + txNote : ''}`, userSession?.name || 'System');
+      await logWalletTransaction(toW.name, 'IN', amt, toNew, `Transfer from ${fromW.name}${txNote ? ' - ' + txNote : ''}`, userSession?.name || 'System');
+      
       showToast(`Transferred ${fmt(amt)} from ${txFrom} to ${txTo}`);
       setTransferModal(false); setTxFrom(''); setTxTo(''); setTxAmt(''); setTxNote('');
       fetchWallets();
     } catch (e) { alert(e.message); }
     finally { setSaving(false); }
+  };
+
+  const fetchWalletHistory = async (dateStr) => {
+    setIsHistoryLoading(true);
+    try {
+      const rows = await getTransactionRows();
+      if (rows && rows.length > 1) {
+        const headers = rows[0].map(h => (h || '').toString().trim().toLowerCase());
+        const dateIdx = headers.indexOf('date');
+        const timeIdx = headers.indexOf('time');
+        const walletIdx = headers.indexOf('wallet name');
+        const typeIdx = headers.indexOf('type');
+        const amtIdx = headers.indexOf('amount');
+        const balIdx = headers.indexOf('closing balance');
+        const descIdx = headers.indexOf('description');
+
+        const filtered = rows.slice(1).filter(r => {
+          if (!r || r.length === 0) return false;
+          const wDate = (r[dateIdx] || '').toString().trim();
+          const description = (r[descIdx] || '').toString().trim();
+          
+          return isSameDateText(wDate, dateStr) && isTransferOrOpeningUpdate(description);
+        }).map(r => ({
+          time: r[timeIdx] || '',
+          walletName: r[walletIdx] || '',
+          type: r[typeIdx] || 'IN',
+          amount: parseFloat(r[amtIdx]) || 0,
+          closingBalance: parseFloat(r[balIdx]) || 0,
+          description: r[descIdx] || ''
+        }));
+        
+        // Sort chronologically (assuming earliest first in sheet, we might want latest first)
+        setHistoryData(filtered.reverse());
+      } else {
+        setHistoryData([]);
+      }
+    } catch (error) {
+      console.error('Failed to load history:', error);
+      setHistoryData([]);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+
+  const openHistory = () => {
+    setHistoryModal(true);
+    fetchWalletHistory(historyDate);
+  };
+
+  const handleDateChange = (newDate) => {
+    setHistoryDate(newDate);
+    if (historyModal) {
+      fetchWalletHistory(newDate);
+    }
   };
 
   const filtered = wallets.filter((w) =>
@@ -199,6 +388,21 @@ export default function WalletManagement() {
         </div>
       )}
 
+      {openingUpdateNeeded && !checkingOpeningUpdate && (
+        <button
+          type="button"
+          onClick={() => setOpeningUpdateModal(true)}
+          className="admin-banner"
+          style={{ width: '100%', border: '1px solid #F59E0B', background: '#FFFBEB', color: '#92400E', cursor: 'pointer', justifyContent: 'space-between' }}
+        >
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
+            <Clock size={18} />
+            New day opening balance update is pending
+          </span>
+          <span style={{ fontSize: '13px', fontWeight: '700' }}>Update now</span>
+        </button>
+      )}
+
       {/* Toolbar */}
       <div className="admin-toolbar">
         <h2 className="admin-toolbar-title">
@@ -223,8 +427,7 @@ export default function WalletManagement() {
           <button type="button" onClick={() => setTransferModal(true)} className="admin-tool-btn admin-tool-btn--green">
             <ArrowRightLeft size={16} /> Transfer
           </button>
-          
-          <button type="button" onClick={() => setHistoryModal(true)} className="admin-tool-btn">
+          <button type="button" onClick={openHistory} className="admin-tool-btn">
             <History size={16} /> History
           </button>
         </div>
@@ -252,7 +455,6 @@ export default function WalletManagement() {
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textAlign: 'right' }}>OPENING BALANCE</th>
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textAlign: 'right' }}>CURRENT BALANCE</th>
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px' }}>LAST UPDATED</th>
-                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px' }}>STATUS</th>
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textAlign: 'right' }}>ACTIONS</th>
                 </tr>
               </thead>
@@ -276,23 +478,15 @@ export default function WalletManagement() {
                     <td style={{ padding: '16px 24px', fontSize: '13px', color: '#64748B' }}>
                       {w.updated}
                     </td>
-                    <td style={{ padding: '16px 24px' }}>
-                      <span style={{ 
-                        padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px',
-                        backgroundColor: w.status?.toLowerCase().includes('needs update') ? '#FEF2F2' : '#ECFDF5', 
-                        color: w.status?.toLowerCase().includes('needs update') ? '#EF4444' : '#10B981' 
-                      }}>
-                        {w.status?.toLowerCase().includes('needs update') ? <AlertCircle size={12} /> : <CheckCircle size={12} />}
-                        {w.status}
-                      </span>
-                    </td>
                     <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                      <button 
-                        onClick={() => { setAddFundsModal(w); setAddAmt(''); setAddNote(''); }}
-                        style={{ background: '#ECFDF5', border: 'none', cursor: 'pointer', color: '#10B981', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', transition: 'background 0.2s', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        <Plus size={14} /> Add
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button 
+                          onClick={() => { setAddFundsModal(w); setAddAmt(''); setAddNote(''); }}
+                          style={{ background: '#ECFDF5', border: 'none', cursor: 'pointer', color: '#10B981', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', transition: 'background 0.2s', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          <Plus size={14} /> Add
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -426,21 +620,122 @@ export default function WalletManagement() {
         </div>
       )}
 
-      {/* 4. History Modal */}
-      {historyModal && (
+      {/* 4. Opening Balance Update Modal */}
+      {openingUpdateModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px', animation: 'fadeIn 0.2s ease-out' }}>
-          <div style={{ background: 'white', borderRadius: '24px', width: '100%', maxWidth: '500px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+          <div style={{ background: 'white', borderRadius: '24px', width: '100%', maxWidth: '520px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
             <div style={{ padding: '24px 32px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <History size={20} color="#64748B" /> Transaction History
+                <Clock size={20} color="#F59E0B" /> Opening Balance Update
               </h3>
-              <button onClick={() => setHistoryModal(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}><X size={20} /></button>
+              <button onClick={() => setOpeningUpdateModal(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}><X size={20} /></button>
             </div>
-            <div style={{ padding: '40px', textAlign: 'center' }}>
-              <History size={48} style={{ color: '#E2E8F0', marginBottom: '16px' }} />
-              <p style={{ color: '#64748B', fontSize: '14px', lineHeight: '1.5' }}>
-                Full transaction log will appear here once wallet history tracking is fully configured in Google Sheets ("Wallet History" tab).
-              </p>
+            <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '12px', padding: '16px', color: '#92400E', fontSize: '14px', lineHeight: 1.6 }}>
+                This will complete today's opening balance update. Cash and UPI opening/current balances become 0. BANK and other wallets keep their current balance and copy it to opening balance.
+              </div>
+              <div style={{ display: 'grid', gap: '10px' }}>
+                {wallets.map((w) => {
+                  const name = w.name.trim().toLowerCase();
+                  const shouldReset = name === 'cash' || name === 'upi';
+                  const nextOpening = shouldReset ? 0 : w.current;
+                  const nextCurrent = shouldReset ? 0 : w.current;
+                  return (
+                    <div key={w.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '10px', fontSize: '13px' }}>
+                      <strong style={{ color: '#1E293B' }}>{w.name}</strong>
+                      <span style={{ color: '#64748B' }}>Opening {fmt(nextOpening)} / Current {fmt(nextCurrent)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button type="button" onClick={() => setOpeningUpdateModal(false)} style={{ flex: 1, height: '48px', background: '#F1F5F9', color: '#475569', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
+                <button type="button" onClick={handleOpeningBalanceUpdate} disabled={saving || wallets.length === 0} style={{ flex: 2, height: '48px', background: '#10B981', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
+                  {saving ? 'Updating...' : 'Complete Update'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. History Modal */}
+      {historyModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px', animation: 'fadeIn 0.2s ease-out' }}>
+          <div style={{ background: 'white', borderRadius: '24px', width: '100%', maxWidth: '700px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <div style={{ padding: '24px 32px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F8FAFC' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <History size={24} color="#3B82F6" /> Wallet History
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748B' }}>Only wallet transfers and opening balance updates are shown.</p>
+              </div>
+              <button onClick={() => setHistoryModal(false)} style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '50%', width: '36px', height: '36px', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}><X size={18} /></button>
+            </div>
+            
+            <div style={{ padding: '20px 32px', borderBottom: '1px solid #E2E8F0', display: 'flex', gap: '16px', alignItems: 'center', background: '#fff' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Date (DD-MM-YYYY)</label>
+                <input 
+                  type="text" 
+                  value={historyDate}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  placeholder="e.g. 05-07-2026"
+                  style={{ ...inputStyle, height: '40px', marginTop: '4px', background: '#F8FAFC' }}
+                />
+              </div>
+              <div style={{ flex: 1, textAlign: 'right' }}>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Records</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', color: '#0F172A', marginTop: '2px' }}>{historyData.length}</div>
+              </div>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0', background: '#F8FAFC' }}>
+              {isHistoryLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px' }}>
+                  <div style={{ width: '40px', height: '40px', border: '4px solid #E2E8F0', borderTop: '4px solid #3B82F6', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <span style={{ fontSize: '14px', color: '#64748B', fontWeight: '500', marginTop: '16px' }}>Loading transactions...</span>
+                </div>
+              ) : historyData.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', textAlign: 'center' }}>
+                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                    <History size={28} color="#94A3B8" />
+                  </div>
+                  <span style={{ fontSize: '16px', color: '#1E293B', fontWeight: '700' }}>No Transactions Found</span>
+                  <span style={{ fontSize: '14px', color: '#64748B', marginTop: '8px' }}>No wallet transfer or opening balance update records found on {historyDate}.</span>
+                </div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', background: '#fff' }}>
+                  <thead>
+                    <tr style={{ background: '#F1F5F9', borderBottom: '1px solid #E2E8F0' }}>
+                      <th style={{ padding: '12px 24px', fontSize: '12px', fontWeight: '700', color: '#475569' }}>Time</th>
+                      <th style={{ padding: '12px 24px', fontSize: '12px', fontWeight: '700', color: '#475569' }}>Wallet</th>
+                      <th style={{ padding: '12px 24px', fontSize: '12px', fontWeight: '700', color: '#475569' }}>Description</th>
+                      <th style={{ padding: '12px 24px', fontSize: '12px', fontWeight: '700', color: '#475569', textAlign: 'right' }}>In (+)</th>
+                      <th style={{ padding: '12px 24px', fontSize: '12px', fontWeight: '700', color: '#475569', textAlign: 'right' }}>Out (-)</th>
+                      <th style={{ padding: '12px 24px', fontSize: '12px', fontWeight: '700', color: '#475569', textAlign: 'right' }}>Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyData.map((tx, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '12px 24px', fontSize: '13px', color: '#64748B', whiteSpace: 'nowrap' }}>{tx.time}</td>
+                        <td style={{ padding: '12px 24px', fontSize: '14px', color: '#1E293B', fontWeight: '700' }}>{tx.walletName}</td>
+                        <td style={{ padding: '12px 24px', fontSize: '14px', color: '#1E293B', fontWeight: '500' }}>{tx.description || '-'}</td>
+                        <td style={{ padding: '12px 24px', fontSize: '14px', fontWeight: '700', color: '#10B981', textAlign: 'right' }}>
+                          {tx.type === 'IN' ? `+₹${tx.amount.toFixed(2)}` : ''}
+                        </td>
+                        <td style={{ padding: '12px 24px', fontSize: '14px', fontWeight: '700', color: '#EF4444', textAlign: 'right' }}>
+                          {tx.type === 'OUT' ? `-₹${tx.amount.toFixed(2)}` : ''}
+                        </td>
+                        <td style={{ padding: '12px 24px', fontSize: '14px', fontWeight: '800', color: '#0F172A', textAlign: 'right' }}>
+                          {fmt(tx.closingBalance)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>

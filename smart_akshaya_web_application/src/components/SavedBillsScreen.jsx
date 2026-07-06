@@ -1,9 +1,86 @@
 import React, { useState, useEffect } from 'react';
-import { Bookmark, Search, RefreshCw, Layers, Calendar, Phone, FileText, X, DollarSign } from 'lucide-react';
+import { Bookmark, Search, RefreshCw, Layers, Calendar, Phone, FileText, X, DollarSign, ChevronDown, ChevronUp, Clock, Trash2, ExternalLink } from 'lucide-react';
 import { getRows, appendRow, updateRowColumns } from '../services/googleSheetsService';
 import { SHEETS_CONFIG } from '../config/sheetsConfig';
 
-export default function SavedBillsScreen({ onSettleBill }) {
+const isPhoneValue = (value = '') => /^\d{10}$/.test(value.toString().trim());
+
+const buildCustomerLookup = (rows = []) => {
+  const lookup = new Map();
+  if (!rows || rows.length <= 1) return lookup;
+
+  const headers = rows[0].map(h => (h || '').toString().trim().toLowerCase());
+  const idIdx = headers.indexOf('id') !== -1 ? headers.indexOf('id') : 0;
+  const nameIdx = headers.indexOf('name') !== -1 ? headers.indexOf('name') : headers.indexOf('customer name');
+  const phoneIdx = headers.indexOf('mobile') !== -1 ? headers.indexOf('mobile') : headers.indexOf('mobile number');
+
+  rows.slice(1).forEach(row => {
+    const id = (row[idIdx] || '').toString().trim();
+    const name = (row[nameIdx] || '').toString().trim();
+    const phone = (row[phoneIdx] || '').toString().trim();
+    const customer = { id, name, phone };
+    if (id) lookup.set(id.toLowerCase(), customer);
+    if (name) lookup.set(name.toLowerCase(), customer);
+  });
+
+  return lookup;
+};
+
+const parseSavedBillRow = (row, idx, customerLookup) => {
+  const hasStoredMobile = isPhoneValue(row[3]);
+  const isLegacyPending = hasStoredMobile && row.length <= 19;
+  const offset = hasStoredMobile ? 1 : 0;
+  const customerRef = row[3 + offset] || '';
+  const customer = customerLookup.get(customerRef.toString().trim().toLowerCase());
+
+  if (isLegacyPending) {
+    return {
+      rowIndex: idx + 2,
+      date: row[0] || '',
+      time: row[1] || '',
+      staffName: row[2] || '',
+      mobile: customer?.phone || row[3] || '',
+      customerName: customer?.name || customerRef,
+      customerRef,
+      services: row[5] || '',
+      quantity: parseInt(row[6]) || 0,
+      totalAmount: parseFloat(row[7]) || 0,
+      walletCharge: 0,
+      gpayUpi: parseFloat(row[9]) || 0,
+      cash: parseFloat(row[10]) || 0,
+      balance: parseFloat(row[11]) || 0,
+      status: (row[12] || 'pending').toString().trim().toLowerCase(),
+      serviceCharge: parseFloat(row[13]) || 0,
+      wallet: row[15] || '',
+      billId: row[17] || '',
+      isPriceEdited: (row[18] || '').toString().trim().toLowerCase() === 'yes'
+    };
+  }
+
+  return {
+    rowIndex: idx + 2,
+    date: row[0] || '',
+    time: row[1] || '',
+    staffName: row[2] || '',
+    mobile: customer?.phone || (hasStoredMobile ? row[3] : ''),
+    customerName: customer?.name || customerRef,
+    customerRef,
+    services: row[4 + offset] || '',
+    quantity: parseInt(row[5 + offset]) || 0,
+    totalAmount: parseFloat(row[6 + offset]) || 0,
+    walletCharge: parseFloat(row[8 + offset]) || 0,
+    gpayUpi: parseFloat(row[9 + offset]) || 0,
+    cash: parseFloat(row[10 + offset]) || 0,
+    balance: parseFloat(row[11 + offset]) || 0,
+    status: (row[12 + offset] || 'pending').toString().trim().toLowerCase(),
+    serviceCharge: parseFloat(row[13 + offset]) || 0,
+    wallet: row[15 + offset] || '',
+    billId: row[17 + offset] || '',
+    isPriceEdited: (row[18 + offset] || '').toString().trim().toLowerCase() === 'yes'
+  };
+};
+
+export default function SavedBillsScreen({ onSettleBill, userSession }) {
   const [bills, setBills] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -12,6 +89,7 @@ export default function SavedBillsScreen({ onSettleBill }) {
   const [settleGpay, setSettleGpay] = useState('');
   const [settleCash, setSettleCash] = useState('');
   const [staffName, setStaffName] = useState('Staff User');
+  const [expandedBills, setExpandedBills] = useState({});
 
   useEffect(() => {
     fetchBills();
@@ -20,42 +98,13 @@ export default function SavedBillsScreen({ onSettleBill }) {
   const fetchBills = async () => {
     setIsLoading(true);
     try {
-      const rows = await getRows(SHEETS_CONFIG.savedBillsSheetName);
+      const [rows, customerRows] = await Promise.all([
+        getRows(SHEETS_CONFIG.savedBillsSheetName),
+        getRows(SHEETS_CONFIG.customerSheetName).catch(() => [])
+      ]);
+      const customerLookup = buildCustomerLookup(customerRows);
       if (rows && rows.length > 1) {
-        const headers = rows[0].map(h => (h || '').toString().trim().toLowerCase());
-        
-        const getIdx = (key) => headers.indexOf(key);
-        const dateIdx = getIdx('date');
-        const timeIdx = getIdx('time');
-        const staffIdx = getIdx('staff name');
-        const mobileIdx = getIdx('mobile');
-        const nameIdx = getIdx('customer name');
-        const serviceIdx = getIdx('service');
-        const qtyIdx = getIdx('quantity');
-        const totalIdx = getIdx('total');
-        const gpayIdx = headers.findIndex(h => h.includes('gpay'));
-        const cashIdx = headers.findIndex(h => h.includes('cash'));
-        const balanceIdx = headers.findIndex(h => h.includes('balance'));
-        const statusIdx = headers.findIndex(h => h.includes('status'));
-
-        const parsed = rows.slice(1).map((row, idx) => {
-          const statusVal = (row[statusIdx] || 'pending').toString().trim().toLowerCase();
-          return {
-            rowIndex: idx + 2,
-            date: row[dateIdx] || '',
-            time: row[timeIdx] || '',
-            staffName: row[staffIdx] || '',
-            mobile: row[mobileIdx] || '',
-            customerName: row[nameIdx] || '',
-            services: row[serviceIdx] || '',
-            quantity: parseInt(row[qtyIdx]) || 0,
-            totalAmount: parseFloat(row[totalIdx]) || 0,
-            gpayUpi: parseFloat(row[gpayIdx >= 0 ? gpayIdx : -1] || 0),
-            cash: parseFloat(row[cashIdx >= 0 ? cashIdx : -1] || 0),
-            balance: parseFloat(row[balanceIdx >= 0 ? balanceIdx : -1] || 0),
-            status: statusVal,
-          };
-        });
+        const parsed = rows.slice(1).map((row, idx) => parseSavedBillRow(row, idx, customerLookup));
 
         setBills(parsed);
       } else {
@@ -87,19 +136,23 @@ export default function SavedBillsScreen({ onSettleBill }) {
       const row = [
         settleDialogBill.date,
         settleDialogBill.time,
-        settleDialogBill.customerName,
-        settleDialogBill.mobile,
+        staffName,
+        settleDialogBill.customerRef || settleDialogBill.customerName,
         settleDialogBill.services,
-        '', // Placeholder for service charge
-        '', // Placeholder for wallet charge
-        '', // Placeholder for wallet type
         settleDialogBill.quantity,
         settleDialogBill.totalAmount,
+        0,
+        settleDialogBill.walletCharge || 0,
         settleGpay || '0',
         settleCash || '0',
         settleDialogBill.balance,
-        staffName,
-        'Completed'
+        'Completed',
+        settleDialogBill.serviceCharge || 0,
+        0,
+        settleDialogBill.wallet || '',
+        '',
+        settleDialogBill.billId || '',
+        settleDialogBill.isPriceEdited ? 'Yes' : 'No'
       ];
       await appendRow(SHEETS_CONFIG.serviceEntrySheetName, row);
 
@@ -123,7 +176,15 @@ export default function SavedBillsScreen({ onSettleBill }) {
 
   const totalItems = filteredBills.reduce((acc, b) => acc + b.quantity, 0);
   const totalCustomers = new Set(filteredBills.map(b => b.mobile)).size;
-  const pendingCount = filteredBills.filter(b => b.status === 'pending').length;
+  const oldestSave = filteredBills.length > 0 
+    ? [...filteredBills].sort((a,b) => new Date(a.date) - new Date(b.date))[0].date 
+    : '-';
+
+  const isAdminOrAccountant = userSession?.role === 'admin' || userSession?.role === 'accountant';
+
+  const toggleExpand = (idx) => {
+    setExpandedBills(prev => ({...prev, [idx]: !prev[idx]}));
+  };
 
   return (
     <div style={{ 
@@ -168,12 +229,14 @@ export default function SavedBillsScreen({ onSettleBill }) {
         </button>
       </div>
 
-      {/* Stats row */}
-      <div style={{ display: 'flex', gap: '24px', marginBottom: '32px', flexWrap: 'wrap' }}>
-        <StatCard title="PENDING BILLS" value={pendingCount} icon={<Layers size={24} color="#D97706" />} bgColor="#FEF3C7" />
-        <StatCard title="TOTAL CUSTOMERS" value={totalCustomers} icon={<Layers size={24} color="#0284C7" />} bgColor="#E0F2FE" />
-        <StatCard title="TOTAL ITEMS" value={totalItems} icon={<Layers size={24} color="#0284C7" />} bgColor="#E0F2FE" />
-      </div>
+      {/* Stats row - ONLY for Admin/Accountant */}
+      {isAdminOrAccountant && (
+        <div style={{ display: 'flex', gap: '24px', marginBottom: '32px', flexWrap: 'wrap' }}>
+          <StatCard title="CUSTOMERS" value={totalCustomers} icon={<Layers size={24} color="#0284C7" />} bgColor="#E0F2FE" />
+          <StatCard title="TOTAL ITEMS" value={totalItems} icon={<Layers size={24} color="#0284C7" />} bgColor="#E0F2FE" />
+          <StatCard title="OLDEST SAVE" value={oldestSave} icon={<Clock size={24} color="#D97706" />} bgColor="#FEF3C7" />
+        </div>
+      )}
 
       <div className="glow-card" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -215,90 +278,115 @@ export default function SavedBillsScreen({ onSettleBill }) {
             <span style={{ fontSize: '14px', color: '#64748B', marginTop: '8px' }}>All bills have been cleared or no bills exist yet.</span>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Customer</th>
-                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Services</th>
-                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Date & Time</th>
-                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textTransform: 'uppercase', textAlign: 'center' }}>Qty</th>
-                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textTransform: 'uppercase', textAlign: 'right' }}>Total Amount</th>
-                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textTransform: 'uppercase', textAlign: 'center' }}>Status</th>
-                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textTransform: 'uppercase', textAlign: 'right' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredBills.map((bill, index) => {
-                  const isPending = bill.status === 'pending';
-                  const statusColor = isPending ? { bg: '#FEF3C7', text: '#B45309', badge: 'Pending' } : { bg: '#ECFDF5', text: '#10B981', badge: 'Completed' };
+          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {filteredBills.map((bill, index) => {
+              const isExpanded = !!expandedBills[index];
+              const isPending = bill.status === 'pending';
+              const statusColor = isPending ? { bg: '#FEF3C7', text: '#B45309', badge: 'pending' } : { bg: '#ECFDF5', text: '#10B981', badge: 'completed' };
+              const initial = bill.customerName ? bill.customerName.charAt(0).toUpperCase() : 'C';
 
-                  return (
-                    <tr 
-                      key={index}
-                      style={{ 
-                        borderBottom: '1px solid #F1F5F9',
-                        transition: 'background-color 0.15s'
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F8FAFC'}
-                      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                    >
-                      <td style={{ padding: '16px 24px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontWeight: '600', color: '#1E293B', fontSize: '14px' }}>{bill.customerName || 'Walk-in Customer'}</span>
-                          <span style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Phone size={12} /> {bill.mobile || '-'}
-                          </span>
+              const rowBg = bill.isPriceEdited ? '#FEF2F2' : '#fff';
+
+              return (
+                <div key={index} style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden', backgroundColor: rowBg, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  
+                  {/* Card Header */}
+                  <div 
+                    onClick={() => toggleExpand(index)}
+                    style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', backgroundColor: rowBg }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#3B82F6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 'bold' }}>
+                        {initial}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '16px', fontWeight: '700', color: '#1E293B' }}>{bill.customerName || 'Walk-in'}</div>
+                        <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Phone size={12}/> {bill.mobile || '-'}</span>
+                          <span>Saved {bill.date}</span>
+                          <span>Created {bill.date}, {bill.time}</span>
+                          {isAdminOrAccountant && (
+                            <span style={{ backgroundColor: '#F1F5F9', color: '#475569', padding: '2px 8px', borderRadius: '4px', fontWeight: '600' }}>
+                              Staff: {bill.staffName || 'Unknown'}
+                            </span>
+                          )}
                         </div>
-                      </td>
-                      <td style={{ padding: '16px 24px' }}>
-                        <div style={{ fontSize: '14px', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <FileText size={14} color="#64748B" />
-                          {bill.services || 'No services'}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <span style={{ backgroundColor: '#F1F5F9', color: '#475569', fontSize: '12px', fontWeight: '700', padding: '4px 10px', borderRadius: '12px' }}>
+                        1 item
+                      </span>
+                      <span style={{ color: '#8B5CF6', fontWeight: '700', backgroundColor: '#EDE9FE', padding: '4px 10px', borderRadius: '12px', fontSize: '12px' }}>
+                        ₹{bill.totalAmount.toFixed(2)}
+                      </span>
+                      {isExpanded ? <ChevronUp size={20} color="#94A3B8" /> : <ChevronDown size={20} color="#94A3B8" />}
+                    </div>
+                  </div>
+
+                  {/* Expanded Body */}
+                  {isExpanded && (
+                    <div style={{ padding: '0 24px 24px 24px', backgroundColor: '#F8FAFC', borderTop: '1px solid #F1F5F9' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '16px', textAlign: 'left' }}>
+                        <thead>
+                          <tr style={{ color: '#94A3B8', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            <th style={{ padding: '12px 8px', borderBottom: '1px solid #E2E8F0' }}>Service</th>
+                            {isAdminOrAccountant && (
+                              <>
+                                <th style={{ padding: '12px 8px', borderBottom: '1px solid #E2E8F0' }}>Dept. Fee</th>
+                                <th style={{ padding: '12px 8px', borderBottom: '1px solid #E2E8F0' }}>Svc Charge</th>
+                                <th style={{ padding: '12px 8px', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>Qty</th>
+                                <th style={{ padding: '12px 8px', borderBottom: '1px solid #E2E8F0' }}>Total</th>
+                                <th style={{ padding: '12px 8px', borderBottom: '1px solid #E2E8F0', textAlign: 'center' }}>Status</th>
+                              </>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td style={{ padding: '16px 8px', color: '#1E293B', fontWeight: '500', fontSize: '14px' }}>{bill.services}</td>
+                            {isAdminOrAccountant && (
+                              <>
+                                <td style={{ padding: '16px 8px', color: '#1E293B', fontWeight: '600', fontSize: '14px' }}>₹0.00</td>
+                                <td style={{ padding: '16px 8px', color: '#1E293B', fontWeight: '600', fontSize: '14px' }}>₹{bill.totalAmount.toFixed(2)}</td>
+                                <td style={{ padding: '16px 8px', textAlign: 'center' }}>
+                                  <span style={{ backgroundColor: '#E0F2FE', color: '#0284C7', padding: '4px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '700' }}>x1</span>
+                                </td>
+                                <td style={{ padding: '16px 8px', color: '#1E293B', fontWeight: '600', fontSize: '14px' }}>₹{bill.totalAmount.toFixed(2)}</td>
+                                <td style={{ padding: '16px 8px', textAlign: 'center' }}>
+                                  <span style={{ backgroundColor: statusColor.bg, color: statusColor.text, padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }}>{statusColor.badge}</span>
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {/* Footer Actions */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #CBD5E1' }}>
+                        <div style={{ color: '#64748B', fontSize: '14px' }}>
+                          Grand Total: <span style={{ color: '#0284C7', fontWeight: '700' }}>₹{bill.totalAmount.toFixed(2)}</span>
                         </div>
-                      </td>
-                      <td style={{ padding: '16px 24px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontSize: '14px', color: '#1E293B' }}>{bill.date}</span>
-                          <span style={{ fontSize: '13px', color: '#64748B', marginTop: '2px' }}>{bill.time}</span>
-                        </div>
-                      </td>
-                      <td style={{ padding: '16px 24px', textAlign: 'center' }}>
-                        <span style={{ display: 'inline-flex', padding: '4px 10px', borderRadius: '12px', backgroundColor: '#F1F5F9', color: '#475569', fontSize: '13px', fontWeight: '600' }}>
-                          {bill.quantity}
-                        </span>
-                      </td>
-                      <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                        <span style={{ fontWeight: '700', color: '#1E293B', fontSize: '15px' }}>
-                          ₹{bill.totalAmount.toFixed(2)}
-                        </span>
-                      </td>
-                      <td style={{ padding: '16px 24px', textAlign: 'center' }}>
-                        <span style={{
-                          padding: '6px 12px', fontSize: '12px', fontWeight: '600',
-                          color: statusColor.text, backgroundColor: statusColor.bg, borderRadius: '20px'
-                        }}>
-                          {statusColor.badge}
-                        </span>
-                      </td>
-                      <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                        {isPending && (
-                          <button
-                            onClick={() => onSettleBill ? onSettleBill(bill) : setSettleDialogBill(bill)}
-                            className="btn"
-                            style={{
-                              backgroundColor: '#10B981', padding: '8px 16px', borderRadius: '8px', fontSize: '13px'
-                            }}
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                          {isAdminOrAccountant && (
+                            <button style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#FEE2E2', color: '#EF4444', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                              <Trash2 size={14} /> Delete
+                            </button>
+                          )}
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); onSettleBill ? onSettleBill(bill) : setSettleDialogBill(bill); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#0284C7', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
                           >
-                            Settle
+                            <ExternalLink size={14} /> {isAdminOrAccountant ? 'Open in Billing' : 'Settle Bill'}
                           </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

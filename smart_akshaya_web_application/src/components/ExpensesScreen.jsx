@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Calendar, Tag, DollarSign, FileText, Search, X, Receipt } from 'lucide-react';
-import { getRows, appendRow, updateRow } from '../services/googleSheetsService';
+import { Plus, Edit2, Trash2, Calendar, Tag, DollarSign, FileText, Search, X, Receipt, CheckCircle } from 'lucide-react';
+import { getRows, appendRow, updateRow, updateRowColumns, logWalletTransaction } from '../services/googleSheetsService';
 import { SHEETS_CONFIG } from '../config/sheetsConfig';
 
-export default function ExpensesScreen() {
+export default function ExpensesScreen({ userSession }) {
   const [expenses, setExpenses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,9 +20,41 @@ export default function ExpensesScreen() {
   const [editingRowIndex, setEditingRowIndex] = useState(-1);
   const [editingId, setEditingId] = useState('');
 
+  // Wallet State
+  const [wallets, setWallets] = useState([]);
+  const [selectedWallet, setSelectedWallet] = useState('');
+
+  // UI State
+  const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState('');
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
+  };
+
   useEffect(() => {
     fetchExpenses();
+    fetchWallets();
   }, []);
+
+  const fetchWallets = async () => {
+    try {
+      const rows = await getRows('Wallets');
+      if (rows && rows.length > 1) {
+        const h = rows[0].map((v) => v.trim().toLowerCase());
+        const gi = (k) => h.indexOf(k);
+        const list = rows.slice(1).map((r, idx) => ({
+          rowIndex: idx + 2,
+          name: r[gi('wallet name')] || r[gi('name')] || `Wallet ${idx + 1}`,
+          current: parseFloat(r[gi('current balance')] || 0),
+        })).filter(w => w.name);
+        setWallets(list);
+      }
+    } catch (error) {
+      console.error('Failed to fetch wallets:', error);
+    }
+  };
 
   const fetchExpenses = async () => {
     setIsLoading(true);
@@ -63,6 +95,7 @@ export default function ExpensesScreen() {
     setCategory('');
     setAmount('');
     setDescription('');
+    setSelectedWallet('');
     setIsEditing(false);
     setEditingRowIndex(-1);
     setEditingId('');
@@ -82,26 +115,60 @@ export default function ExpensesScreen() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!date.trim() || !category.trim() || !amount.trim()) {
-      alert('Please fill out Date, Category, and Amount.');
+    if (!date.trim() || !category.trim() || !amount.trim() || (!isEditing && !selectedWallet)) {
+      alert('Please fill out all required fields, including Wallet.');
       return;
     }
 
+    setIsSaving(true);
     try {
+      const parsedAmount = parseFloat(amount);
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        alert('Amount must be greater than zero.');
+        return;
+      }
+
       const newId = isEditing ? editingId : Date.now().toString();
       const rowData = [newId, date.trim(), category.trim(), amount.trim(), description.trim()];
 
       if (isEditing) {
         await updateRow(SHEETS_CONFIG.expenseSheetName, editingRowIndex, rowData);
       } else {
+        // Find selected wallet
+        const wallet = wallets.find(w => w.name === selectedWallet);
+        if (!wallet) {
+          alert('Invalid wallet selected.');
+          return;
+        }
+
+        // Add expense
         await appendRow(SHEETS_CONFIG.expenseSheetName, rowData);
+
+        // Deduct from wallet
+        const newBalance = wallet.current - parsedAmount;
+        const nowStr = new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        await updateRowColumns('Wallets', wallet.rowIndex, { 'current balance': newBalance, 'last updated': nowStr });
+
+        // Log transaction
+        await logWalletTransaction(
+          wallet.name, 
+          'OUT', 
+          parsedAmount, 
+          newBalance, 
+          `Expense: ${category.trim()}${description.trim() ? ' - ' + description.trim() : ''}`, 
+          userSession?.name || 'System'
+        );
       }
       
       clearForm();
       fetchExpenses();
+      fetchWallets();
+      showToast(isEditing ? 'Expense updated successfully!' : 'Expense added successfully!');
     } catch (error) {
       console.error('Error saving expense:', error);
       alert('Error saving expense.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -144,6 +211,20 @@ export default function ExpensesScreen() {
   return (
     <div style={{ padding: '32px 40px', maxWidth: '1400px', margin: '0 auto', position: 'relative', minHeight: 'calc(100vh - 70px)' }}>
       
+      {/* Toast Notification */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: '24px', left: '50%', transform: 'translateX(-50%)',
+          background: '#ECFDF5', border: '1px solid #10B981', color: '#065F46',
+          padding: '12px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+          zIndex: 9999, fontWeight: '600', animation: 'slideDown 0.3s ease-out'
+        }}>
+          <CheckCircle size={18} color="#10B981" />
+          {toast}
+        </div>
+      )}
+
       {/* Hero Header Section */}
       <div style={{ 
         background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)', 
@@ -368,6 +449,21 @@ export default function ExpensesScreen() {
                 </div>
               </div>
 
+              {!isEditing && (
+                <div>
+                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px', display: 'block' }}>Wallet *</label>
+                  <select 
+                    value={selectedWallet} onChange={e => setSelectedWallet(e.target.value)} required={!isEditing}
+                    style={{ width: '100%', height: '48px', padding: '0 16px', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
+                  >
+                    <option value="">— Select Wallet —</option>
+                    {wallets.map(w => (
+                      <option key={w.rowIndex} value={w.name}>{w.name} (₹{w.current.toLocaleString('en-IN', { minimumFractionDigits: 2 })})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px', display: 'block' }}>Description (Optional)</label>
                 <div style={{ position: 'relative' }}>
@@ -385,10 +481,10 @@ export default function ExpensesScreen() {
                 >
                   Cancel
                 </button>
-                <button type="submit"
-                  style={{ flex: 2, height: '52px', background: '#4F46E5', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '15px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)' }}
+                <button type="submit" disabled={isSaving}
+                  style={{ flex: 2, height: '52px', background: isSaving ? '#9CA3AF' : '#4F46E5', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '15px', cursor: isSaving ? 'not-allowed' : 'pointer', boxShadow: isSaving ? 'none' : '0 4px 12px rgba(79, 70, 229, 0.3)' }}
                 >
-                  {isEditing ? 'Save Changes' : 'Add Expense'}
+                  {isSaving ? 'Saving...' : (isEditing ? 'Save Changes' : 'Add Expense')}
                 </button>
               </div>
             </form>
@@ -401,6 +497,7 @@ export default function ExpensesScreen() {
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes slideDown { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
         .expense-row:hover { background-color: #F8FAFC !important; }
       `}</style>
     </div>

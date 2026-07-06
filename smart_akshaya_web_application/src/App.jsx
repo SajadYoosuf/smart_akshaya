@@ -6,7 +6,6 @@ import PassportPhotoGenerator from './components/PassportPhotoGenerator';
 import PhotoResizer from './components/PhotoResizer';
 import SheetSettings from './components/SheetSettings';
 import WalletManagement from './components/WalletManagement';
-import CalculatorPage from './components/CalculatorPage';
 import QuickDocumentFinder from './components/QuickDocumentFinder';
 import PscPhotoCreator from './components/PscPhotoCreator';
 import SslcCalculator from './components/SslcCalculator';
@@ -15,14 +14,19 @@ import SavedBillsScreen from './components/SavedBillsScreen';
 import ServiceReportsScreen from './components/ServiceReportsScreen';
 import ServiceManagement from './components/ServiceManagement';
 import StaffManagement from './components/StaffManagement';
+import StaffDashboard from './components/StaffDashboard';
 import CustomerDetails from './components/CustomerDetails';
 import ExpensesScreen from './components/ExpensesScreen';
+import AdminPermissionsScreen from './components/AdminPermissionsScreen';
 import ResumeBuilderWrapper from './components/ResumeBuilderWrapper';
+import TransactionHistoryScreen from './components/TransactionHistoryScreen';
 import { getCurrentSession, logoutSession } from './services/googleSheetsAuth';
 import MenuRounded from '@mui/icons-material/MenuRounded';
 import SyncRounded from '@mui/icons-material/SyncRounded';
 import { Search, X } from 'lucide-react';
 import ReloadPrompt from './components/ReloadPrompt';
+import AttendancePopup from './components/AttendancePopup';
+import ExternalLinksManager from './components/ExternalLinksManager';
 
 // ── Page title map (matches Windows app pageTitles list) ──────────────────────
 const PAGE_TITLES = {
@@ -30,20 +34,23 @@ const PAGE_TITLES = {
   'new-entry': 'New Entry',
   'saved-bills': 'Saved Bills',
   wallet: 'Wallets Balance',
-  calculator: 'Calculator',
   'document-finder': 'Application Forms',
   passport: 'Passport Photo Creator',
   'psc-photo': 'PSC Photo Creator',
   resizer: 'Photo Resizer',
   'sslc-calc': 'SSLC Calculator',
-  'service-reports': 'Service Reports',
+  'service-reports': 'Billed Services',
   expenses: 'Expenses',
   settings: 'Sheet Config',
   'service-management': 'Service Management',
   'staff-management': 'Staff Management',
+  'staff-performance': 'Staff Performance',
   'customer-details': 'Customer Details',
+  permissions: 'Feature Permissions',
   nameslip: 'Nameslip',
   'resume-studio': 'Resume Studio',
+  'transaction-history': 'Transaction History',
+  'external-tools': 'External Tools',
 };
 
 // ── Top Bar Component (matches Windows 70px white header) ─────────────────────
@@ -206,6 +213,14 @@ export default function App() {
 
   // Render active view
   const renderView = () => {
+    const role = userSession?.role || 'staff';
+    const isAdmin = role === 'admin';
+    const isAccountant = role === 'accountant';
+
+    const canSeeStaffManagement = isAdmin;
+    const canSeeStaffPerformance = isAdmin;
+    const canSeeWallet = isAdmin || isAccountant;
+
     switch (currentView) {
       case 'dashboard':
         return <DashboardOverview onViewChange={setCurrentView} userSession={userSession} />;
@@ -225,11 +240,7 @@ export default function App() {
 
       // ── Wallet ──
       case 'wallet':
-        return <WalletManagement />;
-
-      // ── Calculator ──
-      case 'calculator':
-        return <CalculatorPage />;
+        return canSeeWallet ? <WalletManagement /> : <DashboardOverview onViewChange={setCurrentView} userSession={userSession} />;
 
       // ── Document Finder ──
       case 'document-finder':
@@ -259,9 +270,9 @@ export default function App() {
           </div>
         );
       case 'service-reports':
-        return <ServiceReportsScreen />;
+        return <ServiceReportsScreen userSession={userSession} onEditBill={(bill) => { setEditBillData(bill); setCurrentView('new-entry'); }} />;
       case 'expenses':
-        return <ExpensesScreen />;
+        return <ExpensesScreen userSession={userSession} />;
 
       // ── Admin ──
       case 'settings':
@@ -271,10 +282,22 @@ export default function App() {
         return <ServiceManagement />;
 
       case 'staff-management':
-        return <StaffManagement />;
+        return canSeeStaffManagement ? <StaffManagement /> : <DashboardOverview onViewChange={setCurrentView} userSession={userSession} />;
+
+      case 'staff-performance':
+        return canSeeStaffPerformance ? <StaffDashboard /> : <DashboardOverview onViewChange={setCurrentView} userSession={userSession} />;
 
       case 'customer-details':
         return <CustomerDetails />;
+
+      case 'permissions':
+        return isAdmin ? <AdminPermissionsScreen userSession={userSession} /> : <DashboardOverview onViewChange={setCurrentView} userSession={userSession} />;
+
+      case 'transaction-history':
+        return isAdmin ? <TransactionHistoryScreen userSession={userSession} /> : <DashboardOverview onViewChange={setCurrentView} userSession={userSession} />;
+
+      case 'external-tools':
+        return <ExternalLinksManager />;
 
       default:
         return <DashboardOverview onViewChange={setCurrentView} userSession={userSession} />;
@@ -337,6 +360,7 @@ export default function App() {
         </main>
       </div>
       <ReloadPrompt />
+      <AttendancePopup userSession={userSession} />
     </div>
   );
 }

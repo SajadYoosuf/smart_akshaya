@@ -328,9 +328,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .app-topbar-center {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   min-width: 0;
   overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+  .app-topbar-center {
+    justify-content: center;
+  }
 }
 
 .app-topbar-right {
@@ -1392,6 +1398,85 @@ input[type="range"]::-webkit-slider-thumb:hover {
   transition: all 0.15s;
   font-family: inherit;
 }
+
+.modern-date-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modern-date-input-group {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+}
+
+.modern-date-input-group:hover,
+.modern-date-input-group:focus-within {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.modern-date-icon {
+  color: #64748B;
+  margin-right: 8px;
+}
+
+.modern-date-input {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-family: inherit;
+  color: #1E293B;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  padding: 4px 2px;
+}
+
+/* Hide default calendar icon in webkit */
+.modern-date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: 0.2s;
+  padding: 2px;
+}
+.modern-date-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.modern-date-separator {
+  color: #94A3B8;
+  font-size: 13px;
+  margin: 0 8px;
+  user-select: none;
+}
+
+.modern-date-clear {
+  background: #F1F5F9;
+  border: none;
+  cursor: pointer;
+  color: #64748B;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  transition: all 0.2s ease;
+}
+
+.modern-date-clear:hover {
+  background: #E2E8F0;
+  color: #EF4444;
+  transform: rotate(90deg);
+}
+
 
 .admin-action-btn:hover {
   background: #E2E8F0;

@@ -3,10 +3,11 @@ import { PDFDocument, rgb } from 'pdf-lib';
 export async function generateInvoicePdf(entryData) {
   try {
     // 1. Fetch the template PDF from the public directory
-    const templateBytes = await fetch('/invoice_template.pdf').then(res => {
-      if (!res.ok) throw new Error("Could not load invoice_template.pdf");
-      return res.arrayBuffer();
-    });
+    const res = await fetch(import.meta.env.BASE_URL + 'invoice_template.pdf');
+    if (!res.ok) throw new Error(`Could not load invoice_template.pdf (Status: ${res.status})`);
+    
+    const arrayBuffer = await res.arrayBuffer();
+    const templateBytes = new Uint8Array(arrayBuffer);
     
     // 2. Load the PDF
     const pdfDoc = await PDFDocument.load(templateBytes);

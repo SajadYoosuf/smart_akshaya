@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Edit3, CheckCircle, Banknote, Wallet, Crop, Camera, User, Percent, Calculator, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { Edit3, CheckCircle, Banknote, Wallet, Crop, Camera, User, Percent, Calculator, ChevronDown, ChevronUp, FileText, Bookmark, Globe, Link as LinkIcon, ExternalLink, Database, Cloud, Star, Monitor, AppWindow, Cpu, Rocket, Search } from 'lucide-react';
 import { getRows } from '../services/googleSheetsService';
+import { SHEETS_CONFIG } from '../config/sheetsConfig';
+import CalculatorModal from './CalculatorModal';
+
+const ICON_MAP = {
+  Globe, Link: LinkIcon, ExternalLink, Database, Cloud, Star, Monitor, AppWindow, Cpu, Rocket
+};
 
 // ─── Quick‑launch tile definitions ─────────────
 const TILES = [
@@ -153,10 +159,55 @@ export default function DashboardOverview({ onViewChange, userSession }) {
   const [loadingStats, setLoadingStats] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [walletBreakdown, setWalletBreakdown] = useState([]);
+  const [bookmarkedServices, setBookmarkedServices] = useState([]);
+  const [allServices, setAllServices] = useState([]);
+  const [serviceSearchQuery, setServiceSearchQuery] = useState('');
+  const [externalLinks, setExternalLinks] = useState([]);
+  const [showCalculatorModal, setShowCalculatorModal] = useState(false);
 
   useEffect(() => {
     fetchDashboardStats();
+    fetchExternalLinks();
   }, []);
+
+  const fetchExternalLinks = async () => {
+    try {
+      const rows = await getRows('External Links');
+      if (rows && rows.length > 0) {
+        let startIndex = 1;
+        let nameIdx = 0, urlIdx = 1, iconIdx = 2, colorIdx = 3;
+        
+        const firstRow = rows[0].map(h => (h || '').toString().trim().toLowerCase());
+        
+        if (firstRow.includes('name') || firstRow.includes('url')) {
+          nameIdx = firstRow.indexOf('name') !== -1 ? firstRow.indexOf('name') : 0;
+          urlIdx = firstRow.indexOf('url') !== -1 ? firstRow.indexOf('url') : 1;
+          iconIdx = firstRow.indexOf('icon') !== -1 ? firstRow.indexOf('icon') : 2;
+          colorIdx = firstRow.indexOf('color') !== -1 ? firstRow.indexOf('color') : 3;
+        } else {
+          startIndex = 0;
+        }
+        
+        const links = [];
+        for (let i = startIndex; i < rows.length; i++) {
+          const r = rows[i];
+          if (!r || r.length === 0 || (!r[nameIdx] && !r[urlIdx])) continue;
+          links.push({
+            id: `ext-${i}`,
+            label: r[nameIdx] || 'Link',
+            sublabel: 'External Tool',
+            Icon: ICON_MAP[r[iconIdx]] || Globe,
+            bg: r[colorIdx] || 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+            url: r[urlIdx] || '#',
+            isExternal: true
+          });
+        }
+        setExternalLinks(links);
+      }
+    } catch (err) {
+      console.error('Failed to fetch external links', err);
+    }
+  };
 
   const fetchDashboardStats = async () => {
     setLoadingStats(true);
@@ -205,7 +256,42 @@ export default function DashboardOverview({ onViewChange, userSession }) {
         }
       }
 
+      const servicesRows = await getRows(SHEETS_CONFIG.serviceSheetName).catch(() => null);
+      const bookmarked = [];
+      const allList = [];
+      if (servicesRows && servicesRows.length > 1) {
+        const normalizedHeaders = servicesRows[0].map(h => (h || '').toString().toLowerCase().replace(/[^a-z0-9]/g, ''));
+        const getIdx = (keys, defaultVal) => {
+          for (const key of keys) {
+            const idx = normalizedHeaders.indexOf(key);
+            if (idx !== -1) return idx;
+          }
+          return defaultVal;
+        };
+        const idIdx = getIdx(['id', 'serviceid', 'srvid'], -1);
+        const nameIdx = getIdx(['servicename', 'name', 'service'], idIdx === -1 ? 0 : 1);
+        const websiteIdx = getIdx(['website', 'url', 'link'], idIdx === -1 ? 1 : 2);
+        const bookmarkIdx = getIdx(['bookmark', 'isbookmarked', 'favorite'], idIdx === -1 ? 8 : 9);
+
+        for (let i = 1; i < servicesRows.length; i++) {
+          const r = servicesRows[i];
+          if (!r || r.length === 0 || (r[nameIdx] || '').toString().trim() === '') continue;
+          
+          const srvObj = {
+            name: r[nameIdx] || 'Service',
+            website: r[websiteIdx] || '#'
+          };
+          allList.push(srvObj);
+
+          if (r.length > bookmarkIdx && (r[bookmarkIdx] || '').toString().toLowerCase() === 'true') {
+            bookmarked.push(srvObj);
+          }
+        }
+      }
+
       setWalletBreakdown(breakdown);
+      setBookmarkedServices(bookmarked);
+      setAllServices(allList);
       setStats({ todayEntry, todayCompleted, totalServiceCharge, totalWalletCharge });
     } catch (_) {
       // silently fail
@@ -269,6 +355,68 @@ export default function DashboardOverview({ onViewChange, userSession }) {
         />
       </div>
 
+      {/* ── Top Bookmarked Services ── */}
+      {bookmarkedServices.length > 0 && (
+        <div style={{ marginBottom: '32px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1E293B', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Bookmark size={20} color="#3B82F6" fill="#DBEAFE" /> Top Bookmarked Services
+          </h3>
+          <div style={{ display: 'flex', gap: '20px', overflowX: 'auto', paddingBottom: '16px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+            {bookmarkedServices.map((service, index) => {
+              const initial = service.name.charAt(0).toUpperCase();
+              const colors = [
+                ['#EC4899', '#BE185D'], // Pink
+                ['#F43F5E', '#BE123C'], // Rose
+                ['#14B8A6', '#0F766E'], // Teal
+                ['#A855F7', '#7E22CE'], // Purple
+                ['#F59E0B', '#B45309'], // Amber
+                ['#3B82F6', '#1D4ED8'], // Blue
+              ];
+              const color = colors[index % colors.length];
+              
+              return (
+                <a 
+                  key={index} 
+                  href={service.website !== '#' ? service.website : undefined} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '84px', gap: '8px', cursor: 'pointer' }}
+                >
+                  <div style={{ 
+                    width: '76px', height: '76px', borderRadius: '50%', 
+                    background: `linear-gradient(135deg, ${color[0]} 0%, ${color[1]} 100%)`,
+                    padding: '3px',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+                    transition: 'transform 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    <div style={{ 
+                      width: '100%', height: '100%', borderRadius: '50%', backgroundColor: '#ffffff', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      border: '2px solid transparent'
+                    }}>
+                      <span style={{ fontSize: '28px', fontWeight: '800', background: `linear-gradient(135deg, ${color[0]} 0%, ${color[1]} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                        {initial}
+                      </span>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#475569', textAlign: 'center', width: '84px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {service.name}
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+          <style>{`
+            div::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
+        </div>
+      )}
+
       {/* ── Wallet Breakdown ── */}
       {showBreakdown && walletBreakdown.length > 0 && (
         <div className="dashboard-breakdown glass-panel">
@@ -313,11 +461,162 @@ export default function DashboardOverview({ onViewChange, userSession }) {
             <QuickTile
               key={tile.id}
               tile={tile}
-              onClick={() => onViewChange(tile.view)}
+              onClick={() => {
+                if (tile.id === 'calculator') {
+                  setShowCalculatorModal(true);
+                } else {
+                  onViewChange(tile.view);
+                }
+              }}
+            />
+          ))}
+          {externalLinks.map((tile) => (
+            <QuickTile
+              key={tile.id}
+              tile={tile}
+              onClick={() => {
+                if (tile.url && tile.url !== '#') {
+                  window.open(tile.url, '_blank');
+                }
+              }}
             />
           ))}
         </div>
       </div>
+
+      {/* ── Service Directory ── */}
+      <div style={{ marginTop: '40px', marginBottom: '40px', position: 'relative' }}>
+        {/* Background Decorative Blur */}
+        <div style={{ position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)', width: '600px', height: '400px', background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, rgba(255,255,255,0) 70%)', pointerEvents: 'none', zIndex: 0 }}></div>
+        
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: '20px', backgroundColor: '#EFF6FF', color: '#2563EB', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px' }}>
+            <Globe size={14} /> Service Directory
+          </div>
+          <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#0F172A', margin: '0 0 24px 0', textAlign: 'center', letterSpacing: '-0.5px' }}>
+            Quickly Access Any Service
+          </h2>
+          
+          <div style={{ position: 'relative', width: '100%', maxWidth: '480px' }}>
+            <div style={{ position: 'absolute', inset: '-2px', background: 'linear-gradient(90deg, #3B82F6, #8B5CF6, #EC4899)', borderRadius: '24px', opacity: serviceSearchQuery ? 0.5 : 0.1, filter: 'blur(8px)', transition: 'opacity 0.3s' }}></div>
+            <input 
+              type="text" 
+              placeholder="Search for a service..." 
+              value={serviceSearchQuery}
+              onChange={(e) => setServiceSearchQuery(e.target.value)}
+              style={{
+                width: '100%', height: '56px', padding: '0 24px 0 52px', borderRadius: '20px',
+                border: '1px solid rgba(255,255,255,0.8)', outline: 'none', fontSize: '16px',
+                backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05)',
+                color: '#1E293B', fontWeight: '500', position: 'relative', zIndex: 1
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#3B82F6'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.8)'}
+            />
+            <Search size={20} color="#64748B" style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', zIndex: 2 }} />
+          </div>
+        </div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px', position: 'relative', zIndex: 1 }}>
+          {allServices.filter(s => s.name.toLowerCase().includes(serviceSearchQuery.toLowerCase())).map((service, idx) => {
+            const colors = [
+              { bg: '#EFF6FF', text: '#3B82F6', grad: 'linear-gradient(135deg, #60A5FA, #2563EB)' },
+              { bg: '#FDF4FF', text: '#C026D3', grad: 'linear-gradient(135deg, #E879F9, #9333EA)' },
+              { bg: '#F0FDF4', text: '#16A34A', grad: 'linear-gradient(135deg, #4ADE80, #16A34A)' },
+              { bg: '#FFF7ED', text: '#EA580C', grad: 'linear-gradient(135deg, #FB923C, #EA580C)' },
+              { bg: '#FEF2F2', text: '#DC2626', grad: 'linear-gradient(135deg, #F87171, #DC2626)' },
+              { bg: '#F8FAFC', text: '#475569', grad: 'linear-gradient(135deg, #94A3B8, #475569)' },
+            ];
+            const colorTheme = colors[idx % colors.length];
+            
+            let displayUrl = 'No URL Provided';
+            if (service.website && service.website !== '#') {
+              try {
+                displayUrl = new URL(service.website).hostname.replace('www.', '');
+              } catch (e) {
+                displayUrl = service.website;
+              }
+            }
+            
+            return (
+              <a 
+                key={idx}
+                href={service.website !== '#' ? service.website : undefined} 
+                target="_blank" 
+                rel="noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', padding: '16px 20px', borderRadius: '20px',
+                  backgroundColor: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(255,255,255,1)', textDecoration: 'none',
+                  boxShadow: '0 4px 15px -5px rgba(0,0,0,0.05), inset 0 0 0 1px rgba(255,255,255,0.5)',
+                  transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)', cursor: 'pointer',
+                  position: 'relative', overflow: 'hidden'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
+                  e.currentTarget.style.boxShadow = `0 20px 25px -5px ${colorTheme.text}30, 0 8px 10px -6px ${colorTheme.text}20, inset 0 0 0 1px ${colorTheme.text}40`;
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  const arrow = e.currentTarget.querySelector('.arrow-icon');
+                  if (arrow) {
+                    arrow.style.transform = 'translate(4px, -4px)';
+                    arrow.style.color = colorTheme.text;
+                    arrow.style.backgroundColor = colorTheme.bg;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = '0 4px 15px -5px rgba(0,0,0,0.05), inset 0 0 0 1px rgba(255,255,255,0.5)';
+                  e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.7)';
+                  const arrow = e.currentTarget.querySelector('.arrow-icon');
+                  if (arrow) {
+                    arrow.style.transform = 'translate(0, 0)';
+                    arrow.style.color = '#94A3B8';
+                    arrow.style.backgroundColor = 'rgba(241, 245, 249, 0.8)';
+                  }
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    width: '46px', height: '46px', borderRadius: '14px',
+                    background: colorTheme.grad,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, boxShadow: 'inset 0 -2px 4px rgba(0,0,0,0.2), 0 4px 8px -2px rgba(0,0,0,0.2)'
+                  }}>
+                    <Globe size={22} color="#ffffff" strokeWidth={2.5} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {service.name}
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: '500', color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {displayUrl}
+                    </div>
+                  </div>
+                </div>
+                <div className="arrow-icon" style={{
+                  width: '32px', height: '32px', borderRadius: '10px', backgroundColor: 'rgba(241, 245, 249, 0.8)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#94A3B8', transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)', flexShrink: 0
+                }}>
+                  <ExternalLink size={16} strokeWidth={2.5} />
+                </div>
+              </a>
+            );
+          })}
+          {allServices.filter(s => s.name.toLowerCase().includes(serviceSearchQuery.toLowerCase())).length === 0 && (
+             <div style={{ gridColumn: '1 / -1', padding: '60px 20px', textAlign: 'center', color: '#94A3B8', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                <Search size={48} opacity={0.3} />
+                <div style={{ fontSize: '18px', fontWeight: '600', color: '#64748B' }}>No services found</div>
+                <div style={{ fontSize: '14px' }}>Try adjusting your search query.</div>
+             </div>
+          )}
+        </div>
+      </div>
+
+      {showCalculatorModal && (
+        <CalculatorModal onClose={() => setShowCalculatorModal(false)} />
+      )}
     </div>
   );
 }
