@@ -15,7 +15,8 @@ export async function getRows(sheetName) {
     const token = await getAccessToken();
     console.log(`[getRows] Token acquired (length: ${token?.length})`);
 
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}!A:Z`;
+    const range = `'${sheetName}'!A:Z`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`;
     console.log(`[getRows] Request URL: ${url}`);
 
     const response = await fetch(url, {
@@ -49,7 +50,8 @@ export async function getRows(sheetName) {
 export async function appendRow(sheetName, row) {
   const spreadsheetId = getSpreadsheetId();
   const token = await getAccessToken();
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}!A1:append?valueInputOption=USER_ENTERED`;
+  const range = `'${sheetName}'!A1`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED`;
 
   const response = await fetch(url, {
     method: 'POST',
@@ -77,7 +79,8 @@ export async function appendRow(sheetName, row) {
 export async function appendRows(sheetName, rows) {
   const spreadsheetId = getSpreadsheetId();
   const token = await getAccessToken();
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName)}!A1:append?valueInputOption=USER_ENTERED`;
+  const range = `'${sheetName}'!A1`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED`;
 
   const response = await fetch(url, {
     method: 'POST',
@@ -106,7 +109,7 @@ export async function appendRows(sheetName, rows) {
 export async function updateRow(sheetName, rowIndex, row) {
   const spreadsheetId = getSpreadsheetId();
   const token = await getAccessToken();
-  const range = `${sheetName}!A${rowIndex}`;
+  const range = `'${sheetName}'!A${rowIndex}`;
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
 
   const response = await fetch(url, {
@@ -174,7 +177,7 @@ export async function clearRow(sheetName, rowIndex, numColumns) {
   };
 
   const endColumnLetter = getColumnLetter(numColumns);
-  const range = `${sheetName}!A${rowIndex}:${endColumnLetter}${rowIndex}`;
+  const range = `'${sheetName}'!A${rowIndex}:${endColumnLetter}${rowIndex}`;
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
 
   const emptyRow = Array(numColumns).fill('');
@@ -197,3 +200,103 @@ export async function clearRow(sheetName, rowIndex, numColumns) {
   return await response.json();
 }
 
+/**
+ * Deletes a row from a Google Sheet.
+ * @param {string} sheetName - Name of the sheet (tab) to delete from.
+ * @param {number} rowIndex - The 1-indexed row number to delete.
+ */
+export async function deleteRow(sheetName, rowIndex) {
+  const spreadsheetId = getSpreadsheetId();
+  const token = await getAccessToken();
+
+  // First, we need to get the sheet ID (gid) for the sheetName
+  const sheetMetaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
+  const metaResponse = await fetch(sheetMetaUrl, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (!metaResponse.ok) {
+    throw new Error(`Failed to fetch spreadsheet metadata: ${metaResponse.statusText}`);
+  }
+
+  const metaData = await metaResponse.json();
+  const sheet = metaData.sheets.find(s => s.properties.title === sheetName);
+  
+  if (!sheet) {
+    throw new Error(`Sheet ${sheetName} not found`);
+  }
+
+  const sheetId = sheet.properties.sheetId;
+
+  // Use batchUpdate to delete the row
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId: sheetId,
+              dimension: 'ROWS',
+              startIndex: rowIndex - 1, // 0-indexed, inclusive
+              endIndex: rowIndex        // 0-indexed, exclusive
+            }
+          }
+        }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[deleteRow] failed: ${response.status} - ${errorText}`);
+    throw new Error(`Error deleting row: ${response.statusText}. Details: ${errorText}`);
+  }
+
+  return await response.json();
+}
+
+/**
+ * Logs a wallet transaction to the 'Wallet Transactions' sheet.
+ * @param {string} walletName 
+ * @param {string} type 
+ * @param {number} amount 
+ * @param {number} closingBalance 
+ * @param {string} description 
+ */
+export async function logWalletTransaction(walletName, type, amount, closingBalance, description = '', staffName = '', billId = '') {
+  try {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const dateStr = `${day}-${month}-${year}`; // Format: DD-MM-YYYY
+    const timeStr = now.toLocaleTimeString('en-IN', { hour12: true });
+
+    const row = [
+      dateStr,
+      timeStr,
+      walletName,
+      type,
+      amount.toFixed(2),
+      closingBalance.toFixed(2),
+      description,
+      staffName,
+      billId
+    ];
+
+    try {
+      await appendRow('Transaction History', row);
+    } catch (e) {
+      await appendRow('Wallet Transactions', row);
+    }
+  } catch (err) {
+    console.error('Failed to log wallet transaction. Make sure Transaction History or Wallet Transactions sheet exists.', err);
+  }
+}

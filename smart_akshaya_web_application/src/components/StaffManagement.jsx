@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Save, Edit2, Trash2, RefreshCw, AlertCircle, CheckCircle, Plus, X, Search, Shield, User, Mail, Phone, MapPin } from 'lucide-react';
+import { Users, Save, Edit2, Trash2, RefreshCw, AlertCircle, CheckCircle, Plus, X, Search, Shield, User, Mail, Phone, MapPin, Eye, EyeOff } from 'lucide-react';
 import { getRows, appendRow, updateRow, clearRow } from '../services/googleSheetsService';
 import { sha256 } from '../services/googleSheetsAuth';
 
@@ -7,7 +7,7 @@ export default function StaffManagement() {
   const [staff, setStaff] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState('');
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -19,13 +19,13 @@ export default function StaffManagement() {
   const [editingIndex, setEditingIndex] = useState(null); // 2-indexed row number
   const [staffId, setStaffId] = useState('');
   const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
   const [userType, setUserType] = useState('staff');
-  const [status, setStatus] = useState('Active');
+  const [salary, setSalary] = useState('10000');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     fetchStaff();
@@ -36,7 +36,7 @@ export default function StaffManagement() {
       setFiltered(staff);
     } else {
       const q = search.toLowerCase();
-      setFiltered(staff.filter(s => 
+      setFiltered(staff.filter(s =>
         (s.name || '').toLowerCase().includes(q) ||
         (s.email || '').toLowerCase().includes(q) ||
         (s.id || '').toLowerCase().includes(q)
@@ -55,17 +55,16 @@ export default function StaffManagement() {
         for (let i = 1; i < rows.length; i++) {
           const row = rows[i];
           if (!row || row.length === 0 || (row[0] || '').toString().trim() === '') continue;
-          
+
           list.push({
             rowIndex: i + 1,
             id: row[0],
             name: row.length > 1 ? row[1] : 'Unknown',
-            address: row.length > 2 ? row[2] : '',
             mobile: row.length > 3 ? row[3] : '',
             email: row.length > 4 ? row[4] : '',
             userType: row.length > 5 ? row[5].toString().toLowerCase() : 'staff',
-            status: row.length > 6 ? row[6] : 'Active',
-            password: row.length > 7 ? row[7] : ''
+            password: row.length > 7 ? row[7] : '',
+            salary: row.length > 8 ? row[8] : '10000'
           });
         }
         setStaff(list);
@@ -84,11 +83,10 @@ export default function StaffManagement() {
     setEditingIndex(s.rowIndex);
     setStaffId(s.id);
     setName(s.name);
-    setAddress(s.address);
     setMobile(s.mobile);
     setEmail(s.email);
     setUserType(s.userType);
-    setStatus(s.status);
+    setSalary(s.salary || '10000');
     setPassword('');
     setConfirmPassword('');
     setShowFormModal(true);
@@ -99,11 +97,11 @@ export default function StaffManagement() {
     setEditingIndex(null);
     setStaffId('');
     setName('');
-    setAddress('');
     setMobile('');
     setEmail('');
     setUserType('staff');
-    setStatus('Active');
+    setSalary('10000');
+    // setStatus('Active');
     setPassword('');
     setConfirmPassword('');
     setShowFormModal(false);
@@ -111,7 +109,7 @@ export default function StaffManagement() {
 
   const handleDelete = async (s) => {
     if (!window.confirm(`Are you sure you want to delete staff account "${s.name}"?`)) return;
-    
+
     setIsSaving(true);
     setError('');
     setSuccess('');
@@ -130,14 +128,6 @@ export default function StaffManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim() || !address.trim() || !mobile.trim() || !email.trim()) {
-      setError('Name, Address, Mobile, and Email are required.');
-      return;
-    }
-
-    setIsSaving(true);
-    setError('');
-    setSuccess('');
 
     try {
       let computedPassword = password.trim();
@@ -172,12 +162,13 @@ export default function StaffManagement() {
       const rowValues = [
         finalId,
         name.trim(),
-        address.trim(),
+        '', // Previously address, keeping blank to maintain columns
         mobile.trim(),
         email.trim(),
         userType,
-        status,
-        passwordHash
+        'Active', // Placeholder for status to maintain password index 7
+        passwordHash,
+        salary.trim() || '10000'
       ];
 
       if (isEditing) {
@@ -204,14 +195,14 @@ export default function StaffManagement() {
 
   return (
     <div className="admin-page">
-      
+
       {/* Hero Header Section */}
       <div className="admin-hero admin-hero--staff">
         <div className="admin-hero-main">
           <div className="admin-hero-label">STAFF PROFILES</div>
           <div className="admin-hero-amount">{staff.length}</div>
         </div>
-        
+
         <div className="admin-hero-meta-card">
           <Users size={32} opacity={0.9} />
           <div>
@@ -243,10 +234,10 @@ export default function StaffManagement() {
             <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
           </button>
         </h2>
-        
+
         <div className="admin-search" style={{ flex: '1 1 300px', maxWidth: '400px' }}>
           <Search size={18} className="admin-search-icon" />
-          <input 
+          <input
             type="text"
             placeholder="Search by name, ID or email..."
             value={search}
@@ -255,7 +246,7 @@ export default function StaffManagement() {
             style={{ paddingRight: search ? '40px' : '16px' }}
           />
           {search && (
-            <button 
+            <button
               type="button"
               onClick={() => setSearch('')}
               style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
@@ -288,7 +279,7 @@ export default function StaffManagement() {
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px' }}>NAME</th>
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px' }}>CONTACT</th>
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px' }}>ROLE</th>
-                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px' }}>STATUS</th>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px' }}>SALARY</th>
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textAlign: 'right' }}>ACTIONS</th>
                 </tr>
               </thead>
@@ -317,30 +308,24 @@ export default function StaffManagement() {
                     <td style={{ padding: '16px 24px' }}>
                       <span style={{ 
                         padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', textTransform: 'capitalize',
-                        backgroundColor: s.userType === 'admin' ? '#EFF6FF' : '#F1F5F9', 
-                        color: s.userType === 'admin' ? '#3B82F6' : '#64748B' 
+                        backgroundColor: s.userType === 'admin' ? '#EFF6FF' : '#F1F5F9',
+                        color: s.userType === 'admin' ? '#3B82F6' : '#64748B'
                       }}>
                         {s.userType}
                       </span>
                     </td>
-                    <td style={{ padding: '16px 24px' }}>
-                      <span style={{ 
-                        padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600',
-                        backgroundColor: s.status === 'Active' ? '#ECFDF5' : '#FEF2F2', 
-                        color: s.status === 'Active' ? '#10B981' : '#EF4444' 
-                      }}>
-                        {s.status}
-                      </span>
+                    <td style={{ padding: '16px 24px', color: '#475569', fontWeight: '500' }}>
+                      ₹{s.salary || '10000'}
                     </td>
                     <td style={{ padding: '16px 24px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <button 
+                      <button
                         onClick={() => handleEdit(s)}
                         style={{ background: '#EFF6FF', border: 'none', cursor: 'pointer', color: '#3B82F6', marginRight: '8px', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }}
                         title="Edit"
                       >
                         <Edit2 size={16} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDelete(s)}
                         style={{ background: '#FEF2F2', border: 'none', cursor: 'pointer', color: '#EF4444', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }}
                         title="Delete"
@@ -378,10 +363,10 @@ export default function StaffManagement() {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="admin-modal-body">
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                
+
                 <div>
                   <label style={labelStyle}>Full Name *</label>
                   <div style={{ position: 'relative' }}>
@@ -390,20 +375,12 @@ export default function StaffManagement() {
                   </div>
                 </div>
 
-                <div>
-                  <label style={labelStyle}>Address *</label>
-                  <div style={{ position: 'relative' }}>
-                    <MapPin size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#94A3B8' }} />
-                    <input type="text" value={address} onChange={e => setAddress(e.target.value)} required placeholder="e.g. 123 Main St, City" style={inputStyle} />
-                  </div>
-                </div>
-
                 <div className="admin-form-grid-2">
                   <div>
                     <label style={labelStyle}>Mobile *</label>
                     <div style={{ position: 'relative' }}>
                       <Phone size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#94A3B8' }} />
-                      <input type="text" value={mobile} onChange={e => setMobile(e.target.value)} required placeholder="10-digit number" style={inputStyle} />
+                      <input type="text" value={mobile} onChange={e => setMobile(e.target.value.replace(/\D/g, ''))} maxLength={10} required placeholder="10-digit number" style={inputStyle} />
                     </div>
                   </div>
                   <div>
@@ -421,30 +398,52 @@ export default function StaffManagement() {
                     <div style={{ position: 'relative' }}>
                       <Shield size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#94A3B8' }} />
                       <select value={userType} onChange={e => setUserType(e.target.value)} style={{ ...inputStyle, paddingLeft: '44px' }}>
-                        <option value="staff">Staff User</option>
-                        <option value="admin">Administrator</option>
+                        <option value="staff">Staff</option>
+                        <option value="accountant">Accountant</option>
                       </select>
                     </div>
                   </div>
                   <div>
-                    <label style={labelStyle}>Account Status</label>
-                    <select value={status} onChange={e => setStatus(e.target.value)} style={{ ...inputStyle, paddingLeft: '16px' }}>
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
+                    <label style={labelStyle}>Basic Salary</label>
+                    <div style={{ position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: '16px', top: '14px', color: '#94A3B8', fontSize: '15px', fontWeight: '600' }}>₹</span>
+                      <input type="number" value={salary} onChange={e => setSalary(e.target.value)} placeholder="10000" style={{ ...inputStyle, paddingLeft: '32px' }} />
+                    </div>
                   </div>
+
                 </div>
 
                 <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '12px', border: '1px solid #E2E8F0', marginTop: '8px' }}>
                   <div style={{ marginBottom: '16px' }}>
-                    <label style={labelStyle}>{isEditing ? 'New Password' : 'Password'}</label>
-                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={isEditing ? "Leave empty to keep current" : "Leave empty for default: [firstname]akshaya"} style={{ ...inputStyle, paddingLeft: '16px' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={{ ...labelStyle, marginBottom: 0 }}>{isEditing ? 'New Password' : 'Password'}</label>
+                      <button type="button" onClick={() => {
+                        const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+                        let pwd = "";
+                        for (let i = 0; i < 10; i++) pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+                        setPassword(pwd);
+                        setConfirmPassword(pwd);
+                      }} style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: '12px', fontWeight: '600', cursor: 'pointer', padding: 0 }}>
+                        Auto Generate
+                      </button>
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <input type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder={isEditing ? "Leave empty to keep current" : "Leave empty for default: [firstname]akshaya"} style={{ ...inputStyle, paddingLeft: '16px', paddingRight: '40px' }} />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '12px', top: '14px', background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
-                  
+
                   {password && (
                     <div>
                       <label style={labelStyle}>Confirm Password</label>
-                      <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Confirm password" required style={{ ...inputStyle, paddingLeft: '16px' }} />
+                      <div style={{ position: 'relative' }}>
+                        <input type={showPassword ? "text" : "password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Confirm password" required style={{ ...inputStyle, paddingLeft: '16px', paddingRight: '40px' }} />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '12px', top: '14px', background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

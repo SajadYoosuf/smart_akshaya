@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Calendar, DollarSign, Eye, EyeOff, Filter, Download, Phone, User, Briefcase, ChevronDown, ChevronUp, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
-import { getRows } from '../services/googleSheetsService';
+import { Search, Calendar, DollarSign, Eye, EyeOff, Filter, Download, Phone, User, Briefcase, ChevronDown, ChevronUp, CheckCircle, AlertCircle, RefreshCw, Edit, Trash2 } from 'lucide-react';
+import { getRows, deleteRow } from '../services/googleSheetsService';
 import { SHEETS_CONFIG } from '../config/sheetsConfig';
 
-export default function ServiceReportsScreen() {
+export default function ServiceReportsScreen({ userSession, onEditBill }) {
   const [entries, setEntries] = useState([]);
   const [filteredEntries, setFilteredEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all'); // all, today, week, month
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
@@ -17,7 +18,7 @@ export default function ServiceReportsScreen() {
 
   useEffect(() => {
     applyFilters();
-  }, [entries, searchTerm, filterType]);
+  }, [entries, searchTerm, startDate, endDate]);
 
   const fetchServiceEntries = async () => {
     setIsLoading(true);
@@ -27,18 +28,30 @@ export default function ServiceReportsScreen() {
       if (rows && rows.length > 1) {
         const parsed = rows.slice(1).map((row, idx) => ({
           id: idx,
+          rowIndex: idx + 2,
+          sourceSheet: SHEETS_CONFIG.serviceEntrySheetName,
           date: row[0] || '',
           time: row[1] || '',
-          staff: row[2] || '',
-          mobile: row[3] || '',
-          name: row[4] || '',
-          services: row[5] || '',
-          qty: row[6] || '0',
-          total: parseFloat(row[7]) || 0,
-          gpay: parseFloat(row[8]) || 0,
-          cash: parseFloat(row[9]) || 0,
-          balance: parseFloat(row[10]) || 0,
-          status: row[11] || 'Completed'
+          staffName: row[2] || '',
+          mobile: '', // Not stored in service entry row directly
+          customerName: row[3] || 'Walk-in Customer',
+          name: row[3] || 'Walk-in Customer',
+          services: row[4] || '',
+          qty: row[5] || '0',
+          total: parseFloat(row[6]) || 0,
+          deptFee: parseFloat(row[7]) || 0,
+          walletCharge: parseFloat(row[8]) || 0,
+          gpayUpi: parseFloat(row[9]) || 0,
+          gpay: parseFloat(row[9]) || 0,
+          cash: parseFloat(row[10]) || 0,
+          balance: parseFloat(row[11]) || 0,
+          status: row[12] || 'Completed',
+          serviceCharge: parseFloat(row[13]) || 0,
+          commission: parseFloat(row[14]) || 0,
+          walletType: row[15] || '',
+          remarks: row[16] || '',
+          billId: row[17] || '',
+          isPriceEdited: row[18] === 'Yes'
         }));
         // Sort reverse chronological by default assuming newer is appended
         setEntries(parsed.reverse());
@@ -47,6 +60,18 @@ export default function ServiceReportsScreen() {
       console.error('Error fetching service entries:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteBill = async (entry) => {
+    if (!window.confirm(`Are you sure you want to delete the bill for ${entry.name}?`)) return;
+    try {
+      await deleteRow(SHEETS_CONFIG.serviceEntrySheetName, entry.rowIndex);
+      alert('Bill deleted successfully.');
+      fetchServiceEntries();
+    } catch (error) {
+      console.error('Error deleting bill:', error);
+      alert('Failed to delete bill.');
     }
   };
 
@@ -64,22 +89,18 @@ export default function ServiceReportsScreen() {
     }
 
     // Date filter
-    if (filterType !== 'all') {
-      const today = new Date();
+    if (startDate || endDate) {
       filtered = filtered.filter(entry => {
         const entryDate = new Date(entry.date);
         if (isNaN(entryDate.getTime())) return true; // fallback if date is unparseable
+
+        const start = startDate ? new Date(startDate) : new Date('2000-01-01');
+        start.setHours(0, 0, 0, 0);
         
-        if (filterType === 'today') {
-          return entryDate.toDateString() === today.toDateString();
-        } else if (filterType === 'week') {
-          const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-          return entryDate >= weekAgo && entryDate <= today;
-        } else if (filterType === 'month') {
-          return entryDate.getMonth() === today.getMonth() &&
-                 entryDate.getFullYear() === today.getFullYear();
-        }
-        return true;
+        const end = endDate ? new Date(endDate) : new Date('2100-01-01');
+        end.setHours(23, 59, 59, 999);
+        
+        return entryDate >= start && entryDate <= end;
       });
     }
 
@@ -99,7 +120,7 @@ export default function ServiceReportsScreen() {
     const csv = [
       ['Date', 'Time', 'Staff', 'Mobile', 'Name', 'Services', 'Qty', 'Total', 'GPay', 'Cash', 'Balance', 'Status'],
       ...filteredEntries.map(e => [
-        e.date, e.time, e.staff, e.mobile, e.name, `"${(e.services || '').replace(/"/g, '""')}"`, 
+        e.date, e.time, e.staffName, e.mobile, e.name, `"${(e.services || '').replace(/"/g, '""')}"`, 
         e.qty, e.total, e.gpay, e.cash, e.balance, e.status
       ])
     ].map(row => row.join(',')).join('\n');
@@ -173,17 +194,34 @@ export default function ServiceReportsScreen() {
             />
           </div>
 
-          <div className="admin-filter-pills">
-            {['all', 'today', 'week', 'month'].map((f) => (
-              <button
-                key={f}
-                type="button"
-                onClick={() => setFilterType(f)}
-                className={`admin-filter-pill${filterType === f ? ' admin-filter-pill--active' : ''}`}
-              >
-                {f}
-              </button>
-            ))}
+          <div className="modern-date-range">
+            <div className="modern-date-input-group">
+              <Calendar size={16} className="modern-date-icon" />
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="modern-date-input"
+                title="Start Date"
+              />
+              <span className="modern-date-separator">→</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="modern-date-input"
+                title="End Date"
+              />
+              {(startDate || endDate) && (
+                <button 
+                  onClick={() => { setStartDate(''); setEndDate(''); }}
+                  className="modern-date-clear"
+                  title="Clear Dates"
+                >
+                  <RefreshCw size={14} />
+                </button>
+              )}
+            </div>
           </div>
           
           <button type="button" onClick={handleExport} className="admin-tool-btn">
@@ -216,7 +254,7 @@ export default function ServiceReportsScreen() {
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textAlign: 'right' }}>TOTAL</th>
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textAlign: 'right' }}>RECEIVED</th>
                   <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px' }}>STATUS</th>
-                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textAlign: 'right' }}>DETAILS</th>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#64748B', letterSpacing: '0.5px', textAlign: 'right' }}>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
@@ -255,12 +293,32 @@ export default function ServiceReportsScreen() {
                         </span>
                       </td>
                       <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                        <button 
-                          onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}
-                          style={{ background: expandedId === e.id ? '#E2E8F0' : '#F1F5F9', border: 'none', cursor: 'pointer', color: '#475569', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', transition: 'background 0.2s', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                        >
-                          {expandedId === e.id ? 'Hide' : 'View'} {expandedId === e.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                          <button 
+                            onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}
+                            style={{ background: expandedId === e.id ? '#E2E8F0' : '#F1F5F9', border: 'none', cursor: 'pointer', color: '#475569', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', transition: 'background 0.2s', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            {expandedId === e.id ? 'Hide' : 'View'} {expandedId === e.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </button>
+                          {userSession?.role === 'admin' && (
+                            <>
+                              <button
+                                onClick={() => onEditBill && onEditBill(e)}
+                                style={{ background: '#E0F2FE', border: 'none', cursor: 'pointer', color: '#0284C7', padding: '8px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                title="Edit Bill"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteBill(e)}
+                                style={{ background: '#FEE2E2', border: 'none', cursor: 'pointer', color: '#EF4444', padding: '8px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                title="Delete Bill"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                     {expandedId === e.id && (
@@ -281,7 +339,7 @@ export default function ServiceReportsScreen() {
                                 {e.services || 'No detailed service description provided.'}
                               </p>
                               <div style={{ marginTop: '16px', display: 'flex', gap: '24px', fontSize: '13px', color: '#64748B' }}>
-                                <span><strong>Staff:</strong> {e.staff || 'N/A'}</span>
+                                <span><strong>Staff:</strong> {e.staffName || 'N/A'}</span>
                                 <span><strong>Quantity:</strong> {e.qty || '0'}</span>
                               </div>
                             </div>

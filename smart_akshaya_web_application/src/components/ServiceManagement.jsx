@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, Plus, Edit2, Trash2, RefreshCw, AlertCircle, CheckCircle, ExternalLink, X, Briefcase, Globe, DollarSign, Wallet, Search } from 'lucide-react';
+import { Settings, Save, Plus, Edit2, Trash2, RefreshCw, AlertCircle, CheckCircle, ExternalLink, X, Briefcase, Globe, DollarSign, Wallet, Search, Bookmark } from 'lucide-react';
 import { getRows, appendRow, updateRow, clearRow } from '../services/googleSheetsService';
 import { SHEETS_CONFIG } from '../config/sheetsConfig';
 
@@ -72,6 +72,7 @@ export default function ServiceManagement() {
         const allowEditIdx = getIdx(['allowedit', 'allowediting'], idIdx === -1 ? 5 : 6);
         const followupIdx = getIdx(['followupdays', 'followup'], idIdx === -1 ? 6 : 7);
         const walletIdx = getIdx(['defaultwallet', 'wallet'], idIdx === -1 ? 7 : 8);
+        const bookmarkIdx = getIdx(['bookmark', 'isbookmarked', 'favorite'], idIdx === -1 ? 8 : 9);
 
         // The first row is headers
         for (let i = 1; i < rows.length; i++) {
@@ -88,7 +89,8 @@ export default function ServiceManagement() {
             allowEdit: (row[allowEditIdx] || '').toString().toLowerCase() === 'true',
             followupDays: row[followupIdx] || '0',
             wallet: row[walletIdx] || 'CASH',
-            originalId: row[idIdx] || `SRV-${i}`
+            originalId: row[idIdx] || `SRV-${i}`,
+            isBookmarked: (row[bookmarkIdx] || '').toString().toLowerCase() === 'true'
           });
         }
         setServices(list);
@@ -136,13 +138,53 @@ export default function ServiceManagement() {
     setError('');
     setSuccess('');
     try {
-      await updateRow(SHEETS_CONFIG.serviceSheetName, s.rowIndex, ['', '', '', '', '', '', '', '', '']);
+      await updateRow(SHEETS_CONFIG.serviceSheetName, s.rowIndex, ['', '', '', '', '', '', '', '', '', '']);
       setSuccess('Service deleted successfully!');
       await fetchServices();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error(err);
       setError(err.message || 'Failed to delete service.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleToggleBookmark = async (s) => {
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const newValue = !s.isBookmarked;
+      const rowValues = hasIdColumn ? [
+        s.originalId,
+        s.name,
+        s.website,
+        s.deptFee,
+        s.serviceCharge,
+        s.commission,
+        s.allowEdit ? 'true' : 'false',
+        s.followupDays,
+        s.wallet,
+        newValue ? 'true' : 'false'
+      ] : [
+        s.name,
+        s.website,
+        s.deptFee,
+        s.serviceCharge,
+        s.commission,
+        s.allowEdit ? 'true' : 'false',
+        s.followupDays,
+        s.wallet,
+        newValue ? 'true' : 'false'
+      ];
+      await updateRow(SHEETS_CONFIG.serviceSheetName, s.rowIndex, rowValues);
+      setSuccess(`Service ${newValue ? 'bookmarked' : 'unbookmarked'}!`);
+      await fetchServices();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to update bookmark status.');
     } finally {
       setIsLoading(false);
     }
@@ -161,6 +203,9 @@ export default function ServiceManagement() {
         ? services.find(s => s.rowIndex === editingIndex)?.originalId || `SRV-${editingIndex - 1}`
         : `SRV-${Date.now()}`;
 
+      const oldService = isEditing ? services.find(s => s.rowIndex === editingIndex) : null;
+      const currentBookmark = oldService ? oldService.isBookmarked : false;
+
       const rowValues = hasIdColumn ? [
         newId,
         name.trim(),
@@ -170,7 +215,8 @@ export default function ServiceManagement() {
         commission.trim() || '0.00',
         allowEdit ? 'true' : 'false',
         followupDays.trim() || '0',
-        wallet
+        wallet,
+        currentBookmark ? 'true' : 'false'
       ] : [
         name.trim(),
         website.trim(),
@@ -179,7 +225,8 @@ export default function ServiceManagement() {
         commission.trim() || '0.00',
         allowEdit ? 'true' : 'false',
         followupDays.trim() || '0',
-        wallet
+        wallet,
+        currentBookmark ? 'true' : 'false'
       ];
 
       if (isEditing) {
@@ -358,6 +405,13 @@ export default function ServiceManagement() {
                       ₹{s.commission}
                     </td>
                     <td style={{ padding: '16px 24px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button 
+                        onClick={() => handleToggleBookmark(s)}
+                        style={{ background: s.isBookmarked ? '#FEF2F2' : '#F1F5F9', border: 'none', cursor: 'pointer', color: s.isBookmarked ? '#EF4444' : '#94A3B8', marginRight: '8px', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }}
+                        title={s.isBookmarked ? "Remove Bookmark" : "Add Bookmark"}
+                      >
+                        <Bookmark size={16} fill={s.isBookmarked ? "#EF4444" : "none"} />
+                      </button>
                       <button 
                         onClick={() => handleEdit(s)}
                         style={{ background: '#EFF6FF', border: 'none', cursor: 'pointer', color: '#3B82F6', marginRight: '8px', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }}

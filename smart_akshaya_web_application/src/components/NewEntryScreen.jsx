@@ -470,10 +470,14 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
       ];
 
       if (editingRowIndex !== null) {
-        await updateRowColumns(SHEETS_CONFIG.savedBillsSheetName, editingRowIndex, {
-          'status': 'completed'
-        });
-        await appendRow(SHEETS_CONFIG.serviceEntrySheetName, entryRow);
+        if (editBillData && editBillData.sourceSheet === SHEETS_CONFIG.serviceEntrySheetName) {
+          await updateRow(SHEETS_CONFIG.serviceEntrySheetName, editingRowIndex, entryRow);
+        } else {
+          await updateRowColumns(SHEETS_CONFIG.savedBillsSheetName, editingRowIndex, {
+            'status': 'completed'
+          });
+          await appendRow(SHEETS_CONFIG.serviceEntrySheetName, entryRow);
+        }
       } else {
         await appendRow(SHEETS_CONFIG.serviceEntrySheetName, entryRow);
       }
@@ -625,7 +629,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
       window.open(pdfUrl, '_blank');
     } catch (e) {
       console.error(e);
-      alert("Failed to generate PDF. Make sure invoice_template.pdf is present in the public folder.");
+      alert(`Failed to generate PDF: ${e.message}\nMake sure invoice_template.pdf is present in the public folder and accessible.`);
     }
   };
 

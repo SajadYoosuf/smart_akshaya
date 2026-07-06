@@ -6,8 +6,10 @@ export const SHEETS_CONFIG = {
   customerSheetName: 'Customer Details',
   expenseSheetName: 'Expense Management',
   serviceEntrySheetName: 'Service Entries',
-  savedBillsSheetName: 'Saved Bills',
+  savedBillsSheetName: 'Service Entries',
   walletSheetName: 'Wallets',
+  attendanceSheetName: 'Attendance',
+  permissionsSheetName: 'Permissions',
 };
 
 /**
