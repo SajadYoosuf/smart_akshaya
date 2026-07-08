@@ -12,9 +12,11 @@ import {
   DollarSign,
   TrendingUp,
   CreditCard,
-  Clock
+  Clock,
+  Trash2,
+  Edit2
 } from 'lucide-react';
-import { getRows, appendRow, appendRows, updateRowColumns, logWalletTransaction } from '../services/googleSheetsService';
+import { getRows, appendRow, appendRows, updateRowColumns, logWalletTransaction, deleteRow } from '../services/googleSheetsService';
 
 const SHEET = 'Wallets';
 
@@ -92,9 +94,11 @@ export default function WalletManagement({ userSession = null }) {
   const [historyModal, setHistoryModal] = useState(false);
   const [addFundsModal, setAddFundsModal] = useState(null); // wallet object
   const [openingUpdateModal, setOpeningUpdateModal] = useState(false);
+  const [editModal, setEditModal] = useState(null);
 
   // form state
   const [newName, setNewName] = useState('');
+  const [editName, setEditName] = useState('');
   const [newOpening, setNewOpening] = useState('');
   const [txFrom, setTxFrom] = useState('');
   const [txTo, setTxTo] = useState('');
@@ -224,6 +228,31 @@ export default function WalletManagement({ userSession = null }) {
       await logWalletTransaction(addFundsModal.name, amt > 0 ? 'IN' : 'OUT', Math.abs(amt), newBalance, addNote || 'Manual Balance Update', userSession?.name || 'System');
       showToast(`Balance updated for ${addFundsModal.name}`);
       setAddFundsModal(null); setAddAmt(''); setAddNote('');
+      fetchWallets();
+    } catch (e) { alert(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleEditWallet = async (e) => {
+    e.preventDefault();
+    if (!editModal || !editName.trim()) return;
+    setSaving(true);
+    try {
+      await updateRowColumns(SHEET, editModal.rowIndex, { 'wallet name': editName.trim() });
+      showToast(`Wallet name updated to "${editName.trim()}"`);
+      setEditModal(null);
+      setEditName('');
+      fetchWallets();
+    } catch (e) { alert(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleDeleteWallet = async (w) => {
+    if (!window.confirm(`Are you sure you want to delete the wallet "${w.name}"? This cannot be undone.`)) return;
+    setSaving(true);
+    try {
+      await deleteRow(SHEET, w.rowIndex);
+      showToast(`Wallet "${w.name}" deleted.`);
       fetchWallets();
     } catch (e) { alert(e.message); }
     finally { setSaving(false); }
@@ -483,8 +512,23 @@ export default function WalletManagement({ userSession = null }) {
                         <button 
                           onClick={() => { setAddFundsModal(w); setAddAmt(''); setAddNote(''); }}
                           style={{ background: '#ECFDF5', border: 'none', cursor: 'pointer', color: '#10B981', padding: '8px 12px', borderRadius: '8px', fontWeight: '600', transition: 'background 0.2s', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          title="Add Funds"
                         >
                           <Plus size={14} /> Add
+                        </button>
+                        <button 
+                          onClick={() => { setEditModal(w); setEditName(w.name); }}
+                          style={{ background: '#EFF6FF', border: 'none', cursor: 'pointer', color: '#3B82F6', padding: '8px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', transition: 'background 0.2s' }}
+                          title="Edit Wallet Name"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteWallet(w)}
+                          style={{ background: '#FEF2F2', border: 'none', cursor: 'pointer', color: '#EF4444', padding: '8px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', transition: 'background 0.2s' }}
+                          title="Delete Wallet"
+                        >
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -530,6 +574,32 @@ export default function WalletManagement({ userSession = null }) {
                 <button type="button" onClick={() => setAddModal(false)} style={{ flex: 1, height: '48px', background: '#F1F5F9', color: '#475569', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
                 <button type="submit" disabled={saving || !newName.trim()} style={{ flex: 2, height: '48px', background: '#10B981', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
                   {saving ? 'Creating...' : 'Create Wallet'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Wallet Modal */}
+      {editModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px', animation: 'fadeIn 0.2s ease-out' }}>
+          <div style={{ background: 'white', borderRadius: '24px', width: '100%', maxWidth: '420px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden', animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <div style={{ padding: '24px 32px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#1E293B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Edit2 size={20} color="#3B82F6" /> Edit Wallet
+              </h3>
+              <button onClick={() => setEditModal(null)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleEditWallet} style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={labelStyle}>Wallet Name *</label>
+                <input type="text" value={editName} onChange={e => setEditName(e.target.value)} placeholder="e.g. BANK, Cash, CSC…" style={inputStyle} required />
+              </div>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button type="button" onClick={() => setEditModal(null)} style={{ flex: 1, height: '48px', background: '#F1F5F9', color: '#475569', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={saving || !editName.trim()} style={{ flex: 2, height: '48px', background: '#3B82F6', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}>
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>
