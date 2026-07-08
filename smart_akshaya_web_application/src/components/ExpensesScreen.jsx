@@ -48,7 +48,7 @@ export default function ExpensesScreen({ userSession }) {
           rowIndex: idx + 2,
           name: r[gi('wallet name')] || r[gi('name')] || `Wallet ${idx + 1}`,
           current: parseFloat(r[gi('current balance')] || 0),
-        })).filter(w => w.name);
+        })).filter(w => w.name && ['cash', 'bank'].includes(w.name.toLowerCase()));
         setWallets(list);
       }
     } catch (error) {
