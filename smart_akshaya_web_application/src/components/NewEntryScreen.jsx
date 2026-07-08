@@ -48,9 +48,18 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
   const [calcPaid, setCalcPaid] = useState('');
   const [editingRowIndex, setEditingRowIndex] = useState(null);
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState('');
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 5000);
+  };
+
   // Refs for focusing on shortcut
   const gpayRef = useRef(null);
   const cashRef = useRef(null);
+  const serviceInputRef = useRef(null);
 
   // Computed values
   const walletChargeTotal = billItems.reduce((acc, item) => acc + ((parseFloat(item.walletCharge) || 0) * (parseInt(item.quantity) || 1)), 0);
@@ -138,11 +147,13 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
         const svcNameIdx = getIdx(['servicename', 'name', 'service'], 0);
         const deptFeeIdx = getIdx(['departmentfee', 'deptfee'], 2);
         const svcChargeIdx = getIdx(['servicecharge', 'srvcharge'], 3);
+        const walletIdx = getIdx(['defaultwallet', 'wallet'], 7);
 
         const loadedServices = svcRows.slice(1).map(row => ({
           name: row[svcNameIdx] || '',
           departmentFee: parseFloat(row[deptFeeIdx] || 0),
-          serviceCharge: parseFloat(row[svcChargeIdx] || 0)
+          serviceCharge: parseFloat(row[svcChargeIdx] || 0),
+          defaultWallet: walletIdx !== -1 ? (row[walletIdx] || '').toString().trim() : ''
         })).filter(s => s.name);
         setServices(loadedServices);
       }
@@ -261,6 +272,9 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
     if (match) {
       setWalletCharge(match.departmentFee.toString());
       setServiceCharge(match.serviceCharge.toString());
+      if (match.defaultWallet) {
+        setSelectedWallet(match.defaultWallet);
+      }
     }
     setShowServiceDropdown(false);
     setServiceSelectedIndex(-1);
@@ -354,6 +368,11 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
     setServiceCharge('');
     setQuantity('1');
     setEditingRowIndex(null);
+    
+    // Auto focus the service input after clearing the form
+    setTimeout(() => {
+      serviceInputRef.current?.focus();
+    }, 50);
   };
 
   // Check if credit warning should be shown
@@ -412,6 +431,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
   };
 
   const handleComplete = async () => {
+    if (isSaving) return;
     if (billItems.length === 0) {
       alert("No items in the bill!");
       return;
@@ -422,9 +442,11 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
       return;
     }
 
+    setIsSaving(true);
     try {
       const servicesStr = billItems.map(item => `${item.quantity}x ${item.serviceName}`).join(', ');
       const totalQty = billItems.reduce((acc, item) => acc + (parseInt(item.quantity) || 1), 0);
+      const newBillId = Date.now().toString();
 
       const entryRow = [
         todayStr,
@@ -457,8 +479,9 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
       const accumulatedCash = (existingCustomer ? parseFloat(existingCustomer.cash || 0) : 0) + (parseFloat(cashAmount) || 0);
 
       const customerRow = [
-        existingCustomer ? existingCustomer.id : Date.now().toString(),
+        existingCustomer ? existingCustomer.id : newBillId,
         customerName || 'Walk-in Customer',
+
         mobileNumber || '9999999999',
         '', // Email placeholder
         '', // Address placeholder
@@ -490,11 +513,13 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
 
       await updateWalletBalances(billItems, gpayAmount, cashAmount);
 
-      alert("Bill completed successfully!");
+      showToast(`Bill successfully added with bill number: ${newBillId.slice(-6)}`);
       clearForm();
     } catch (error) {
       console.error("Error saving bill:", error);
       alert("Failed to save bill. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -636,6 +661,33 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
   return (
     <div className="entry-page">
 
+      {/* Success Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: '24px', right: '24px',
+          background: '#ECFDF5', border: '1px solid #10B981', color: '#065F46',
+          padding: '16px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+          zIndex: 9999, fontWeight: '700', fontSize: '15px', animation: 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+        }}>
+          <CheckCircle size={22} color="#10B981" />
+          {toast}
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {isSaving && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          zIndex: 9998, color: 'white'
+        }}>
+          <div style={{ width: '48px', height: '48px', border: '4px solid rgba(255,255,255,0.2)', borderTopColor: '#10B981', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }} />
+          <div style={{ fontSize: '18px', fontWeight: '600' }}>Processing Bill...</div>
+        </div>
+      )}
+
       {/* Hero Header Section */}
       <div className="entry-hero">
         <div className="entry-hero-main">
@@ -744,6 +796,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
               <label className="form-label">SERVICES</label>
               <div style={{ position: 'relative' }}>
                 <input
+                  ref={serviceInputRef}
                   type="text"
                   value={selectedService}
                   onChange={(e) => handleServiceChange(e.target.value)}
