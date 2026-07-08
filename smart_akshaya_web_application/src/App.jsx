@@ -27,6 +27,7 @@ import { Search, X } from 'lucide-react';
 import ReloadPrompt from './components/ReloadPrompt';
 import AttendancePopup from './components/AttendancePopup';
 import ExternalLinksManager from './components/ExternalLinksManager';
+import PendingBillsPopup from './components/PendingBillsPopup';
 
 // ── Page title map (matches Windows app pageTitles list) ──────────────────────
 const PAGE_TITLES = {
@@ -164,6 +165,7 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editBillData, setEditBillData] = useState(null);
+  const [showPendingBillsPopup, setShowPendingBillsPopup] = useState(false);
 
   // Check login session on mount
   useEffect(() => {
@@ -171,6 +173,7 @@ export default function App() {
     if (session) {
       setIsLoggedIn(true);
       setUserSession(session);
+      setShowPendingBillsPopup(true);
     }
   }, []);
 
@@ -178,6 +181,7 @@ export default function App() {
     const session = getCurrentSession();
     setUserSession(session);
     setIsLoggedIn(true);
+    setShowPendingBillsPopup(true);
     // Preserve requested view if not dashboard
     if (currentView === 'dashboard') {
       setCurrentView('dashboard');
@@ -361,6 +365,15 @@ export default function App() {
       </div>
       <ReloadPrompt />
       <AttendancePopup userSession={userSession} />
+      <PendingBillsPopup 
+        userSession={userSession} 
+        isOpen={showPendingBillsPopup} 
+        onClose={() => setShowPendingBillsPopup(false)} 
+        onSettleNow={() => {
+          setShowPendingBillsPopup(false);
+          setCurrentView('saved-bills');
+        }}
+      />
     </div>
   );
 }

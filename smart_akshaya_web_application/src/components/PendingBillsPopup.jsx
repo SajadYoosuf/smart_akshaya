@@ -3,7 +3,7 @@ import { AlertTriangle, X, Clock, User, IndianRupee, FileText } from 'lucide-rea
 import { getRows } from '../services/googleSheetsService';
 import { SHEETS_CONFIG } from '../config/sheetsConfig';
 
-export default function PendingBillsPopup({ userSession, isOpen, onClose }) {
+export default function PendingBillsPopup({ userSession, isOpen, onClose, onSettleNow }) {
   const [pendingBills, setPendingBills] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -188,6 +188,24 @@ export default function PendingBillsPopup({ userSession, isOpen, onClose }) {
             style={{
               padding: '12px 24px',
               borderRadius: '12px',
+              border: '1px solid #CBD5E1',
+              background: '#FFFFFF',
+              color: '#475569',
+              fontWeight: '600',
+              fontSize: '14px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              marginRight: '12px'
+            }}
+          >
+            I'll do it later
+          </button>
+          <button
+            onClick={onSettleNow}
+            className="btn"
+            style={{
+              padding: '12px 24px',
+              borderRadius: '12px',
               border: 'none',
               background: '#F59E0B',
               color: 'white',
@@ -206,7 +224,7 @@ export default function PendingBillsPopup({ userSession, isOpen, onClose }) {
               e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
-            I Understand
+            Settle Now
           </button>
         </div>
       </div>
