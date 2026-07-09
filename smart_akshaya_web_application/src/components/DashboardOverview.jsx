@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Edit3, CheckCircle, Banknote, Wallet, Crop, Camera, User, Percent, Calculator, ChevronDown, ChevronUp, FileText, Bookmark, Globe, Link as LinkIcon, ExternalLink, Database, Cloud, Star, Monitor, AppWindow, Cpu, Rocket, Search, Ruler } from 'lucide-react';
+import { Edit3, CheckCircle, Banknote, Wallet, Crop, Camera, User, Percent, Calculator, ChevronDown, ChevronUp, FileText, Bookmark, Globe, Link as LinkIcon, ExternalLink, Database, Cloud, Star, Monitor, AppWindow, Cpu, Rocket, Search } from 'lucide-react';
 import { getRows, updateRow, appendRow } from '../services/googleSheetsService';
 import { SHEETS_CONFIG } from '../config/sheetsConfig';
 import CalculatorModal from './CalculatorModal';
 import CashCounterModal from './CashCounterModal';
-import AreaConverterModal from './AreaConverterModal';
 const ICON_MAP = {
   Globe, Link: LinkIcon, ExternalLink, Database, Cloud, Star, Monitor, AppWindow, Cpu, Rocket
 };
@@ -66,14 +65,6 @@ const TILES = [
     Icon: Banknote,
     bg: 'linear-gradient(135deg, #10B981 0%, #047857 100%)', // Emerald
     view: 'cash-counter',
-  },
-  {
-    id: 'area-converter',
-    label: 'Area Converter',
-    sublabel: 'Sq Ft & Sq M',
-    Icon: Ruler,
-    bg: 'linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)', // Cyan
-    view: 'area-converter',
   },
 ];
 
@@ -190,7 +181,6 @@ export default function DashboardOverview({ onViewChange, userSession }) {
   const [externalLinks, setExternalLinks] = useState([]);
   const [showCalculatorModal, setShowCalculatorModal] = useState(false);
   const [showCashCounterModal, setShowCashCounterModal] = useState(false);
-  const [showAreaConverterModal, setShowAreaConverterModal] = useState(false);
   const [canSeeWalletBalance, setCanSeeWalletBalance] = useState(userSession?.role === 'admin');
 
   const [combinedTools, setCombinedTools] = useState([]);
@@ -650,8 +640,6 @@ export default function DashboardOverview({ onViewChange, userSession }) {
                   setShowCalculatorModal(true);
                 } else if (tile.id === 'cash-counter') {
                   setShowCashCounterModal(true);
-                } else if (tile.id === 'area-converter') {
-                  setShowAreaConverterModal(true);
                 } else {
                   onViewChange(tile.view);
                 }
@@ -796,9 +784,6 @@ export default function DashboardOverview({ onViewChange, userSession }) {
       )}
       {showCashCounterModal && (
         <CashCounterModal onClose={() => setShowCashCounterModal(false)} />
-      )}
-      {showAreaConverterModal && (
-        <AreaConverterModal onClose={() => setShowAreaConverterModal(false)} />
       )}
     </div>
   );
