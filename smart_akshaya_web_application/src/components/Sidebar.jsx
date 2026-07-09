@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, LayoutGrid, Bookmark, Wallet, FolderOpen, Settings, BarChart2, Receipt, Users, LogOut, UserCircle, FileText, X, TrendingUp, Shield, History, Link as LinkIcon } from 'lucide-react';
+import { LayoutDashboard, LayoutGrid, Bookmark, Wallet, FolderOpen, Settings, BarChart2, Receipt, Users, LogOut, UserCircle, FileText, X, TrendingUp, Shield, History, Link as LinkIcon, CreditCard } from 'lucide-react';
 
 // Helper: extract 1-2 initials from a name
 function getInitials(name) {
@@ -8,15 +8,15 @@ function getInitials(name) {
   return parts.slice(0, 2).map((p) => p[0] || '').join('').toUpperCase();
 }
 
-export default function Sidebar({ currentView, onViewChange, userSession, onLogout, onClose }) {
+export default function Sidebar({ currentView, onViewChange, userSession, onLogout, onClose, featurePermissions }) {
   const isActive = (view) => currentView === view;
   const role = userSession?.role || 'staff';
   const isAdmin = role === 'admin';
-  const isAccountant = role === 'accountant';
   
   const canSeeStaffManagement = isAdmin;
   const canSeeStaffPerformance = isAdmin;
-  const canSeeWallet = isAdmin || isAccountant;
+  const canSeeWallet = isAdmin || featurePermissions?.['wallet management'] || featurePermissions?.['wallets balance'] || featurePermissions?.['wallet'] || false;
+  const canSeeCustomerDetails = isAdmin || featurePermissions?.['customer details'] || false;
   /* ── style helpers ── */
   const navItem = (active) => ({
     width: '100%',
@@ -157,7 +157,7 @@ export default function Sidebar({ currentView, onViewChange, userSession, onLogo
           {canSeeWallet && (
             <>
               <span style={sectionLabel}>WALLETS</span>
-              <NavItem view="wallet" Icon={Wallet} label="Wallets Balance" />
+              <NavItem view="wallet" Icon={Wallet} label="Wallet Management" />
             </>
           )}
 
@@ -166,13 +166,14 @@ export default function Sidebar({ currentView, onViewChange, userSession, onLogo
           <NavItem view="service-reports" Icon={BarChart2} label="Billed Services" />
           {isAdmin && <NavItem view="transaction-history" Icon={History} label="Transaction History" />}
           <NavItem view="expenses" Icon={Receipt} label="Expenses" />
+          <NavItem view="credit-details" Icon={CreditCard} label="Credit Details" />
 
           {/* SYSTEM */}
           <span style={sectionLabel}>SYSTEM</span>
           {canSeeStaffManagement && <NavItem view="staff-management" Icon={Users} label="Staff Management" />}
           {canSeeStaffPerformance && <NavItem view="staff-performance" Icon={TrendingUp} label="Staff Performance" />}
-          <NavItem view="customer-details" Icon={UserCircle} label="Customer Details" />
-          <NavItem view="external-tools" Icon={LinkIcon} label="External Tools" />
+          {canSeeCustomerDetails && <NavItem view="customer-details" Icon={UserCircle} label="Customer Details" />}
+          <NavItem view="external-tools" Icon={LinkIcon} label="Quick Hub" />
           {isAdmin && <NavItem view="permissions" Icon={Shield} label="Feature Permissions" />}
         </nav>
       </div>

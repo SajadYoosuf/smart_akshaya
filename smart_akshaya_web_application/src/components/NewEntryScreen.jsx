@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Grid, Receipt, Plus, Trash2, Check, Calculator, RefreshCw, DollarSign, Printer, Send, X, Calendar, MapPin, Phone, CreditCard, Banknote, CheckCircle, Clock } from 'lucide-react';
-import { getRows, appendRow, updateRow, updateRowColumns } from '../services/googleSheetsService';
-import { SHEETS_CONFIG } from '../config/sheetsConfig';
+import { User, Grid, Receipt, Plus, Trash2, Check, Calculator, RefreshCw, DollarSign, Printer, Send, X, Calendar, Phone, CreditCard, Banknote, CheckCircle, Clock, Circle, Loader, CheckSquare } from 'lucide-react';
+import { getRows, appendRow, appendRows, updateRow, updateRowColumns, clearRow } from '../services/googleSheetsService';
+import { SHEETS_CONFIG, BILL_TYPES, SVC_STATUS } from '../config/sheetsConfig';
+import { determineBillType } from '../utils/billGrouper';
 import { generateInvoicePdf } from '../utils/pdfGenerator';
 
 export default function NewEntryScreen({ userSession, editBillData, setEditBillData }) {
@@ -47,6 +48,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
   const [showCalculator, setShowCalculator] = useState(false);
   const [calcPaid, setCalcPaid] = useState('');
   const [editingRowIndex, setEditingRowIndex] = useState(null);
+  const [editingBookingId, setEditingBookingId] = useState(null);
 
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState('');
@@ -60,6 +62,8 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
   const gpayRef = useRef(null);
   const cashRef = useRef(null);
   const serviceInputRef = useRef(null);
+  const nameDropdownRef = useRef(null);
+  const serviceDropdownRef = useRef(null);
 
   // Computed values
   const walletChargeTotal = billItems.reduce((acc, item) => acc + ((parseFloat(item.walletCharge) || 0) * (parseInt(item.quantity) || 1)), 0);
@@ -86,42 +90,106 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
     loadData();
   }, [userSession]);
 
+  // Scroll active item into view for customer dropdown
+  useEffect(() => {
+    if (showNameDropdown && nameDropdownRef.current && customerSelectedIndex >= 0) {
+      const container = nameDropdownRef.current;
+      const activeEl = container.children[customerSelectedIndex];
+      if (activeEl) {
+        const containerTop = container.scrollTop;
+        const containerBottom = containerTop + container.clientHeight;
+        const elemTop = activeEl.offsetTop;
+        const elemBottom = elemTop + activeEl.offsetHeight;
+
+        if (elemTop < containerTop) {
+          container.scrollTop = elemTop;
+        } else if (elemBottom > containerBottom) {
+          container.scrollTop = elemBottom - container.clientHeight;
+        }
+      }
+    }
+  }, [customerSelectedIndex, showNameDropdown]);
+
+  // Scroll active item into view for service dropdown
+  useEffect(() => {
+    if (showServiceDropdown && serviceDropdownRef.current && serviceSelectedIndex >= 0) {
+      const container = serviceDropdownRef.current;
+      const activeEl = container.children[serviceSelectedIndex];
+      if (activeEl) {
+        const containerTop = container.scrollTop;
+        const containerBottom = containerTop + container.clientHeight;
+        const elemTop = activeEl.offsetTop;
+        const elemBottom = elemTop + activeEl.offsetHeight;
+
+        if (elemTop < containerTop) {
+          container.scrollTop = elemTop;
+        } else if (elemBottom > containerBottom) {
+          container.scrollTop = elemBottom - container.clientHeight;
+        }
+      }
+    }
+  }, [serviceSelectedIndex, showServiceDropdown]);
+
   useEffect(() => {
     if (editBillData) {
-      setEditingRowIndex(editBillData.rowIndex);
-      setMobileNumber(editBillData.mobile || '');
-      setCustomerName(editBillData.customerName || '');
-      setGpayAmount(editBillData.gpayUpi ? String(editBillData.gpayUpi) : '');
-      setCashAmount(editBillData.cash ? String(editBillData.cash) : '');
+      if (editBillData.bookingId && !editBillData.isLegacy) {
+        setEditingBookingId(editBillData.bookingId);
+        setEditingRowIndex(null);
+        setMobileNumber(editBillData.mobile || '');
+        setCustomerName(editBillData.customerName || '');
+        setGpayAmount(editBillData.gpayAmount ? String(editBillData.gpayAmount) : '');
+        setCashAmount(editBillData.cashAmount ? String(editBillData.cashAmount) : '');
 
-      const parsedItems = [];
-      if (editBillData.services) {
-        const parts = editBillData.services.split(', ');
-        parts.forEach((part, i) => {
-          const xIdx = part.indexOf('x ');
-          if (xIdx !== -1) {
-            const qtyStr = part.substring(0, xIdx);
-            const nameStr = part.substring(xIdx + 2);
-            const qty = parseInt(qtyStr) || 1;
+        const parsedItems = editBillData.services.map((svc, i) => ({
+          id: `edit-${i}-${Date.now()}`,
+          serviceName: svc.serviceName,
+          walletCharge: svc.deptFee ? String(svc.deptFee) : '0',
+          walletType: svc.walletType || '',
+          serviceCharge: svc.serviceCharge ? String(svc.serviceCharge) : '0',
+          quantity: svc.quantity ? String(svc.quantity) : '1',
+          total: svc.rowTotal,
+          serviceStatus: svc.serviceStatus || SVC_STATUS.NOT_STARTED,
+        }));
+        setBillItems(parsedItems);
+      } else {
+        // Legacy/single row edit
+        setEditingBookingId(null);
+        setEditingRowIndex(editBillData.rowIndex);
+        setMobileNumber(editBillData.mobile || '');
+        setCustomerName(editBillData.customerName || '');
+        setGpayAmount(editBillData.gpayUpi ? String(editBillData.gpayUpi) : '');
+        setCashAmount(editBillData.cash ? String(editBillData.cash) : '');
 
-            const sMatch = services.find(s => s.name === nameStr);
-            const deptFee = sMatch ? sMatch.departmentFee : 0;
-            const sCharge = parts.length === 1 && qty > 0 ? (editBillData.totalAmount / qty) : (sMatch ? sMatch.serviceCharge : 0);
+        const parsedItems = [];
+        if (editBillData.services) {
+          const parts = editBillData.services.split(', ');
+          parts.forEach((part, i) => {
+            const xIdx = part.indexOf('x ');
+            if (xIdx !== -1) {
+              const qtyStr = part.substring(0, xIdx);
+              const nameStr = part.substring(xIdx + 2);
+              const qty = parseInt(qtyStr) || 1;
 
-            parsedItems.push({
-              id: `edit-${i}-${Date.now()}`,
-              serviceName: nameStr,
-              departmentFee: deptFee,
-              serviceCharge: sCharge,
-              walletCharge: 0,
-              walletType: '',
-              quantity: qty,
-              total: (deptFee + sCharge) * qty
-            });
-          }
-        });
+              const sMatch = services.find(s => s.name === nameStr);
+              const deptFee = sMatch ? sMatch.departmentFee : 0;
+              const sCharge = parts.length === 1 && qty > 0 ? (editBillData.totalAmount / qty) : (sMatch ? sMatch.serviceCharge : 0);
+
+              parsedItems.push({
+                id: `edit-${i}-${Date.now()}`,
+                serviceName: nameStr,
+                departmentFee: deptFee,
+                serviceCharge: sCharge,
+                walletCharge: 0,
+                walletType: '',
+                quantity: qty,
+                total: (deptFee + sCharge) * qty,
+                serviceStatus: SVC_STATUS.COMPLETED
+              });
+            }
+          });
+        }
+        setBillItems(parsedItems);
       }
-      setBillItems(parsedItems);
       setEditBillData(null);
     }
   }, [editBillData, services, setEditBillData, wallets]);
@@ -225,7 +293,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
 
   const handleNameChange = async (value) => {
     setCustomerName(value);
-    setCustomerSelectedIndex(-1);
+    setCustomerSelectedIndex(0);
     if (value.trim().length === 0) {
       setNameSuggestions([]);
       setShowNameDropdown(false);
@@ -254,7 +322,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
 
   const handleServiceChange = (value) => {
     setSelectedService(value);
-    setServiceSelectedIndex(-1);
+    setServiceSelectedIndex(0);
     if (value.trim().length === 0) {
       setServiceSuggestions([]);
       setShowServiceDropdown(false);
@@ -330,7 +398,8 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
       walletType: selectedWallet || '',
       serviceCharge: serviceCharge || '0',
       quantity: quantity || '1',
-      total: ((parseFloat(serviceCharge) || 0) + (parseFloat(walletCharge) || 0)) * (parseInt(quantity) || 1)
+      total: ((parseFloat(serviceCharge) || 0) + (parseFloat(walletCharge) || 0)) * (parseInt(quantity) || 1),
+      serviceStatus: SVC_STATUS.NOT_STARTED,
     };
 
     setBillItems(prev => [...prev, newItem]);
@@ -368,6 +437,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
     setServiceCharge('');
     setQuantity('1');
     setEditingRowIndex(null);
+    setEditingBookingId(null);
     
     // Auto focus the service input after clearing the form
     setTimeout(() => {
@@ -430,40 +500,103 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
     }
   };
 
-  const handleComplete = async () => {
+  // ── Cycle service status: not_started → in_progress → completed → not_started
+  const cycleServiceStatus = (id) => {
+    const cycle = {
+      [SVC_STATUS.NOT_STARTED]: SVC_STATUS.IN_PROGRESS,
+      [SVC_STATUS.IN_PROGRESS]: SVC_STATUS.COMPLETED,
+      [SVC_STATUS.COMPLETED]:   SVC_STATUS.NOT_STARTED,
+    };
+    setBillItems(prev => prev.map(item =>
+      item.id === id ? { ...item, serviceStatus: cycle[item.serviceStatus] || SVC_STATUS.NOT_STARTED } : item
+    ));
+  };
+
+  // ── Shared save helper — writes one row per service with same booking_id ──
+  const saveBooking = async ({ forceAllCompleted = false } = {}) => {
     if (isSaving) return;
     if (billItems.length === 0) {
-      alert("No items in the bill!");
+      alert('No items in the bill!');
       return;
     }
-
     if (creditWarningNeeded) {
-      alert("Please enter both Customer Name and Mobile Number to save this credit bill.");
+      alert('Please enter Customer Name and Mobile Number for credit / pending bills.');
       return;
     }
 
     setIsSaving(true);
     try {
-      const servicesStr = billItems.map(item => `${item.quantity}x ${item.serviceName}`).join(', ');
-      const totalQty = billItems.reduce((acc, item) => acc + (parseInt(item.quantity) || 1), 0);
-      const newBillId = Date.now().toString();
+      const bookingId = editingBookingId || Date.now().toString();
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString();
+      const gpay = parseFloat(gpayAmount) || 0;
+      const cash = parseFloat(cashAmount) || 0;
+      const amountPaid = gpay + cash;
+      const bal = amountPaid - totalAmount;
 
-      const entryRow = [
-        todayStr,
-        new Date().toLocaleTimeString(),
-        staffName,
-        mobileNumber || '9999999999',
-        customerName || 'Walk-in Customer',
-        servicesStr,
-        totalQty,
-        totalAmount,
-        parseFloat(gpayAmount) || 0,
-        parseFloat(cashAmount) || 0,
-        balance,
-        'completed'
-      ];
+      const statuses = forceAllCompleted
+        ? billItems.map(() => SVC_STATUS.COMPLETED)
+        : billItems.map(item => item.serviceStatus || SVC_STATUS.NOT_STARTED);
 
-      // Update Customer Details sheet
+      const billType = determineBillType(statuses, amountPaid, totalAmount);
+
+      const rows = billItems.map((item, idx) => [
+        todayStr,                                          // A
+        timeStr,                                           // B
+        staffName,                                         // C
+        mobileNumber || '',                                // D
+        customerName || 'Walk-in Customer',                // E
+        item.serviceName,                                  // F
+        item.quantity || 1,                                // G
+        parseFloat(item.walletCharge) || 0,                // H dept_fee
+        parseFloat(item.serviceCharge) || 0,               // I service_charge
+        parseFloat(item.total) || 0,                       // J row_total
+        item.walletType || '',                             // K
+        statuses[idx],                                     // L service_status
+        bookingId,                                         // M booking_id
+        billType,                                          // N bill_type
+        totalAmount,                                       // O booking_total
+        amountPaid,                                        // P amount_paid
+        gpay,                                              // Q gpay_amount
+        cash,                                              // R cash_amount
+        bal,                                               // S balance
+        '',                                                // T remarks
+      ]);
+
+      if (editingBookingId) {
+        // Fetch current rows to get latest indices matching this booking ID
+        const allRows = await getRows(SHEETS_CONFIG.serviceEntrySheetName);
+        const matchingRows = [];
+        if (allRows && allRows.length > 0) {
+          for (let i = 1; i < allRows.length; i++) {
+            const rowBookingId = (allRows[i][12] || '').toString().trim();
+            if (rowBookingId === bookingId) {
+              matchingRows.push({ rowIndex: i + 1 });
+            }
+          }
+        }
+
+        // Update existing rows, append extra ones, or clear excess rows
+        const maxLen = Math.max(rows.length, matchingRows.length);
+        for (let i = 0; i < maxLen; i++) {
+          if (i < rows.length && i < matchingRows.length) {
+            await updateRow(SHEETS_CONFIG.serviceEntrySheetName, matchingRows[i].rowIndex, rows[i]);
+          } else if (i < rows.length) {
+            await appendRow(SHEETS_CONFIG.serviceEntrySheetName, rows[i]);
+          } else {
+            // Write empty row
+            await clearRow(SHEETS_CONFIG.serviceEntrySheetName, matchingRows[i].rowIndex, 20);
+          }
+        }
+      } else if (editingRowIndex !== null) {
+        // Legacy single row edit
+        await updateRow(SHEETS_CONFIG.serviceEntrySheetName, editingRowIndex, rows[0]);
+      } else {
+        // Write all service rows in one API call
+        await appendRows(SHEETS_CONFIG.serviceEntrySheetName, rows);
+      }
+
+      // Update customer ledger
       const enteredMobile = (mobileNumber || '').trim();
       const enteredName = (customerName || '').trim().toLowerCase();
       let existingCustomer = null;
@@ -473,134 +606,56 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
           (enteredName && c.name.toLowerCase() === enteredName)
         );
       }
-
-      const accumulatedTotalPaid = (existingCustomer ? parseFloat(existingCustomer.totalPaid || 0) : 0) + totalPaid;
-      const accumulatedGpay = (existingCustomer ? parseFloat(existingCustomer.gpayUpi || 0) : 0) + (parseFloat(gpayAmount) || 0);
-      const accumulatedCash = (existingCustomer ? parseFloat(existingCustomer.cash || 0) : 0) + (parseFloat(cashAmount) || 0);
-
+      const accTotalPaid = (existingCustomer ? parseFloat(existingCustomer.totalPaid || 0) : 0) + amountPaid;
+      const accGpay = (existingCustomer ? parseFloat(existingCustomer.gpayUpi || 0) : 0) + gpay;
+      const accCash = (existingCustomer ? parseFloat(existingCustomer.cash || 0) : 0) + cash;
       const customerRow = [
-        existingCustomer ? existingCustomer.id : newBillId,
+        existingCustomer ? existingCustomer.id : bookingId,
         customerName || 'Walk-in Customer',
-
-        mobileNumber || '9999999999',
-        '', // Email placeholder
-        '', // Address placeholder
-        'Auto-added via Service Entry',
-        accumulatedTotalPaid,
-        accumulatedGpay,
-        accumulatedCash,
-        balance
+        mobileNumber || '',
+        '', '', 'Auto-added via Service Entry',
+        accTotalPaid, accGpay, accCash, bal,
       ];
-
-      if (editingRowIndex !== null) {
-        if (editBillData && editBillData.sourceSheet === SHEETS_CONFIG.serviceEntrySheetName) {
-          await updateRow(SHEETS_CONFIG.serviceEntrySheetName, editingRowIndex, entryRow);
-        } else {
-          await updateRowColumns(SHEETS_CONFIG.savedBillsSheetName, editingRowIndex, {
-            'status': 'completed'
-          });
-          await appendRow(SHEETS_CONFIG.serviceEntrySheetName, entryRow);
-        }
-      } else {
-        await appendRow(SHEETS_CONFIG.serviceEntrySheetName, entryRow);
-      }
-
       if (existingCustomer && existingCustomer.rowIndex > 0) {
         await updateRow(SHEETS_CONFIG.customerSheetName, existingCustomer.rowIndex, customerRow);
       } else {
         await appendRow(SHEETS_CONFIG.customerSheetName, customerRow);
       }
 
-      await updateWalletBalances(billItems, gpayAmount, cashAmount);
+      if (billType === BILL_TYPES.COMPLETED || billType === BILL_TYPES.SERVICE_PENDING) {
+        await updateWalletBalances(billItems, gpayAmount, cashAmount);
+      }
 
-      showToast(`Bill successfully added with bill number: ${newBillId.slice(-6)}`);
+      const shortId = bookingId.slice(-6);
+      const destLabel = {
+        [BILL_TYPES.COMPLETED]:       '✅ Service Reports',
+        [BILL_TYPES.SERVICE_PENDING]: '📋 Saved Bills (services pending)',
+        [BILL_TYPES.CREDIT_PENDING]:  '💳 Credit Details (payment pending)',
+        [BILL_TYPES.PARTIAL_PAYMENT]: '💳 Credit Details (partial payment)',
+      }[billType] || 'Service Reports';
+
+      showToast(`Bill #${shortId} saved → ${destLabel}`);
       clearForm();
     } catch (error) {
-      console.error("Error saving bill:", error);
-      alert("Failed to save bill. Please try again.");
+      console.error('Error saving bill:', error);
+      alert('Failed to save bill. Please try again.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleSavePending = async () => {
-    if (billItems.length === 0) {
-      alert("No items in the bill!");
+  // F9 — Complete Bill (Enforces all services completed)
+  const handleComplete = () => {
+    const allDone = billItems.length > 0 && billItems.every(i => i.serviceStatus === SVC_STATUS.COMPLETED);
+    if (!allDone) {
+      alert("Cannot complete the bill. Please mark all services as 'Completed' first, or press 'Save' (F8) to save this as a pending bill.");
       return;
     }
-
-    if (creditWarningNeeded) {
-      alert("Please enter both Customer Name and Mobile Number to save this bill.");
-      return;
-    }
-
-    try {
-      const servicesStr = billItems.map(item => `${item.quantity}x ${item.serviceName}`).join(', ');
-      const totalQty = billItems.reduce((acc, item) => acc + (parseInt(item.quantity) || 1), 0);
-
-      const entryRow = [
-        todayStr,
-        new Date().toLocaleTimeString(),
-        staffName,
-        mobileNumber || '9999999999',
-        customerName || 'Walk-in Customer',
-        servicesStr,
-        totalQty,
-        totalAmount,
-        parseFloat(gpayAmount) || 0,
-        parseFloat(cashAmount) || 0,
-        balance,
-        'pending'
-      ];
-
-      const enteredMobile = (mobileNumber || '').trim();
-      const enteredName = (customerName || '').trim().toLowerCase();
-      let existingCustomer = null;
-      if (enteredMobile || enteredName) {
-        existingCustomer = customers.find(c =>
-          (enteredMobile && c.phone === enteredMobile) ||
-          (enteredName && c.name.toLowerCase() === enteredName)
-        );
-      }
-
-      const accumulatedTotalPaid = (existingCustomer ? parseFloat(existingCustomer.totalPaid || 0) : 0) + totalPaid;
-      const accumulatedGpay = (existingCustomer ? parseFloat(existingCustomer.gpayUpi || 0) : 0) + (parseFloat(gpayAmount) || 0);
-      const accumulatedCash = (existingCustomer ? parseFloat(existingCustomer.cash || 0) : 0) + (parseFloat(cashAmount) || 0);
-
-      const customerRow = [
-        existingCustomer ? existingCustomer.id : Date.now().toString(),
-        customerName || 'Walk-in Customer',
-        mobileNumber || '9999999999',
-        '', // Email placeholder
-        '', // Address placeholder
-        'Auto-added via Service Entry',
-        accumulatedTotalPaid,
-        accumulatedGpay,
-        accumulatedCash,
-        balance
-      ];
-
-      if (editingRowIndex !== null) {
-        await updateRow(SHEETS_CONFIG.savedBillsSheetName, editingRowIndex, entryRow);
-      } else {
-        await appendRow(SHEETS_CONFIG.savedBillsSheetName, entryRow);
-      }
-
-      if (existingCustomer && existingCustomer.rowIndex > 0) {
-        await updateRow(SHEETS_CONFIG.customerSheetName, existingCustomer.rowIndex, customerRow);
-      } else {
-        await appendRow(SHEETS_CONFIG.customerSheetName, customerRow);
-      }
-
-      await updateWalletBalances(billItems, gpayAmount, cashAmount);
-
-      alert("Bill saved as pending successfully!");
-      clearForm();
-    } catch (error) {
-      console.error("Error saving pending bill:", error);
-      alert("Failed to save bill. Please try again.");
-    }
+    saveBooking({ forceAllCompleted: false });
   };
+
+  // F8 — Save Bill (allows saving service-pending bills)
+  const handleSavePending = () => saveBooking({ forceAllCompleted: false });
 
   // Keyboard Shortcuts (F7 - F10, Alt combinations)
   useEffect(() => {
@@ -765,16 +820,21 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
                   autoComplete="off"
                 />
                 {showNameDropdown && nameSuggestions.length > 0 && (
-                  <div style={dropdownStyle}>
+                  <div ref={nameDropdownRef} style={dropdownStyle}>
                     {nameSuggestions.map((c, i) => (
                       <div
                         key={i}
                         onMouseDown={() => handleCustomerSelect(c)}
-                        style={{ ...dropdownItemStyle, background: i === customerSelectedIndex ? '#F1F5F9' : 'white' }}
+                        style={{
+                          ...dropdownItemStyle,
+                          background: i === customerSelectedIndex ? '#EFF6FF' : 'white',
+                          borderLeft: i === customerSelectedIndex ? '4px solid #3B82F6' : '4px solid transparent',
+                          paddingLeft: i === customerSelectedIndex ? '10px' : '14px'
+                        }}
                         onMouseEnter={() => setCustomerSelectedIndex(i)}
                       >
-                        <div style={{ fontWeight: '600', color: '#1E293B', fontSize: '13px' }}>{c.name}</div>
-                        <div style={{ fontSize: '12px', color: '#64748B' }}>📞 {c.phone}</div>
+                        <div style={{ fontWeight: '600', color: i === customerSelectedIndex ? '#1E3A8A' : '#1E293B', fontSize: '13px' }}>{c.name}</div>
+                        <div style={{ fontSize: '12px', color: i === customerSelectedIndex ? '#3B82F6' : '#64748B' }}>📞 {c.phone}</div>
                       </div>
                     ))}
                   </div>
@@ -806,7 +866,7 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
                     else {
                       setServiceSuggestions(services);
                       setShowServiceDropdown(true);
-                      setServiceSelectedIndex(-1);
+                      setServiceSelectedIndex(0);
                     }
                   }}
                   placeholder="Search service..."
@@ -814,16 +874,21 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
                   autoComplete="off"
                 />
                 {showServiceDropdown && serviceSuggestions.length > 0 && (
-                  <div style={dropdownStyle}>
+                  <div ref={serviceDropdownRef} style={dropdownStyle}>
                     {serviceSuggestions.map((s, i) => (
                       <div
                         key={i}
                         onMouseDown={() => handleServiceSelect(s.name)}
-                        style={{ ...dropdownItemStyle, background: i === serviceSelectedIndex ? '#F1F5F9' : 'white' }}
+                        style={{
+                          ...dropdownItemStyle,
+                          background: i === serviceSelectedIndex ? '#EFF6FF' : 'white',
+                          borderLeft: i === serviceSelectedIndex ? '4px solid #3B82F6' : '4px solid transparent',
+                          paddingLeft: i === serviceSelectedIndex ? '10px' : '14px'
+                        }}
                         onMouseEnter={() => setServiceSelectedIndex(i)}
                       >
-                        <div style={{ fontWeight: '600', color: '#1E293B', fontSize: '13px' }}>{s.name}</div>
-                        <div style={{ fontSize: '12px', color: '#64748B' }}>Srv: ₹{s.serviceCharge} | Dept: ₹{s.departmentFee}</div>
+                        <div style={{ fontWeight: '600', color: i === serviceSelectedIndex ? '#1E3A8A' : '#1E293B', fontSize: '13px' }}>{s.name}</div>
+                        <div style={{ fontSize: '12px', color: i === serviceSelectedIndex ? '#3B82F6' : '#64748B' }}>Srv: ₹{s.serviceCharge} | Dept: ₹{s.departmentFee}</div>
                       </div>
                     ))}
                   </div>
@@ -885,50 +950,70 @@ export default function NewEntryScreen({ userSession, editBillData, setEditBillD
               <table className="entry-bill-table">
                 <thead>
                   <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                    <th style={thStyle}>#</th>
-                    <th style={{ ...thStyle, width: '25%' }}>Service Name</th>
-                    <th style={thStyle}>Wallet Charge</th>
-                    <th style={thStyle}>Wallet</th>
-                    <th style={thStyle}>Service Charge</th>
-                    <th style={thStyle}>Qty</th>
-                    <th style={{ ...thStyle, textAlign: 'right' }}>Total</th>
-                    <th style={{ ...thStyle, textAlign: 'center' }}>Action</th>
+                    <th style={{ ...thStyle, width: '4%' }}>#</th>
+                    <th style={{ ...thStyle, width: '28%' }}>Service Name</th>
+                    <th style={{ ...thStyle, width: '15%' }}>Status</th>
+                    <th style={{ ...thStyle, width: '11%' }}>Wallet Charge</th>
+                    <th style={{ ...thStyle, width: '15%' }}>Wallet</th>
+                    <th style={{ ...thStyle, width: '11%' }}>Service Charge</th>
+                    <th style={{ ...thStyle, width: '6%' }}>Qty</th>
+                    <th style={{ ...thStyle, width: '6%', textAlign: 'right' }}>Total</th>
+                    <th style={{ ...thStyle, width: '4%', textAlign: 'center' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {billItems.map((item, index) => (
-                    <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={tdStyle}>{index + 1}</td>
-                      <td style={{ ...tdStyle, fontWeight: '600', color: '#1E293B' }}>{item.serviceName}</td>
-                      <td style={tdStyle}>
-                        <input type="number" value={item.walletCharge} onChange={(e) => updateBillItem(item.id, 'walletCharge', e.target.value)} style={tableInputStyle} />
-                      </td>
-                      <td style={tdStyle}>
-                        <select value={item.walletType || ''} onChange={(e) => updateBillItem(item.id, 'walletType', e.target.value)} style={tableInputStyle}>
-                          <option value="">Select Wallet</option>
-                          {wallets.map((w, i) => (
-                            <option key={i} value={w.name}>
-                              {w.name} {w.balance !== null ? `(₹${w.balance.toLocaleString('en-IN')})` : ''}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td style={tdStyle}>
-                        <input type="number" value={item.serviceCharge} onChange={(e) => updateBillItem(item.id, 'serviceCharge', e.target.value)} style={tableInputStyle} />
-                      </td>
-                      <td style={tdStyle}>
-                        <input type="number" value={item.quantity} onChange={(e) => updateBillItem(item.id, 'quantity', e.target.value)} style={tableInputStyle} />
-                      </td>
-                      <td style={{ ...tdStyle, fontWeight: 'bold', color: '#10B981', textAlign: 'right' }}>
-                        ₹{(parseFloat(item.total) || 0).toFixed(2)}
-                      </td>
-                      <td style={{ ...tdStyle, textAlign: 'center' }}>
-                        <button onClick={() => removeBillItem(item.id)} style={{ border: 'none', background: '#FEF2F2', color: '#EF4444', padding: '6px', borderRadius: '6px', cursor: 'pointer' }}>
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {billItems.map((item, index) => {
+                    const svcSt = item.serviceStatus || SVC_STATUS.NOT_STARTED;
+                    const svcCfg = {
+                      [SVC_STATUS.NOT_STARTED]: { label: 'Not Started', bg: '#F1F5F9', color: '#64748B', Icon: Circle },
+                      [SVC_STATUS.IN_PROGRESS]: { label: 'In Progress', bg: '#FEF3C7', color: '#B45309', Icon: Loader },
+                      [SVC_STATUS.COMPLETED]:   { label: 'Completed',   bg: '#ECFDF5', color: '#059669', Icon: CheckSquare },
+                    }[svcSt] || { label: svcSt, bg: '#F1F5F9', color: '#64748B', Icon: Circle };
+                    return (
+                      <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={tdStyle}>{index + 1}</td>
+                        <td style={{ ...tdStyle, fontWeight: '600', color: '#1E293B' }}>{item.serviceName}</td>
+                        <td style={tdStyle}>
+                          <select
+                            value={item.serviceStatus || SVC_STATUS.NOT_STARTED}
+                            onChange={(e) => updateBillItem(item.id, 'serviceStatus', e.target.value)}
+                            style={{ ...tableInputStyle, fontWeight: '700', color: '#334155' }}
+                          >
+                            <option value={SVC_STATUS.NOT_STARTED}>Not Started</option>
+                            <option value={SVC_STATUS.IN_PROGRESS}>In Progress</option>
+                            <option value={SVC_STATUS.COMPLETED}>Completed</option>
+                          </select>
+                        </td>
+                        <td style={tdStyle}>
+                          <input type="number" value={item.walletCharge} onChange={(e) => updateBillItem(item.id, 'walletCharge', e.target.value)} style={tableInputStyle} />
+                        </td>
+                        <td style={tdStyle}>
+                          <select value={item.walletType || ''} onChange={(e) => updateBillItem(item.id, 'walletType', e.target.value)} style={tableInputStyle}>
+                            <option value="">Select Wallet</option>
+                            {wallets.map((w, i) => (
+                              <option key={i} value={w.name}>
+                                {w.name} {w.balance !== null ? `(₹${w.balance.toLocaleString('en-IN')})` : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td style={tdStyle}>
+                          <input type="number" value={item.serviceCharge} onChange={(e) => updateBillItem(item.id, 'serviceCharge', e.target.value)} style={tableInputStyle} />
+                        </td>
+                        <td style={tdStyle}>
+                          <input type="number" value={item.quantity} onChange={(e) => updateBillItem(item.id, 'quantity', e.target.value)} style={tableInputStyle} />
+                        </td>
+                        <td style={{ ...tdStyle, fontWeight: 'bold', color: '#10B981', textAlign: 'right' }}>
+                          ₹{(parseFloat(item.total) || 0).toFixed(2)}
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: 'center' }}>
+                          <button onClick={() => removeBillItem(item.id)} style={{ border: 'none', background: '#FEF2F2', color: '#EF4444', padding: '6px', borderRadius: '6px', cursor: 'pointer' }}>
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

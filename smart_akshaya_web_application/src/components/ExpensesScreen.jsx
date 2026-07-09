@@ -8,13 +8,13 @@ export default function ExpensesScreen({ userSession }) {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
-  
+
   // Form State
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  
+
   // Edit State
   const [isEditing, setIsEditing] = useState(false);
   const [editingRowIndex, setEditingRowIndex] = useState(-1);
@@ -63,12 +63,12 @@ export default function ExpensesScreen({ userSession }) {
       if (rows && rows.length > 1) {
         const hasHeader = rows[0].length > 0 && rows[0][0].toString().trim().toLowerCase() === 'id';
         const startRowIndex = hasHeader ? 1 : 0;
-        
+
         const parsedList = [];
         for (let i = startRowIndex; i < rows.length; i++) {
           const row = rows[i];
           if (!row || row.length === 0 || !row[0].toString().trim()) continue;
-          
+
           parsedList.push({
             id: row[0] || '',
             date: row[1] || '',
@@ -151,15 +151,15 @@ export default function ExpensesScreen({ userSession }) {
 
         // Log transaction
         await logWalletTransaction(
-          wallet.name, 
-          'OUT', 
-          parsedAmount, 
-          newBalance, 
-          `Expense: ${category.trim()}${description.trim() ? ' - ' + description.trim() : ''}`, 
+          wallet.name,
+          'OUT',
+          parsedAmount,
+          newBalance,
+          `Expense: ${category.trim()}${description.trim() ? ' - ' + description.trim() : ''}`,
           userSession?.name || 'System'
         );
       }
-      
+
       clearForm();
       fetchExpenses();
       fetchWallets();
@@ -187,11 +187,18 @@ export default function ExpensesScreen({ userSession }) {
     }
   };
 
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+
   const filteredExpenses = expenses.filter(e => {
     const q = searchQuery.toLowerCase();
-    return (e.category || '').toLowerCase().includes(q) ||
-           (e.description || '').toLowerCase().includes(q) ||
-           (e.date || '').toLowerCase().includes(q);
+    const matchesSearch = (e.category || '').toLowerCase().includes(q) ||
+      (e.description || '').toLowerCase().includes(q) ||
+      (e.date || '').toLowerCase().includes(q);
+    const matchesMonth = selectedMonth ? (e.date || '').startsWith(selectedMonth) : true;
+    return matchesSearch && matchesMonth;
   });
 
   const totalExpenses = filteredExpenses.reduce((acc, curr) => {
@@ -210,7 +217,7 @@ export default function ExpensesScreen({ userSession }) {
 
   return (
     <div style={{ padding: '32px 40px', maxWidth: '1400px', margin: '0 auto', position: 'relative', minHeight: 'calc(100vh - 70px)' }}>
-      
+
       {/* Toast Notification */}
       {toast && (
         <div style={{
@@ -226,14 +233,14 @@ export default function ExpensesScreen({ userSession }) {
       )}
 
       {/* Hero Header Section */}
-      <div style={{ 
-        background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)', 
-        borderRadius: '20px', 
-        padding: '32px 40px', 
-        color: 'white', 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
+      <div style={{
+        background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
+        borderRadius: '20px',
+        padding: '32px 40px',
+        color: 'white',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         boxShadow: '0 10px 25px -5px rgba(124, 58, 237, 0.4)',
         marginBottom: '32px',
         flexWrap: 'wrap',
@@ -241,14 +248,14 @@ export default function ExpensesScreen({ userSession }) {
       }}>
         <div>
           <div style={{ fontSize: '14px', fontWeight: '600', letterSpacing: '1px', opacity: 0.8, marginBottom: '8px' }}>
-            TOTAL EXPENSES
+            TOTAL EXPENSES {selectedMonth && `(${new Date(selectedMonth).toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase()})`}
           </div>
           <div style={{ fontSize: '48px', fontWeight: '800', letterSpacing: '-1px', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
             <span style={{ fontSize: '32px', opacity: 0.8 }}>₹</span>
             {totalExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
-        
+
         <div style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', padding: '16px 24px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <Receipt size={32} opacity={0.9} />
           <div>
@@ -261,29 +268,47 @@ export default function ExpensesScreen({ userSession }) {
       {/* Toolbar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '16px', flexWrap: 'wrap' }}>
         <h2 style={{ margin: 0, fontSize: '20px', color: '#1E293B', fontWeight: '700' }}>Recent Transactions</h2>
-        
-        <div style={{ position: 'relative', flex: '1 1 300px', maxWidth: '400px' }}>
-          <Search size={18} style={{ position: 'absolute', left: '16px', top: '12px', color: '#94A3B8' }} />
-          <input 
-            type="text"
-            placeholder="Search by category, description, or date..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            style={{ 
-              width: '100%', height: '44px', padding: '0 40px 0 44px', 
-              borderRadius: '22px', border: '1px solid #E2E8F0', outline: 'none', 
-              fontSize: '14px', backgroundColor: 'white',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.02)', boxSizing: 'border-box'
-            }}
-          />
-          {searchQuery && (
-            <button 
-              onClick={() => setSearchQuery('')}
-              style={{ position: 'absolute', right: '12px', top: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
-            >
-              <X size={18} />
-            </button>
-          )}
+
+        <div style={{ display: 'flex', gap: '16px', flex: '1 1 auto', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', width: '200px' }}>
+            <Calendar size={18} style={{ position: 'absolute', left: '16px', top: '13px', color: '#94A3B8' }} />
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={e => setSelectedMonth(e.target.value)}
+              style={{
+                width: '100%', height: '44px', padding: '0 16px 0 44px',
+                borderRadius: '22px', border: '1px solid #E2E8F0', outline: 'none',
+                fontSize: '14px', backgroundColor: 'white',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.02)', boxSizing: 'border-box',
+                color: '#1E293B', fontWeight: '500', cursor: 'pointer'
+              }}
+            />
+          </div>
+
+          <div style={{ position: 'relative', flex: '1 1 300px', maxWidth: '400px' }}>
+            <Search size={18} style={{ position: 'absolute', left: '16px', top: '12px', color: '#94A3B8' }} />
+            <input
+              type="text"
+              placeholder="Search by category, description, or date..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%', height: '44px', padding: '0 40px 0 44px',
+                borderRadius: '22px', border: '1px solid #E2E8F0', outline: 'none',
+                fontSize: '14px', backgroundColor: 'white',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.02)', boxSizing: 'border-box'
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{ position: 'absolute', right: '12px', top: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -321,10 +346,10 @@ export default function ExpensesScreen({ userSession }) {
                         {expense.date}
                       </td>
                       <td style={{ padding: '16px 24px' }}>
-                        <span style={{ 
-                          display: 'inline-flex', padding: '4px 10px', 
-                          background: colors.bg, color: colors.text, 
-                          borderRadius: '20px', fontSize: '13px', fontWeight: '600' 
+                        <span style={{
+                          display: 'inline-flex', padding: '4px 10px',
+                          background: colors.bg, color: colors.text,
+                          borderRadius: '20px', fontSize: '13px', fontWeight: '600'
                         }}>
                           {expense.category}
                         </span>
@@ -336,14 +361,14 @@ export default function ExpensesScreen({ userSession }) {
                         ₹{parseFloat(expense.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </td>
                       <td style={{ padding: '16px 24px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        <button 
+                        <button
                           onClick={() => handleEdit(expense)}
                           style={{ background: '#EFF6FF', border: 'none', cursor: 'pointer', color: '#3B82F6', marginRight: '8px', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }}
                           title="Edit"
                         >
                           <Edit2 size={16} />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(expense.rowIndex)}
                           style={{ background: '#FEF2F2', border: 'none', cursor: 'pointer', color: '#EF4444', padding: '8px', borderRadius: '8px', transition: 'background 0.2s' }}
                           title="Delete"
@@ -402,11 +427,14 @@ export default function ExpensesScreen({ userSession }) {
           zIndex: 1000, padding: '20px', animation: 'fadeIn 0.2s ease-out'
         }}>
           <div style={{
-            background: 'white', borderRadius: '24px', width: '100%', maxWidth: '480px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', overflow: 'hidden',
+            background: 'white', borderRadius: '24px', width: '100%', maxWidth: '480px',  // Add these
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
             animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
           }}>
-            <div style={{ padding: '24px 32px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#1E293B' }}>
                 {isEditing ? 'Edit Expense' : 'Add New Expense'}
               </h3>
@@ -414,47 +442,52 @@ export default function ExpensesScreen({ userSession }) {
                 <X size={24} />
               </button>
             </div>
-            
-            <form onSubmit={handleSubmit} style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+            <form onSubmit={handleSubmit} style={{
+              padding: '20px 24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px', display: 'block' }}>Date *</label>
+                <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '6px', display: 'block' }}>Date *</label>
                 <div style={{ position: 'relative' }}>
-                  <Calendar size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#94A3B8' }} />
-                  <input 
+                  <Calendar size={18} style={{ position: 'absolute', left: '16px', top: '13px', color: '#94A3B8' }} />
+                  <input
                     type="date" value={date} onChange={e => setDate(e.target.value)} required
-                    style={{ width: '100%', height: '48px', padding: '0 16px 0 44px', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '44px', padding: '0 16px 0 44px', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px', display: 'block' }}>Category *</label>
+                <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '6px', display: 'block' }}>Category *</label>
                 <div style={{ position: 'relative' }}>
-                  <Tag size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#94A3B8' }} />
-                  <input 
+                  <Tag size={18} style={{ position: 'absolute', left: '16px', top: '13px', color: '#94A3B8' }} />
+                  <input
                     type="text" value={category} onChange={e => setCategory(e.target.value)} required placeholder="e.g. Rent, Utilities, Salaries"
-                    style={{ width: '100%', height: '48px', padding: '0 16px 0 44px', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '44px', padding: '0 16px 0 44px', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px', display: 'block' }}>Amount (₹) *</label>
+                <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '6px', display: 'block' }}>Amount (₹) *</label>
                 <div style={{ position: 'relative' }}>
-                  <DollarSign size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#94A3B8' }} />
-                  <input 
+                  <DollarSign size={18} style={{ position: 'absolute', left: '16px', top: '13px', color: '#94A3B8' }} />
+                  <input
                     type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} required placeholder="0.00"
-                    style={{ width: '100%', height: '48px', padding: '0 16px 0 44px', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '44px', padding: '0 16px 0 44px', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
 
               {!isEditing && (
                 <div>
-                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px', display: 'block' }}>Wallet *</label>
-                  <select 
+                  <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '6px', display: 'block' }}>Wallet *</label>
+                  <select
                     value={selectedWallet} onChange={e => setSelectedWallet(e.target.value)} required={!isEditing}
-                    style={{ width: '100%', height: '48px', padding: '0 16px', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '44px', padding: '0 16px', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '15px', boxSizing: 'border-box' }}
                   >
                     <option value="">— Select Wallet —</option>
                     {wallets.map(w => (
@@ -465,24 +498,24 @@ export default function ExpensesScreen({ userSession }) {
               )}
 
               <div>
-                <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '8px', display: 'block' }}>Description (Optional)</label>
+                <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginBottom: '6px', display: 'block' }}>Description (Optional)</label>
                 <div style={{ position: 'relative' }}>
-                  <FileText size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: '#94A3B8' }} />
-                  <textarea 
+                  <FileText size={18} style={{ position: 'absolute', left: '16px', top: '13px', color: '#94A3B8' }} />
+                  <textarea
                     value={description} onChange={e => setDescription(e.target.value)} placeholder="Add some details..."
-                    style={{ width: '100%', minHeight: '100px', padding: '14px 16px 14px 44px', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '15px', boxSizing: 'border-box', resize: 'vertical' }}
+                    style={{ width: '100%', minHeight: '80px', padding: '12px 16px 12px 44px', borderRadius: '12px', border: '1px solid #E2E8F0', outline: 'none', fontSize: '15px', boxSizing: 'border-box', resize: 'vertical' }}
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
                 <button type="button" onClick={() => setShowModal(false)}
-                  style={{ flex: 1, height: '52px', background: '#F1F5F9', color: '#475569', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '15px', cursor: 'pointer' }}
+                  style={{ flex: 1, height: '44px', background: '#F1F5F9', color: '#475569', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '15px', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button type="submit" disabled={isSaving}
-                  style={{ flex: 2, height: '52px', background: isSaving ? '#9CA3AF' : '#4F46E5', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '15px', cursor: isSaving ? 'not-allowed' : 'pointer', boxShadow: isSaving ? 'none' : '0 4px 12px rgba(79, 70, 229, 0.3)' }}
+                  style={{ flex: 2, height: '44px', background: isSaving ? '#9CA3AF' : '#4F46E5', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '15px', cursor: isSaving ? 'not-allowed' : 'pointer', boxShadow: isSaving ? 'none' : '0 4px 12px rgba(79, 70, 229, 0.3)' }}
                 >
                   {isSaving ? 'Saving...' : (isEditing ? 'Save Changes' : 'Add Expense')}
                 </button>

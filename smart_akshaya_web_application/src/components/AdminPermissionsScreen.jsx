@@ -75,8 +75,9 @@ function AdminPermissionsScreen({ userSession }) {
     ));
 
     try {
+      const headerName = isAccountant ? 'Accountant Access' : 'Staff Access';
       const updates = {
-        [colIdx]: newValue ? 'TRUE' : 'FALSE'
+        [headerName]: newValue ? 'TRUE' : 'FALSE'
       };
       
       await updateRowColumns(SHEETS_CONFIG.permissionsSheetName, perm.rowIndex, updates);
@@ -147,7 +148,6 @@ function AdminPermissionsScreen({ userSession }) {
               <table className="admin-table admin-table--wide">
                 <thead>
                   <tr>
-                    <th>Feature ID</th>
                     <th>Feature Name</th>
                     <th style={{ textAlign: 'center' }}>Accountant Access</th>
                     <th style={{ textAlign: 'center' }}>Staff Access</th>
@@ -156,9 +156,6 @@ function AdminPermissionsScreen({ userSession }) {
                 <tbody>
                   {permissions.map((perm) => (
                     <tr key={perm.id}>
-                      <td>
-                        <span className="admin-cell-secondary">{perm.id}</span>
-                      </td>
                       <td>
                         <span className="admin-cell-name-text" style={{ fontWeight: 500 }}>{perm.name}</span>
                       </td>

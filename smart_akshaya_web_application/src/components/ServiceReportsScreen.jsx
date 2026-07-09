@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Calendar, DollarSign, Eye, EyeOff, Filter, Download, Phone, User, Briefcase, ChevronDown, ChevronUp, CheckCircle, AlertCircle, RefreshCw, Edit, Trash2 } from 'lucide-react';
 import { getRows, deleteRow } from '../services/googleSheetsService';
-import { SHEETS_CONFIG } from '../config/sheetsConfig';
+import { SHEETS_CONFIG, BILL_TYPES } from '../config/sheetsConfig';
+import { groupByBooking } from '../utils/billGrouper';
 
 export default function ServiceReportsScreen({ userSession, onEditBill }) {
   const [entries, setEntries] = useState([]);
@@ -24,37 +25,117 @@ export default function ServiceReportsScreen({ userSession, onEditBill }) {
     setIsLoading(true);
     try {
       const rows = await getRows(SHEETS_CONFIG.serviceEntrySheetName);
-      
+
       if (rows && rows.length > 1) {
-        const parsed = rows.slice(1).map((row, idx) => ({
-          id: idx,
-          rowIndex: idx + 2,
-          sourceSheet: SHEETS_CONFIG.serviceEntrySheetName,
-          date: row[0] || '',
-          time: row[1] || '',
-          staffName: row[2] || '',
-          mobile: '', // Not stored in service entry row directly
-          customerName: row[3] || 'Walk-in Customer',
-          name: row[3] || 'Walk-in Customer',
-          services: row[4] || '',
-          qty: row[5] || '0',
-          total: parseFloat(row[6]) || 0,
-          deptFee: parseFloat(row[7]) || 0,
-          walletCharge: parseFloat(row[8]) || 0,
-          gpayUpi: parseFloat(row[9]) || 0,
-          gpay: parseFloat(row[9]) || 0,
-          cash: parseFloat(row[10]) || 0,
-          balance: parseFloat(row[11]) || 0,
-          status: row[12] || 'Completed',
-          serviceCharge: parseFloat(row[13]) || 0,
-          commission: parseFloat(row[14]) || 0,
-          walletType: row[15] || '',
-          remarks: row[16] || '',
-          billId: row[17] || '',
-          isPriceEdited: row[18] === 'Yes'
+        // Parse each row — detect new vs legacy format by presence of booking_id (col M)
+        const parsed = rows.slice(1).map((row, idx) => {
+          const bookingIdRaw = (row[12] || '').toString().trim();
+          const isNew = bookingIdRaw && /^\d{13}$/.test(bookingIdRaw);
+          const bookingId = isNew ? bookingIdRaw : '';
+
+          if (isNew) {
+            const billType = (row[13] || BILL_TYPES.COMPLETED).toString().trim().toLowerCase();
+            return {
+              id: idx,
+              rowIndex: idx + 2,
+              isNew: true,
+              bookingId,
+              billType,
+              date: row[0] || '',
+              time: row[1] || '',
+              staffName: row[2] || '',
+              mobile: row[3] || '',
+              customerName: row[4] || 'Walk-in Customer',
+              name: row[4] || 'Walk-in Customer',
+              // Single service per row in new format
+              services: row[5] || '',
+              serviceName: row[5] || '',
+              qty: row[6] || '0',
+              total: parseFloat(row[9]) || 0,   // row_total (col J)
+              deptFee: parseFloat(row[7]) || 0,
+              serviceCharge: parseFloat(row[8]) || 0,
+              walletType: row[10] || '',
+              serviceStatus: row[11] || 'completed',
+              bookingTotal: parseFloat(row[14]) || 0,
+              amountPaid: parseFloat(row[15]) || 0,
+              gpay: parseFloat(row[16]) || 0,
+              gpayUpi: parseFloat(row[16]) || 0,
+              cash: parseFloat(row[17]) || 0,
+              balance: parseFloat(row[18]) || 0,
+              status: billType,
+              remarks: row[19] || '',
+            };
+          }
+
+          // Legacy row (old format)
+          const hasStoredMobile = /^\d{10}$/.test((row[3] || '').toString().trim());
+          const offset = hasStoredMobile ? 1 : 0;
+          return {
+            id: idx,
+            rowIndex: idx + 2,
+            isNew: false,
+            bookingId: `legacy_${idx + 2}`,
+            billType: BILL_TYPES.COMPLETED,
+            date: row[0] || '',
+            time: row[1] || '',
+            staffName: row[2] || '',
+            mobile: hasStoredMobile ? row[3] : '',
+            customerName: row[3 + offset] || 'Walk-in Customer',
+            name: row[3 + offset] || 'Walk-in Customer',
+            services: row[4 + offset] || '',
+            serviceName: row[4 + offset] || '',
+            qty: row[5 + offset] || '0',
+            total: parseFloat(row[6 + offset]) || 0,
+            deptFee: parseFloat(row[7 + offset]) || 0,
+            walletCharge: parseFloat(row[8 + offset]) || 0,
+            gpay: parseFloat(row[9 + offset]) || 0,
+            gpayUpi: parseFloat(row[9 + offset]) || 0,
+            cash: parseFloat(row[10 + offset]) || 0,
+            balance: parseFloat(row[11 + offset]) || 0,
+            status: (row[12 + offset] || 'Completed'),
+            serviceCharge: parseFloat(row[13 + offset]) || 0,
+            commission: parseFloat(row[14 + offset]) || 0,
+            walletType: row[15 + offset] || '',
+            remarks: row[16 + offset] || '',
+            billId: row[17 + offset] || '',
+            bookingTotal: parseFloat(row[6 + offset]) || 0,
+            amountPaid: (parseFloat(row[9 + offset]) || 0) + (parseFloat(row[10 + offset]) || 0),
+          };
+        });
+
+        // Only keep completed rows (for new format); legacy rows included unless explicitly pending
+        const completed = parsed.filter(r => {
+          if (r.isNew) return r.billType === BILL_TYPES.COMPLETED;
+          // Legacy: include if status is not service_pending / credit_pending
+          const st = (r.status || '').toLowerCase();
+          return st !== 'service_pending' && st !== 'credit_pending' && st !== 'partial_payment';
+        });
+
+        // Group new-format rows by booking_id; legacy rows stand alone
+        const bookingMap = new Map();
+        for (const row of completed) {
+          const key = row.bookingId;
+          if (!bookingMap.has(key)) {
+            bookingMap.set(key, {
+              ...row,
+              // Aggregated fields
+              totalAmount: 0,
+              servicesList: [],
+            });
+          }
+          const b = bookingMap.get(key);
+          b.totalAmount += row.total;
+          b.servicesList.push(row.serviceName || row.services);
+        }
+
+        const entries = [...bookingMap.values()].map(b => ({
+          ...b,
+          // Expose aggregated total for display
+          total: b.isNew ? b.bookingTotal : b.total,
+          services: b.servicesList.join(', ') || b.services,
         }));
-        // Sort reverse chronological by default assuming newer is appended
-        setEntries(parsed.reverse());
+
+        setEntries(entries.reverse());
       }
     } catch (error) {
       console.error('Error fetching service entries:', error);

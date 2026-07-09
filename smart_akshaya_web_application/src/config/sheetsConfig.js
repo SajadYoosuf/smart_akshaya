@@ -10,6 +10,22 @@ export const SHEETS_CONFIG = {
   walletSheetName: 'Wallets',
   attendanceSheetName: 'Attendance',
   permissionsSheetName: 'Permissions',
+  announcementsSheetName: 'Announcements',
+};
+
+/** Bill routing types — stored in the bill_type column (col N) */
+export const BILL_TYPES = {
+  COMPLETED:       'completed',
+  SERVICE_PENDING: 'service_pending',
+  CREDIT_PENDING:  'credit_pending',
+  PARTIAL_PAYMENT: 'partial_payment',
+};
+
+/** Per-service completion statuses — stored in service_status column (col L) */
+export const SVC_STATUS = {
+  NOT_STARTED: 'not_started',
+  IN_PROGRESS:  'in_progress',
+  COMPLETED:    'completed',
 };
 
 /**

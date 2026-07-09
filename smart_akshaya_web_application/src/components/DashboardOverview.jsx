@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Edit3, CheckCircle, Banknote, Wallet, Crop, Camera, User, Percent, Calculator, ChevronDown, ChevronUp, FileText, Bookmark, Globe, Link as LinkIcon, ExternalLink, Database, Cloud, Star, Monitor, AppWindow, Cpu, Rocket, Search } from 'lucide-react';
-import { getRows } from '../services/googleSheetsService';
+import { Edit3, CheckCircle, Banknote, Wallet, Crop, Camera, User, Percent, Calculator, ChevronDown, ChevronUp, FileText, Bookmark, Globe, Link as LinkIcon, ExternalLink, Database, Cloud, Star, Monitor, AppWindow, Cpu, Rocket, Search, Ruler } from 'lucide-react';
+import { getRows, updateRow, appendRow } from '../services/googleSheetsService';
 import { SHEETS_CONFIG } from '../config/sheetsConfig';
 import CalculatorModal from './CalculatorModal';
-
+import CashCounterModal from './CashCounterModal';
+import AreaConverterModal from './AreaConverterModal';
 const ICON_MAP = {
   Globe, Link: LinkIcon, ExternalLink, Database, Cloud, Star, Monitor, AppWindow, Cpu, Rocket
 };
@@ -58,6 +59,22 @@ const TILES = [
     bg: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', // Blue
     view: 'resume-studio',
   },
+  {
+    id: 'cash-counter',
+    label: 'Cash Counter',
+    sublabel: 'Denomination Calculator',
+    Icon: Banknote,
+    bg: 'linear-gradient(135deg, #10B981 0%, #047857 100%)', // Emerald
+    view: 'cash-counter',
+  },
+  {
+    id: 'area-converter',
+    label: 'Area Converter',
+    sublabel: 'Sq Ft & Sq M',
+    Icon: Ruler,
+    bg: 'linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)', // Cyan
+    view: 'area-converter',
+  },
 ];
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
@@ -106,18 +123,26 @@ function StatCard({ label, value, Icon, iconBg, iconColor, loading, onClick, isE
 }
 
 // ─── Quick Launch Tile ─────────────────────────
-function QuickTile({ tile, onClick }) {
+function QuickTile({ tile, onClick, isEditing, onDragStart, onDragEnter, onDragEnd, isDragged }) {
   const [hovered, setHovered] = useState(false);
   return (
     <button
-      onClick={onClick}
+      draggable={isEditing}
+      onDragStart={(e) => onDragStart && onDragStart(e, tile.id)}
+      onDragEnter={(e) => onDragEnter && onDragEnter(e, tile.id)}
+      onDragEnd={onDragEnd}
+      onDragOver={(e) => isEditing && e.preventDefault()}
+      onClick={isEditing ? undefined : onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="dashboard-quick-tile"
+      className={`dashboard-quick-tile ${isEditing ? 'editing-jiggle' : ''}`}
       style={{
         background: tile.bg,
-        boxShadow: hovered ? '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-        transform: hovered ? 'translateY(-4px)' : 'none',
+        boxShadow: hovered && !isEditing ? '0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        transform: hovered && !isEditing ? 'translateY(-4px)' : 'none',
+        opacity: isDragged ? 0.4 : 1,
+        cursor: isEditing ? 'grab' : 'pointer',
+        transition: 'all 0.2s ease',
       }}
     >
       <div
@@ -164,11 +189,140 @@ export default function DashboardOverview({ onViewChange, userSession }) {
   const [serviceSearchQuery, setServiceSearchQuery] = useState('');
   const [externalLinks, setExternalLinks] = useState([]);
   const [showCalculatorModal, setShowCalculatorModal] = useState(false);
+  const [showCashCounterModal, setShowCashCounterModal] = useState(false);
+  const [showAreaConverterModal, setShowAreaConverterModal] = useState(false);
+  const [canSeeWalletBalance, setCanSeeWalletBalance] = useState(userSession?.role === 'admin');
+
+  const [combinedTools, setCombinedTools] = useState([]);
+  const [isEditingLayout, setIsEditingLayout] = useState(false);
+  const [draggedItemId, setDraggedItemId] = useState(null);
+  const [globalLayoutOrder, setGlobalLayoutOrder] = useState(null);
+  const [layoutRowIndex, setLayoutRowIndex] = useState(null);
+
+  const fetchLayoutSettings = async () => {
+    try {
+      const rows = await getRows('Layout Settings');
+      if (rows && rows.length > 1) {
+        for (let i = 1; i < rows.length; i++) {
+          if (rows[i][0] === 'QuickLaunchOrder') {
+            setLayoutRowIndex(i + 1); // 1-indexed for updateRow
+            try {
+              const order = JSON.parse(rows[i][1]);
+              setGlobalLayoutOrder(order);
+            } catch (e) {
+              console.error('Failed to parse QuickLaunchOrder', e);
+            }
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch Layout Settings', err);
+    }
+  };
+
+  useEffect(() => {
+    const allTools = [...TILES, ...externalLinks];
+    const savedOrder = globalLayoutOrder || JSON.parse(localStorage.getItem('quick_launch_tool_order') || '[]');
+    
+    if (savedOrder.length > 0) {
+      allTools.sort((a, b) => {
+        const indexA = savedOrder.indexOf(a.id);
+        const indexB = savedOrder.indexOf(b.id);
+        if (indexA === -1 && indexB === -1) return 0;
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+    }
+    setCombinedTools(allTools);
+  }, [externalLinks, globalLayoutOrder]);
+
+  const handleDragStart = (e, id) => {
+    if (!isEditingLayout) return;
+    setDraggedItemId(id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnter = (e, targetId) => {
+    if (!isEditingLayout || draggedItemId === null || draggedItemId === targetId) return;
+    
+    setCombinedTools(prev => {
+      const newTools = [...prev];
+      const draggedIndex = newTools.findIndex(t => t.id === draggedItemId);
+      const targetIndex = newTools.findIndex(t => t.id === targetId);
+      
+      const [draggedItem] = newTools.splice(draggedIndex, 1);
+      newTools.splice(targetIndex, 0, draggedItem);
+      
+      return newTools;
+    });
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItemId(null);
+  };
+
+  const handleSaveLayout = async () => {
+    setIsEditingLayout(false);
+    const order = combinedTools.map(t => t.id);
+    
+    localStorage.setItem('quick_launch_tool_order', JSON.stringify(order));
+    setGlobalLayoutOrder(order);
+    
+    try {
+      const orderString = JSON.stringify(order);
+      if (layoutRowIndex) {
+        await updateRow('Layout Settings', layoutRowIndex, ['QuickLaunchOrder', orderString]);
+      } else {
+        await appendRow('Layout Settings', ['QuickLaunchOrder', orderString]);
+        fetchLayoutSettings();
+      }
+    } catch (err) {
+      console.error('Failed to save layout to Google Sheets', err);
+    }
+  };
 
   useEffect(() => {
     fetchDashboardStats();
     fetchExternalLinks();
+    fetchPermissions();
+    fetchLayoutSettings();
   }, []);
+
+  const fetchPermissions = async () => {
+    if (userSession?.role === 'admin') {
+      setCanSeeWalletBalance(true);
+      return;
+    }
+    try {
+      const rows = await getRows(SHEETS_CONFIG.permissionsSheetName);
+      if (rows && rows.length > 1) {
+        const headers = rows[0].map(h => (h || '').toString().trim().toLowerCase());
+        const nameIdx = headers.findIndex(h => h.includes('feature name') || h.includes('name'));
+        const accIdx = headers.findIndex(h => h.includes('accountant'));
+        const staffIdx = headers.findIndex(h => h.includes('staff'));
+        
+        let hasAccess = false;
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          const featureName = (row[nameIdx] || '').toString().trim().toLowerCase();
+          
+          if (featureName.includes('dashboard') && featureName.includes('wallet')) {
+            if (userSession?.role === 'accountant' && accIdx !== -1) {
+              hasAccess = (row[accIdx] || 'FALSE').toString().trim().toUpperCase() === 'TRUE';
+            } else if (userSession?.role === 'staff' && staffIdx !== -1) {
+              hasAccess = (row[staffIdx] || 'FALSE').toString().trim().toUpperCase() === 'TRUE';
+            }
+            break;
+          }
+        }
+        setCanSeeWalletBalance(hasAccess);
+      }
+    } catch (err) {
+      console.error('Failed to fetch permissions', err);
+    }
+  };
 
   const fetchExternalLinks = async () => {
     try {
@@ -249,7 +403,8 @@ export default function DashboardOverview({ onViewChange, userSession }) {
           for (let i = 1; i < walletRows.length; i++) {
             const r = walletRows[i];
             const name = nameIdx >= 0 ? (r[nameIdx] || `Wallet ${i}`).trim() : `Wallet ${i}`;
-            const balance = parseFloat(r[balanceIdx] || 0);
+            const rawBalance = (r[balanceIdx] || '0').toString().replace(/[^0-9.-]+/g, '');
+            const balance = parseFloat(rawBalance) || 0;
             totalWalletCharge += balance;
             breakdown.push({ name, balance });
           }
@@ -343,16 +498,18 @@ export default function DashboardOverview({ onViewChange, userSession }) {
           iconColor="#DC2626"
           loading={loadingStats}
         />
-        <StatCard
-          label="Net Wallet Balance"
-          value={fmt(stats.totalWalletCharge)}
-          Icon={Wallet}
-          iconBg="#FDF4FF"
-          iconColor="#C026D3"
-          loading={loadingStats}
-          onClick={() => setShowBreakdown((v) => !v)}
-          isExpanded={showBreakdown}
-        />
+        {canSeeWalletBalance && (
+          <StatCard
+            label="Net Wallet Balance"
+            value={fmt(stats.totalWalletCharge)}
+            Icon={Wallet}
+            iconBg="#FDF4FF"
+            iconColor="#C026D3"
+            loading={loadingStats}
+            onClick={() => setShowBreakdown((v) => !v)}
+            isExpanded={showBreakdown}
+          />
+        )}
       </div>
 
       {/* ── Top Bookmarked Services ── */}
@@ -413,12 +570,21 @@ export default function DashboardOverview({ onViewChange, userSession }) {
             div::-webkit-scrollbar {
               display: none;
             }
+            @keyframes jiggle {
+              0% { transform: rotate(-1deg); }
+              50% { transform: rotate(1.5deg); }
+              100% { transform: rotate(-1deg); }
+            }
+            .editing-jiggle {
+              animation: jiggle 0.3s infinite;
+              border: 2px dashed rgba(255,255,255,0.5);
+            }
           `}</style>
         </div>
       )}
 
       {/* ── Wallet Breakdown ── */}
-      {showBreakdown && walletBreakdown.length > 0 && (
+      {canSeeWalletBalance && showBreakdown && walletBreakdown.length > 0 && (
         <div className="dashboard-breakdown glass-panel">
           <div className="dashboard-breakdown-header">
             <h4 style={{ fontSize: '16px', fontWeight: '800', color: '#1E293B', textTransform: 'uppercase', letterSpacing: '1px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -453,30 +619,41 @@ export default function DashboardOverview({ onViewChange, userSession }) {
 
       {/* ── Quick Launch Tools ── */}
       <div className="dashboard-tools glass-panel">
-        <h3 className="dashboard-tools-title">
-          Quick Launch Tools
-        </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h3 className="dashboard-tools-title" style={{ margin: 0 }}>
+            Quick Launch Tools
+          </h3>
+          {userSession?.role === 'admin' && (
+            <button 
+              onClick={isEditingLayout ? handleSaveLayout : () => setIsEditingLayout(true)}
+              className={isEditingLayout ? "btn btn-primary" : "btn btn-outline"}
+              style={{ height: '36px', fontSize: '13px', padding: '0 16px', borderRadius: '8px' }}
+            >
+              {isEditingLayout ? 'Save Layout' : 'Customize Layout'}
+            </button>
+          )}
+        </div>
         <div className="dashboard-tiles-grid">
-          {TILES.map((tile) => (
+          {combinedTools.map((tile) => (
             <QuickTile
               key={tile.id}
               tile={tile}
+              isEditing={isEditingLayout}
+              isDragged={draggedItemId === tile.id}
+              onDragStart={handleDragStart}
+              onDragEnter={handleDragEnter}
+              onDragEnd={handleDragEnd}
               onClick={() => {
-                if (tile.id === 'calculator') {
+                if (tile.isExternal && tile.url && tile.url !== '#') {
+                  window.open(tile.url, '_blank');
+                } else if (tile.id === 'calculator') {
                   setShowCalculatorModal(true);
+                } else if (tile.id === 'cash-counter') {
+                  setShowCashCounterModal(true);
+                } else if (tile.id === 'area-converter') {
+                  setShowAreaConverterModal(true);
                 } else {
                   onViewChange(tile.view);
-                }
-              }}
-            />
-          ))}
-          {externalLinks.map((tile) => (
-            <QuickTile
-              key={tile.id}
-              tile={tile}
-              onClick={() => {
-                if (tile.url && tile.url !== '#') {
-                  window.open(tile.url, '_blank');
                 }
               }}
             />
@@ -616,6 +793,12 @@ export default function DashboardOverview({ onViewChange, userSession }) {
 
       {showCalculatorModal && (
         <CalculatorModal onClose={() => setShowCalculatorModal(false)} />
+      )}
+      {showCashCounterModal && (
+        <CashCounterModal onClose={() => setShowCashCounterModal(false)} />
+      )}
+      {showAreaConverterModal && (
+        <AreaConverterModal onClose={() => setShowAreaConverterModal(false)} />
       )}
     </div>
   );
