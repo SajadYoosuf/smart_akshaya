@@ -20,6 +20,7 @@ import ExpensesScreen from './components/ExpensesScreen';
 import AdminPermissionsScreen from './components/AdminPermissionsScreen';
 import ResumeBuilderWrapper from './components/ResumeBuilderWrapper';
 import TransactionHistoryScreen from './components/TransactionHistoryScreen';
+import CreditDetailsScreen from './components/CreditDetailsScreen';
 import { getCurrentSession, logoutSession } from './services/googleSheetsAuth';
 import MenuRounded from '@mui/icons-material/MenuRounded';
 import SyncRounded from '@mui/icons-material/SyncRounded';
@@ -27,13 +28,17 @@ import { Search, X } from 'lucide-react';
 import ReloadPrompt from './components/ReloadPrompt';
 import AttendancePopup from './components/AttendancePopup';
 import ExternalLinksManager from './components/ExternalLinksManager';
+import PendingBillsPopup from './components/PendingBillsPopup';
+import NotificationBanner, { NotificationBell } from './components/NotificationBanner';
+import { getRows } from './services/googleSheetsService';
+import { SHEETS_CONFIG } from './config/sheetsConfig';
 
 // ── Page title map (matches Windows app pageTitles list) ──────────────────────
 const PAGE_TITLES = {
   dashboard: 'Dashboard',
   'new-entry': 'New Entry',
   'saved-bills': 'Saved Bills',
-  wallet: 'Wallets Balance',
+  wallet: 'Wallet Management',
   'document-finder': 'Application Forms',
   passport: 'Passport Photo Creator',
   'psc-photo': 'PSC Photo Creator',
@@ -50,11 +55,12 @@ const PAGE_TITLES = {
   nameslip: 'Nameslip',
   'resume-studio': 'Resume Studio',
   'transaction-history': 'Transaction History',
-  'external-tools': 'External Tools',
+  'credit-details': 'Credit Details',
+  'external-tools': 'Quick Hub',
 };
 
 // ── Top Bar Component (matches Windows 70px white header) ─────────────────────
-function TopBar({ currentView, onRefresh, isRefreshing, onMenuClick, showMenu, searchQuery, setSearchQuery }) {
+function TopBar({ currentView, onRefresh, isRefreshing, onMenuClick, showMenu, searchQuery, setSearchQuery, userSession }) {
   const title = PAGE_TITLES[currentView] || 'Smart Akshaya';
   return (
     <header className="app-topbar">
@@ -128,6 +134,7 @@ function TopBar({ currentView, onRefresh, isRefreshing, onMenuClick, showMenu, s
           </div>
         )}
 
+        <NotificationBell userSession={userSession} />
         <button
           type="button"
           onClick={onRefresh}
@@ -164,6 +171,8 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editBillData, setEditBillData] = useState(null);
+  const [showPendingBillsPopup, setShowPendingBillsPopup] = useState(false);
+  const [featurePermissions, setFeaturePermissions] = useState({});
 
   // Check login session on mount
   useEffect(() => {
@@ -174,10 +183,45 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!isLoggedIn || !userSession) return;
+    if (userSession.role === 'admin') return;
+
+    const fetchPerms = async () => {
+      try {
+        const rows = await getRows(SHEETS_CONFIG.permissionsSheetName);
+        if (rows && rows.length > 1) {
+          const headers = rows[0].map(h => (h || '').toString().trim().toLowerCase());
+          const nameIdx = headers.indexOf('feature name');
+          const accIdx = headers.indexOf('accountant access');
+          const staffIdx = headers.indexOf('staff access');
+          
+          let perms = {};
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const featureName = (row[nameIdx] || '').toString().trim().toLowerCase();
+            let hasAccess = false;
+            if (userSession.role === 'accountant') {
+              hasAccess = (row[accIdx] || 'FALSE').toString().trim().toUpperCase() === 'TRUE';
+            } else if (userSession.role === 'staff') {
+              hasAccess = (row[staffIdx] || 'FALSE').toString().trim().toUpperCase() === 'TRUE';
+            }
+            perms[featureName] = hasAccess;
+          }
+          setFeaturePermissions(perms);
+        }
+      } catch (e) {
+        console.error('Failed to fetch permissions', e);
+      }
+    };
+    fetchPerms();
+  }, [isLoggedIn, userSession]);
+
   const handleLoginSuccess = () => {
     const session = getCurrentSession();
     setUserSession(session);
     setIsLoggedIn(true);
+    setShowPendingBillsPopup(true);
     // Preserve requested view if not dashboard
     if (currentView === 'dashboard') {
       setCurrentView('dashboard');
@@ -215,11 +259,11 @@ export default function App() {
   const renderView = () => {
     const role = userSession?.role || 'staff';
     const isAdmin = role === 'admin';
-    const isAccountant = role === 'accountant';
 
     const canSeeStaffManagement = isAdmin;
     const canSeeStaffPerformance = isAdmin;
-    const canSeeWallet = isAdmin || isAccountant;
+    const canSeeWallet = isAdmin || featurePermissions['wallet management'] || featurePermissions['wallets balance'] || featurePermissions['wallet'] || false;
+    const canSeeCustomerDetails = isAdmin || featurePermissions['customer details'] || false;
 
     switch (currentView) {
       case 'dashboard':
@@ -231,6 +275,7 @@ export default function App() {
       case 'saved-bills':
         return (
           <SavedBillsScreen
+            userSession={userSession}
             onSettleBill={(bill) => {
               setEditBillData(bill);
               setCurrentView('new-entry');
@@ -288,7 +333,7 @@ export default function App() {
         return canSeeStaffPerformance ? <StaffDashboard /> : <DashboardOverview onViewChange={setCurrentView} userSession={userSession} />;
 
       case 'customer-details':
-        return <CustomerDetails />;
+        return canSeeCustomerDetails ? <CustomerDetails /> : <DashboardOverview onViewChange={setCurrentView} userSession={userSession} />;
 
       case 'permissions':
         return isAdmin ? <AdminPermissionsScreen userSession={userSession} /> : <DashboardOverview onViewChange={setCurrentView} userSession={userSession} />;
@@ -296,8 +341,19 @@ export default function App() {
       case 'transaction-history':
         return isAdmin ? <TransactionHistoryScreen userSession={userSession} /> : <DashboardOverview onViewChange={setCurrentView} userSession={userSession} />;
 
+      case 'credit-details':
+        return (
+          <CreditDetailsScreen
+            userSession={userSession}
+            onSettleBill={(booking) => {
+              setEditBillData(booking);
+              setCurrentView('new-entry');
+            }}
+          />
+        );
+
       case 'external-tools':
-        return <ExternalLinksManager />;
+        return <ExternalLinksManager userSession={userSession} />;
 
       default:
         return <DashboardOverview onViewChange={setCurrentView} userSession={userSession} />;
@@ -333,6 +389,7 @@ export default function App() {
           userSession={userSession}
           onLogout={handleLogout}
           onClose={() => setIsSidebarOpen(false)}
+          featurePermissions={featurePermissions}
         />
       </div>
 
@@ -340,15 +397,18 @@ export default function App() {
       <div className="app-main-shell">
         {/* Top Bar */}
         {!hideTopBar && (
-          <TopBar
-            currentView={currentView}
-            onRefresh={handleRefresh}
-            isRefreshing={isRefreshing}
-            onMenuClick={() => setIsSidebarOpen(true)}
-            showMenu={!hideSidebar && !isSidebarOpen}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-          />
+          <>
+            <TopBar
+              currentView={currentView}
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
+              onMenuClick={() => setIsSidebarOpen(true)}
+              showMenu={!hideSidebar && !isSidebarOpen}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              userSession={userSession}
+            />
+          </>
         )}
 
         {/* Scrollable Content Area */}
@@ -361,6 +421,15 @@ export default function App() {
       </div>
       <ReloadPrompt />
       <AttendancePopup userSession={userSession} />
+      <PendingBillsPopup 
+        userSession={userSession} 
+        isOpen={showPendingBillsPopup} 
+        onClose={() => setShowPendingBillsPopup(false)} 
+        onSettleNow={(tab) => {
+          setShowPendingBillsPopup(false);
+          setCurrentView(tab === 'credit' ? 'credit-details' : 'saved-bills');
+        }}
+      />
     </div>
   );
 }

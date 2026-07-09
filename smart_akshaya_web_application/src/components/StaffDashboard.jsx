@@ -232,11 +232,11 @@ export default function StaffDashboard() {
   };
   // Date helper
   const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
-  const getSaturdaysInMonth = (year, month) => {
+  const getSundaysInMonth = (year, month) => {
     let count = 0;
     const days = getDaysInMonth(year, month);
     for (let d = 1; d <= days; d++) {
-      if (new Date(year, month, d).getDay() === 6) count++;
+      if (new Date(year, month, d).getDay() === 0) count++;
     }
     return count;
   };
@@ -270,12 +270,12 @@ export default function StaffDashboard() {
     ).length;
 
     const totalDays = getDaysInMonth(y, m);
-    const saturdaysCount = getSaturdaysInMonth(y, m);
-    const workingDays = totalDays - saturdaysCount;
+    const sundaysCount = getSundaysInMonth(y, m);
+    const workingDays = totalDays - sundaysCount;
 
     const paidLeave = (actualPresentDays > 0 && actualPresentDays < workingDays) ? 1 : 0;
     const paidDays = actualPresentDays > 0
-      ? Math.min(totalDays, actualPresentDays + saturdaysCount + paidLeave)
+      ? Math.min(totalDays, actualPresentDays + sundaysCount + paidLeave)
       : 0;
 
     const bonus = Math.max(0, stats.totalSvcCharge - (basicSalary * 0.05));
@@ -989,7 +989,7 @@ export default function StaffDashboard() {
                       <span style={{ color: '#374151' }}>Absent</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#FEF9C3', border: '1px solid #F59E0B' }} />
+                      <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#FEF2F2', border: '1px solid #EF4444' }} />
                       <span style={{ color: '#374151' }}>Holiday</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1074,10 +1074,10 @@ export default function StaffDashboard() {
                             borderColor = '#10B981';
                             textColor = '#065F46';
                             statusLabel = 'Present';
-                          } else if (cellDate.getDay() === 6) {
-                            bgColor = '#FEF9C3';
-                            borderColor = '#F59E0B';
-                            textColor = '#854D0E';
+                          } else if (cellDate.getDay() === 0) {
+                            bgColor = '#FEF2F2';
+                            borderColor = '#EF4444';
+                            textColor = '#991B1B';
                             statusLabel = 'Holiday';
                           } else if (isFuture) {
                             bgColor = '#ffffff';
@@ -1109,7 +1109,7 @@ export default function StaffDashboard() {
                                     width: '8px',
                                     height: '8px',
                                     borderRadius: '50%',
-                                    backgroundColor: statusLabel === 'Present' ? '#10B981' : (statusLabel === 'Holiday' ? '#F59E0B' : '#EF4444')
+                                    backgroundColor: statusLabel === 'Present' ? '#10B981' : (statusLabel === 'Holiday' ? '#EF4444' : '#EF4444')
                                   }} title={statusLabel} />
                                 )}
                               </div>

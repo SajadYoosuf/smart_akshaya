@@ -3,6 +3,23 @@ import { Settings, Save, Plus, Edit2, Trash2, RefreshCw, AlertCircle, CheckCircl
 import { getRows, appendRow, updateRow, clearRow } from '../services/googleSheetsService';
 import { SHEETS_CONFIG } from '../config/sheetsConfig';
 
+// Helper: fetch wallet names from the Wallets sheet
+async function fetchWalletNames() {
+  try {
+    const rows = await getRows(SHEETS_CONFIG.walletSheetName || 'Wallets');
+    if (!rows || rows.length <= 1) return ['CASH'];
+    const headers = rows[0].map(h => (h || '').toString().trim().toLowerCase());
+    const nameIdx = headers.indexOf('wallet name') !== -1 ? headers.indexOf('wallet name') : headers.indexOf('name');
+    if (nameIdx === -1) return ['CASH'];
+    return rows
+      .slice(1)
+      .map(r => (r[nameIdx] || '').toString().trim())
+      .filter(Boolean);
+  } catch {
+    return ['CASH'];
+  }
+}
+
 export default function ServiceManagement() {
   const [services, setServices] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -26,6 +43,10 @@ export default function ServiceManagement() {
   const [followupDays, setFollowupDays] = useState('0');
   const [wallet, setWallet] = useState('CASH');
   const [hasIdColumn, setHasIdColumn] = useState(false);
+
+  // Wallet dropdown state
+  const [walletOptions, setWalletOptions] = useState(['CASH']);
+  const [isLoadingWallets, setIsLoadingWallets] = useState(false);
 
   useEffect(() => {
     fetchServices();
@@ -104,6 +125,18 @@ export default function ServiceManagement() {
     }
   };
 
+  const openFormModal = async (initialWallet = 'CASH') => {
+    setIsLoadingWallets(true);
+    const names = await fetchWalletNames();
+    setWalletOptions(names.length > 0 ? names : ['CASH']);
+    // Ensure the current wallet value is in the list
+    if (initialWallet && !names.includes(initialWallet)) {
+      setWalletOptions(prev => [initialWallet, ...prev]);
+    }
+    setIsLoadingWallets(false);
+    setShowFormModal(true);
+  };
+
   const handleEdit = (s) => {
     setIsEditing(true);
     setEditingIndex(s.rowIndex);
@@ -115,7 +148,7 @@ export default function ServiceManagement() {
     setAllowEdit(s.allowEdit);
     setFollowupDays(s.followupDays);
     setWallet(s.wallet);
-    setShowFormModal(true);
+    openFormModal(s.wallet);
   };
 
   const handleCancel = () => {
@@ -248,14 +281,33 @@ export default function ServiceManagement() {
     }
   };
 
-  // Helper colors for default wallets
+  // Helper colors for wallet badges — supports any wallet name
+  const WALLET_PALETTE = [
+    { bg: '#F1F5F9', text: '#475569' },  // Slate  (CASH)
+    { bg: '#DCFCE7', text: '#15803D' },  // Green  (EDISTRICT)
+    { bg: '#E0E7FF', text: '#4338CA' },  // Indigo (GATEWAY)
+    { bg: '#FEF3C7', text: '#B45309' },  // Amber  (SBI)
+    { bg: '#FCE7F3', text: '#9D174D' },  // Pink
+    { bg: '#E0F2FE', text: '#0369A1' },  // Sky
+    { bg: '#FEF2F2', text: '#B91C1C' },  // Red
+    { bg: '#F0FDF4', text: '#166534' },  // Emerald
+  ];
+  const FIXED_BADGES = {
+    CASH:       { bg: '#F1F5F9', text: '#475569' },
+    EDISTRICT:  { bg: '#DCFCE7', text: '#15803D' },
+    GATEWAY:    { bg: '#E0E7FF', text: '#4338CA' },
+    SBI:        { bg: '#FEF3C7', text: '#B45309' },
+  };
   const getBadgeStyle = (label) => {
-    let bg = '#EFF6FF'; let text = '#3B82F6'; // Default (Blue)
-    if (label === 'EDISTRICT') { bg = '#DCFCE7'; text = '#15803D'; } // Green
-    if (label === 'GATEWAY') { bg = '#E0E7FF'; text = '#4338CA'; } // Indigo
-    if (label === 'CASH') { bg = '#F1F5F9'; text = '#475569'; } // Slate
-    if (label === 'SBI') { bg = '#FEF3C7'; text = '#B45309'; } // Amber
-
+    const fixed = FIXED_BADGES[(label || '').toUpperCase()];
+    let bg, text;
+    if (fixed) {
+      bg = fixed.bg; text = fixed.text;
+    } else {
+      // Consistent color per wallet name using character code sum
+      const idx = (label || '').split('').reduce((sum, c) => sum + c.charCodeAt(0), 0) % WALLET_PALETTE.length;
+      bg = WALLET_PALETTE[idx].bg; text = WALLET_PALETTE[idx].text;
+    }
     return {
       display: 'inline-flex',
       padding: '4px 10px',
@@ -437,7 +489,7 @@ export default function ServiceManagement() {
 
       {/* Floating Action Button (FAB) */}
       <button
-        onClick={() => { handleCancel(); setShowFormModal(true); }}
+        onClick={() => { handleCancel(); openFormModal('CASH'); }}
         style={{
           position: 'fixed', bottom: '40px', right: '40px', width: '64px', height: '64px',
           borderRadius: '32px', backgroundColor: '#6366F1', color: 'white', border: 'none',
@@ -520,12 +572,21 @@ export default function ServiceManagement() {
                     <label style={labelStyle}>Default Wallet</label>
                     <div style={{ position: 'relative' }}>
                       <Wallet size={18} style={{ position: 'absolute', left: '16px', top: '14px', color: '#94A3B8' }} />
-                      <select value={wallet} onChange={e => setWallet(e.target.value)} style={{ ...inputStyleNum, paddingLeft: '44px', color: '#1E293B' }}>
-                        <option value="CASH">CASH</option>
-                        <option value="EDISTRICT">EDISTRICT</option>
-                        <option value="GATEWAY">GATEWAY</option>
-                        <option value="SBI">SBI</option>
-                      </select>
+                      {isLoadingWallets ? (
+                        <div style={{ ...inputStyleNum, paddingLeft: '44px', display: 'flex', alignItems: 'center', color: '#94A3B8', fontSize: '14px', border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+                          <RefreshCw size={14} className="animate-spin" style={{ marginRight: '8px' }} /> Loading wallets...
+                        </div>
+                      ) : (
+                        <select
+                          value={wallet}
+                          onChange={e => setWallet(e.target.value)}
+                          style={{ ...inputStyleNum, paddingLeft: '44px', color: '#1E293B', appearance: 'auto' }}
+                        >
+                          {walletOptions.map(w => (
+                            <option key={w} value={w}>{w}</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   </div>
                   <div>

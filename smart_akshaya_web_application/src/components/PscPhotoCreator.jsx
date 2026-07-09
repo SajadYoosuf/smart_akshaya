@@ -100,9 +100,9 @@ export default function PscPhotoCreator({ onViewChange }) {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     
-    // Standard size: 3.5cm x 4.5cm. Let's draw at 350x450 high quality.
-    canvas.width = 350;
-    canvas.height = 450;
+    // Standard size: 180px x 200px as requested
+    canvas.width = 180;
+    canvas.height = 200;
 
     // Fill background
     ctx.fillStyle = '#ffffff';
@@ -110,48 +110,48 @@ export default function PscPhotoCreator({ onViewChange }) {
 
     if (photoImgEl) {
       ctx.save();
-      // Clip image to the top 370px of the canvas (leaving 80px for the text card)
+      // Clip image to the top 160px of the canvas (leaving 40px for the text card)
       ctx.beginPath();
-      ctx.rect(0, 0, canvas.width, 370);
+      ctx.rect(0, 0, canvas.width, 160);
       ctx.clip();
 
       const drawW = photoImgEl.naturalWidth * photoScale;
       const drawH = photoImgEl.naturalHeight * photoScale;
       const cX = canvas.width / 2 + photoOffset.x;
-      const cY = 185 + photoOffset.y; // Center of 370px image window
+      const cY = 80 + photoOffset.y; // Center of 160px image window
 
       ctx.drawImage(photoImgEl, cX - drawW / 2, cY - drawH / 2, drawW, drawH);
       ctx.restore();
     } else {
       ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(0, 0, canvas.width, 370);
+      ctx.fillRect(0, 0, canvas.width, 160);
       ctx.fillStyle = '#94a3b8';
-      ctx.font = '14px sans-serif';
+      ctx.font = '12px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('No Photo Uploaded', canvas.width / 2, 185);
+      ctx.fillText('No Photo Uploaded', canvas.width / 2, 80);
     }
 
     // Bottom name/date block
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 370, canvas.width, 80);
+    ctx.fillRect(0, 160, canvas.width, 40);
 
     // Divider line
     ctx.strokeStyle = '#cbd5e1';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(0, 370);
-    ctx.lineTo(canvas.width, 370);
+    ctx.moveTo(0, 160);
+    ctx.lineTo(canvas.width, 160);
     ctx.stroke();
 
     // Name text
     ctx.fillStyle = '#000000';
-    ctx.font = `bold ${photoNameFontSize * 1.5}px sans-serif`;
+    ctx.font = `bold ${photoNameFontSize * 0.75}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText((photoName || 'NAME').toUpperCase(), canvas.width / 2, 408);
+    ctx.fillText((photoName || 'NAME').toUpperCase(), canvas.width / 2, 178);
 
     // Date text
-    ctx.font = `${photoDateFontSize * 1.5}px sans-serif`;
-    ctx.fillText(photoDate || 'DD-MM-YYYY', canvas.width / 2, 434);
+    ctx.font = `${photoDateFontSize * 0.75}px sans-serif`;
+    ctx.fillText(photoDate || 'DD-MM-YYYY', canvas.width / 2, 194);
   };
 
   const drawSignature = () => {
@@ -239,7 +239,16 @@ export default function PscPhotoCreator({ onViewChange }) {
       const canvas = photoCanvasRef.current;
       const link = document.createElement('a');
       link.download = `psc_photo_${photoName || 'applicant'}.jpg`;
-      link.href = canvas.toDataURL('image/jpeg', 0.95);
+      
+      let quality = 0.95;
+      let dataUrl = canvas.toDataURL('image/jpeg', quality);
+      // Rough estimation of base64 size: length * 0.75. Target: < 30KB (30000 bytes)
+      while (dataUrl.length * 0.75 > 30000 && quality > 0.1) {
+        quality -= 0.1;
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+      }
+      
+      link.href = dataUrl;
       link.click();
       triggerToast("PSC Photo downloaded!");
     } else {
@@ -270,7 +279,16 @@ export default function PscPhotoCreator({ onViewChange }) {
 
       const link = document.createElement('a');
       link.download = `psc_signature.jpg`;
-      link.href = canvas.toDataURL('image/jpeg', 0.95);
+      
+      let quality = 0.95;
+      let dataUrl = canvas.toDataURL('image/jpeg', quality);
+      // Ensure signature is also under 30KB
+      while (dataUrl.length * 0.75 > 30000 && quality > 0.1) {
+        quality -= 0.1;
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+      }
+      
+      link.href = dataUrl;
       link.click();
       triggerToast("PSC Signature downloaded!");
     }
@@ -426,11 +444,11 @@ export default function PscPhotoCreator({ onViewChange }) {
                   marginBottom: '10px'
                 }}
               >
-                <canvas 
+                  <canvas 
                   ref={photoCanvasRef} 
                   style={{
-                    width: '200px',
-                    height: '257px', // scaled display of 350x450
+                    width: '180px',
+                    height: '200px', // scaled display of 180x200
                     borderRadius: '4px',
                     display: 'block',
                     backgroundColor: '#ffffff',
@@ -439,7 +457,7 @@ export default function PscPhotoCreator({ onViewChange }) {
                 />
               </div>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                Standard Aspect Ratio (3.5cm x 4.5cm)
+                Standard Aspect Ratio (180px x 200px)
               </span>
             </div>
 

@@ -20,9 +20,11 @@ export async function getRows(sheetName) {
     console.log(`[getRows] Request URL: ${url}`);
 
     const response = await fetch(url, {
+      method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      cache: 'no-store',
     });
 
     console.log(`[getRows] Response Status: ${response.status} ${response.statusText}`);
